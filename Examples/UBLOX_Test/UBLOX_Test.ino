@@ -13,7 +13,7 @@
 // Build the table listing all of the parsers
 SEMP_PARSE_ROUTINE const parserTable[] =
 {
-    ubloxPreamble
+    sempUbloxPreamble
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 

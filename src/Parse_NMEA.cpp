@@ -38,7 +38,7 @@ should need to be listed in SparkFun_Extensible_Message_Parser.h.
 //
 
 // Read the line termination
-bool nmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     int checksum;
 
@@ -51,7 +51,7 @@ bool nmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Read the second checksum byte
-bool nmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     int checksum;
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
@@ -90,7 +90,7 @@ bool nmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->eomCallback(parse, parse->type);
 
         // Remove any CR or LF that follow
-        parse->state = nmeaLineTermination;
+        parse->state = sempNmeaLineTermination;
         parse->length = 0;
         return true;
     }
@@ -117,12 +117,12 @@ bool nmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Read the first checksum byte
-bool nmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Validate the checksum character
     if (sempAsciiToNibble(parse->buffer[parse->length - 1]) >= 0)
     {
-        parse->state = nmeaChecksumByte2;
+        parse->state = sempNmeaChecksumByte2;
         return true;
     }
 
@@ -140,10 +140,10 @@ bool nmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Read the message data
-bool nmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (data == '*')
-        parse->state = nmeaChecksumByte1;
+        parse->state = sempNmeaChecksumByte1;
     else
     {
         // Include this byte in the checksum
@@ -170,7 +170,7 @@ bool nmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Read the message name
-bool nmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     parse->crc ^= data;
@@ -210,18 +210,18 @@ bool nmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         // Zero terminate the message name
         scratchPad->nmea.messageName[scratchPad->nmea.messageNameLength++] = 0;
-        parse->state = nmeaFindAsterisk;
+        parse->state = sempNmeaFindAsterisk;
     }
     return true;
 }
 
 // Check for the preamble
-bool nmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     if (data != '$')
         return false;
     scratchPad->nmea.messageNameLength = 0;
-    parse->state = nmeaFindFirstComma;
+    parse->state = sempNmeaFindFirstComma;
     return true;
 }

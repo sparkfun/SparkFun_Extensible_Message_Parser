@@ -40,7 +40,7 @@ should need to be listed in SparkFun_Extensible_Message_Parser.h.
 //
 
 // Read the CK_B byte
-bool ubloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     bool badChecksum;
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
@@ -68,14 +68,14 @@ bool ubloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Read the CK_A byte
-bool ubloxCkA(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxCkA(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    parse->state = ubloxCkB;
+    parse->state = sempUbloxCkB;
     return true;
 }
 
 // Read the payload
-bool ubloxPayload(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxPayload(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -87,11 +87,11 @@ bool ubloxPayload(SEMP_PARSE_STATE *parse, uint8_t data)
         scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
         return true;
     }
-    return ubloxCkA(parse, data);
+    return sempUbloxCkA(parse, data);
 }
 
 // Read the second length byte
-bool ubloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -101,12 +101,12 @@ bool ubloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the second length byte
     scratchPad->ublox.bytesRemaining |= ((uint16_t)data) << 8;
-    parse->state = ubloxPayload;
+    parse->state = sempUbloxPayload;
     return true;
 }
 
 // Read the first length byte
-bool ubloxLength1(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -116,12 +116,12 @@ bool ubloxLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the first length byte
     scratchPad->ublox.bytesRemaining = data;
-    parse->state = ubloxLength2;
+    parse->state = sempUbloxLength2;
     return true;
 }
 
 // Read the ID byte
-bool ubloxId(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxId(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -131,12 +131,12 @@ bool ubloxId(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the ID as the lower 8-bits of the message
     scratchPad->ublox.message |= data;
-    parse->state = ubloxLength1;
+    parse->state = sempUbloxLength1;
     return true;
 }
 
 // Read the class byte
-bool ubloxClass(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxClass(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -146,12 +146,12 @@ bool ubloxClass(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the class as the upper 8-bits of the message
     scratchPad->ublox.message = ((uint16_t)data) << 8;
-    parse->state = ubloxId;
+    parse->state = sempUbloxId;
     return true;
 }
 
 // Read the second sync byte
-bool ubloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Verify the sync 2 byte
     if (data != 0x62)
@@ -169,15 +169,15 @@ bool ubloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
         return sempFirstByte(parse, data);
     }
 
-    parse->state = ubloxClass;
+    parse->state = sempUbloxClass;
     return true;
 }
 
 // Check for the preamble
-bool ubloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (data != 0xb5)
         return false;
-    parse->state = ubloxSync2;
+    parse->state = sempUbloxSync2;
     return true;
 }

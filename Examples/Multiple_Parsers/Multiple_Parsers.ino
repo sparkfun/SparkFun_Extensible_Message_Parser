@@ -127,7 +127,7 @@ const DataStream dataStream[] =
 
 SEMP_PARSE_ROUTINE const nmeaParserTable[] =
 {
-    nmeaPreamble
+    sempNmeaPreamble
 };
 const int nmeaParserCount = sizeof(nmeaParserTable) / sizeof(nmeaParserTable[0]);
 
@@ -139,7 +139,7 @@ const int nmeaParserNameCount = sizeof(nmeaParserNames) / sizeof(nmeaParserNames
 
 SEMP_PARSE_ROUTINE const ubloxParserTable[] =
 {
-    ubloxPreamble
+    sempUbloxPreamble
 };
 const int ubloxParserCount = sizeof(ubloxParserTable) / sizeof(ubloxParserTable[0]);
 

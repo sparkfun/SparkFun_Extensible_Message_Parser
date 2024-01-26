@@ -13,7 +13,7 @@
 // Build the table listing all of the parsers
 SEMP_PARSE_ROUTINE const parserTable[] =
 {
-    nmeaPreamble
+    sempNmeaPreamble
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 

@@ -36,9 +36,20 @@ typedef uint32_t (*SEMP_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
                                   uint8_t type); // Message type
 
+// Length of the message name array
+#define SEMP_NMEA_MESSAGE_NAME_BYTES    16
+
+// NMEA parser scratch area
+typedef struct _SEMP_NMEA_VALUES
+{
+    uint8_t messageName[SEMP_NMEA_MESSAGE_NAME_BYTES]; // Message name
+    uint8_t messageNameLength; // Length of the message name
+} SEMP_NMEA_VALUES;
+
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
 {
+    SEMP_NMEA_VALUES nmea;   // NMEA specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -153,5 +164,15 @@ void sempShutdownParser(SEMP_PARSE_STATE **parse);
 
 // Print the contents of the parser data structure
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse);
+
+// The parser routines within a parser module are typically placed in
+// reverse order within the module.  This lets the routine declaration
+// proceed the routine use and eliminates the need for forward declaration.
+// Removing the forward declaration helps reduce the exposure of the
+// routines to the application layer.  As such only the preamble routine
+// should need to be listed below.
+
+// NMEA parse routines
+bool nmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

@@ -46,6 +46,14 @@ typedef struct _SEMP_NMEA_VALUES
     uint8_t messageNameLength; // Length of the message name
 } SEMP_NMEA_VALUES;
 
+// RTCM parser scratch area
+typedef struct _SEMP_RTCM_VALUES
+{
+    uint32_t crc;            // Copy of CRC calculation before CRC bytes
+    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
+    uint16_t message;        // Message number
+} SEMP_RTCM_VALUES;
+
 // UBLOX parser scratch area
 typedef struct _SEMP_UBLOX_VALUES
 {
@@ -59,6 +67,7 @@ typedef struct _SEMP_UBLOX_VALUES
 typedef union
 {
     SEMP_NMEA_VALUES nmea;   // NMEA specific values
+    SEMP_RTCM_VALUES rtcm;   // RTCM specific values
     SEMP_UBLOX_VALUES ublox; // U-blox specific values
 } SEMP_SCRATCH_PAD;
 
@@ -184,6 +193,9 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse);
 
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+
+// RTCM parse routines
+bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

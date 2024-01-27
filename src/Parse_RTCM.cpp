@@ -159,3 +159,23 @@ bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     }
     return false;
 }
+
+// Translates state value into an string, returns nullptr if not found
+const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse->state == sempRtcmPreamble)
+        return "sempRtcmPreamble";
+    if (parse->state == sempRtcmReadLength1)
+        return "sempRtcmReadLength1";
+    if (parse->state == sempRtcmReadLength2)
+        return "sempRtcmReadLength2";
+    if (parse->state == sempRtcmReadMessage1)
+        return "sempRtcmReadMessage1";
+    if (parse->state == sempRtcmReadMessage2)
+        return "sempRtcmReadMessage2";
+    if (parse->state == sempRtcmReadData)
+        return "sempRtcmReadData";
+    if (parse->state == sempRtcmReadCrc)
+        return "sempRtcmReadCrc";
+    return nullptr;
+}

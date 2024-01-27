@@ -180,6 +180,12 @@ void sempPrintf(Print *print, const char *format, ...);
 // Print a line of text
 void sempPrintln(Print *print, const char *string = "");
 
+// Translates state value into an ASCII state name
+const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
+
+// Translate the type value into an ASCII type name
+const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint8_t type);
+
 // Enable or disable debug output.  Specify nullptr to disable output.
 void sempSetPrintDebug(SEMP_PARSE_STATE *parse, Print *printDebug);
 
@@ -195,11 +201,14 @@ void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError);
 
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 
 // RTCM parse routines
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

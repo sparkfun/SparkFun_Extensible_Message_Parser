@@ -208,7 +208,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint8_t type)
     switch (type) // Index into parserTable + 1
     {
         case 1:
-            offset = dataOffset + 1 + 3 - parse->length;
+            offset = dataOffset + 1 + 2 - parse->length;
             Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
                           scratchPad->nmea.messageName, parse->length, offset, offset);
             break;

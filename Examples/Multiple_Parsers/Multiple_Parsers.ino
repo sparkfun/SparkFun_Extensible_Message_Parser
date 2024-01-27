@@ -227,7 +227,7 @@ void nmeaMessage(SEMP_PARSE_STATE *parse, uint8_t type)
 
     // Display the raw message
     Serial.println();
-    offset = dataOffset + 1 + 3 - parse->length;
+    offset = dataOffset + 1 + 2 - parse->length;
     Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
                   scratchPad->nmea.messageName, parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);

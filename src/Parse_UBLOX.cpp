@@ -52,14 +52,11 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
     // Process this message if checksum is valid
     if (badChecksum == false)
         parse->eomCallback(parse, parse->type);
-    else if (sempPrintErrorMessages)
-    {
-        char line[128];
-        sprintf(line, "SEMP %s: UBLOX bad checksum expected 0x%02x%02x actual 0x%02x%02x",
-                parse->parserName, scratchPad->ublox.ck_a, scratchPad->ublox.ck_b,
-                parse->buffer[parse->length - 2], parse->buffer[parse->length - 1]);
-        sempPrintln(line);
-    }
+    else
+        sempPrintf(parse->printDebug,
+                   "SEMP %s: UBLOX bad checksum expected 0x%02x%02x actual 0x%02x%02x",
+                   parse->parserName, scratchPad->ublox.ck_a, scratchPad->ublox.ck_b,
+                   parse->buffer[parse->length - 2], parse->buffer[parse->length - 1]);
 
     // Search for the next preamble byte
     parse->length = 0;
@@ -157,13 +154,9 @@ bool sempUbloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
     if (data != 0x62)
     {
         // Display the invalid data
-        if (sempPrintErrorMessages)
-        {
-            char line[128];
-            sprintf(line, "SEMP %s: UBLOX invalid second sync byte",
-                    parse->parserName);
-            sempPrintln(line);
-        }
+        sempPrintf(parse->printDebug,
+                   "SEMP %s: UBLOX invalid second sync byte",
+                   parse->parserName);
 
         // Invalid sync 2 byte, start searching for a preamble byte
         return sempFirstByte(parse, data);

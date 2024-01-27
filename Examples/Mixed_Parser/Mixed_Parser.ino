@@ -178,7 +178,7 @@ void setup()
     Serial.printf("Raw data stream: %d bytes\r\n", rawDataBytes);
 
     // The raw data stream is passed to the parser one byte at a time
-    sempPrintErrorMessages = true;
+    sempSetPrintDebug(parse, &Serial);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
         for (dataOffset = 0; dataOffset < dataStream[dataIndex].length; dataOffset++)
@@ -193,12 +193,6 @@ void setup()
 // Main loop processing after system is initialized
 void loop()
 {
-}
-
-// Output a line of text for the SparkFun Extensible Message Parser
-void sempExtPrintLineOfText(const char *string)
-{
-    Serial.println(string);
 }
 
 // Call back from within parser, for end of message

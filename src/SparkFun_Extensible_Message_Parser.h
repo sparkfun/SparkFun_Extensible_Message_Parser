@@ -103,11 +103,11 @@ int sempAsciiToNibble(int data);
 // The general routines are used to allocate and free the parse data
 // structure and to pass data bytes to the parser.
 //
-// The routine sempInitParser verifies the parameters and allocates an
+// The routine sempBeginParser verifies the parameters and allocates an
 // SEMP_PARSE_STATE data structure, returning the pointer when successful
 // or nullptr upon failure.
 //
-// Two array addresses are passed to the sempInitParser routine along
+// Two array addresses are passed to the sempBeginParser routine along
 // with the number of entries in each of these arrays.  The array
 // parseTable lists the preamble routines associated with each of the
 // parsers that will process the raw data stream.  The array
@@ -143,15 +143,15 @@ int sempAsciiToNibble(int data);
 // output.
 //
 // Allocate and initialize a parse data structure
-SEMP_PARSE_STATE * sempInitParser(const SEMP_PARSE_ROUTINE *parseTable, \
-                                  uint16_t parserCount, \
-                                  const char * const *parserNameTable, \
-                                  uint16_t parserNameCount, \
-                                  uint16_t scratchPadBytes, \
-                                  size_t bufferLength, \
-                                  SEMP_EOM_CALLBACK eomCallback, \
-                                  const char *name, \
-                                  Print *printError = &Serial);
+SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
+                                   uint16_t parserCount, \
+                                   const char * const *parserNameTable, \
+                                   uint16_t parserNameCount, \
+                                   uint16_t scratchPadBytes, \
+                                   size_t bufferLength, \
+                                   SEMP_EOM_CALLBACK eomCallback, \
+                                   const char *name, \
+                                   Print *printError = &Serial);
 
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state
@@ -166,10 +166,10 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 // from a raw data stream.
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
 
-// The routine sempShutdownParser frees the parse data structure and
-// sets the pointer value to nullptr to prevent future references to
-// the freed structure.
-void sempShutdownParser(SEMP_PARSE_STATE **parse);
+// The routine sempStopParser frees the parse data structure and sets
+// the pointer value to nullptr to prevent future references to the
+// freed structure.
+void sempStopParser(SEMP_PARSE_STATE **parse);
 
 // Print the contents of the parser data structure
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse);

@@ -175,14 +175,14 @@ void setup()
     Serial.println();
 
     // Initialize the parsers
-    nmeaParser = sempInitParser(nmeaParserTable, nmeaParserCount,
-                                nmeaParserNames, nmeaParserNameCount,
-                                0, BUFFER_LENGTH, nmeaMessage, "NMEA_Parser");
+    nmeaParser = sempBeginParser(nmeaParserTable, nmeaParserCount,
+                                 nmeaParserNames, nmeaParserNameCount,
+                                 0, BUFFER_LENGTH, nmeaMessage, "NMEA_Parser");
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
-    ubloxParser = sempInitParser(ubloxParserTable, ubloxParserCount,
-                                 ubloxParserNames, ubloxParserNameCount,
-                                 0, BUFFER_LENGTH, ubloxMessage, "U-Blox_Parser");
+    ubloxParser = sempBeginParser(ubloxParserTable, ubloxParserCount,
+                                  ubloxParserNames, ubloxParserNameCount,
+                                  0, BUFFER_LENGTH, ubloxMessage, "U-Blox_Parser");
     if (!ubloxParser)
         reportFatalError("Failed to initialize the U-Blox parser");
 
@@ -206,8 +206,8 @@ void setup()
     }
 
     // Done parsing the data
-    sempShutdownParser(&nmeaParser);
-    sempShutdownParser(&ubloxParser);
+    sempStopParser(&nmeaParser);
+    sempStopParser(&ubloxParser);
     free(nmeaParser);
     free(ubloxParser);
 }

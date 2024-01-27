@@ -113,13 +113,15 @@ int sempAsciiToNibble(int data)
 }
 
 // Translate the type value into an ASCII type name
-const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint8_t type)
+const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    if (!type)
-        return "No active parser, scanning for preamble";
-    if (type > parse->parserCount)
-        return "Unknown parser";
-    return parse->parserNames[type - 1];
+    const char *name = "Unknown parser";
+
+    if (type == parse->parserCount)
+        name = "No active parser, scanning for preamble";
+    else if (parse->parserNames && (type < parse->parserCount))
+        name = parse->parserNames[type];
+    return name;
 }
 
 // Print the parser's configuration
@@ -128,7 +130,7 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse)
     if (parse->printError)
     {
         sempPrintln(parse->printError, "SparkFun Extensible Message Parser");
-        sempPrintf(parse->printError, "    Name: %s", parse->parserName);
+        sempPrintf(parse->printError, "    Name: %p (%s)", parse->parserName, parse->parserName);
         sempPrintf(parse->printError, "    parsers: %p", parse->parsers);
         sempPrintf(parse->printError, "    parserNames: %p", parse->parserNames);
         sempPrintf(parse->printError, "    parserCount: %d", parse->parserCount);
@@ -302,7 +304,7 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
     parse->crc = 0;
     parse->computeCrc = nullptr;
     parse->length = 0;
-    parse->type = 0;
+    parse->type = parse->parserCount;
     parse->buffer[parse->length++] = data;
 
     // Walk through the parse table
@@ -311,12 +313,12 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
         parseRoutine = parse->parsers[index];
         if (parseRoutine(parse, data))
         {
-            parse->type = index + 1;
+            parse->type = index;
             return true;
         }
     }
 
-    // preamble byte not found
+    // Preamble byte not found, continue searching for a preamble byte
     parse->state = sempFirstByte;
     return false;
 }

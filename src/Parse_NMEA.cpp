@@ -83,7 +83,7 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->buffer[parse->length] = 0;
 
         // Process this NMEA message
-        parse->eomCallback(parse, parse->type);
+        parse->eomCallback(parse, parse->type); // Pass parser array index
 
         // Remove any CR or LF that follow
         parse->state = sempNmeaLineTermination;

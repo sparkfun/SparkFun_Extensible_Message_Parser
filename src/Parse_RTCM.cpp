@@ -58,7 +58,7 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Process the message if CRC is valid
     if (parse->crc == 0)
-        parse->eomCallback(parse, parse->type);
+        parse->eomCallback(parse, parse->type); // Pass parser array index
 
     // Display the RTCM messages with bad CRC
     else

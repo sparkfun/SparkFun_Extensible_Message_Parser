@@ -110,13 +110,15 @@ void setup()
     Serial.println("Parser successfully initialized");
 
     // Display the parser configuration
+    Serial.printf("&parserTable: %p\r\n", parserTable);
+    Serial.printf("&parserNames: %p\r\n", parserNames);
     sempPrintParserConfiguration(parse);
-
-    // Display the parser type
-    Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
 
     // Display the parse state
     Serial.printf("Parse State: %s\r\n", sempGetStateName(parse));
+
+    // Display the parser type
+    Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
 
     // Obtain a raw data stream from somewhere
     sempSetPrintDebug(parse, &Serial);
@@ -145,7 +147,7 @@ bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
-void processMessage(SEMP_PARSE_STATE *parse, uint8_t type)
+void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     static bool displayOnce = true;
     uint32_t offset;

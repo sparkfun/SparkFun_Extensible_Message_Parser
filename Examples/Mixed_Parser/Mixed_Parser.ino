@@ -200,7 +200,7 @@ void loop()
 
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
-void processMessage(SEMP_PARSE_STATE *parse, uint8_t type)
+void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;
@@ -208,15 +208,15 @@ void processMessage(SEMP_PARSE_STATE *parse, uint8_t type)
 
     // Display the raw message
     Serial.println();
-    switch (type) // Index into parserTable + 1
+    switch (type) // Index into parserTable array
     {
-        case 1:
+        case 0:
             offset = dataOffset + 1 + 2 - parse->length;
             Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
                           scratchPad->nmea.messageName, parse->length, offset, offset);
             break;
 
-        case 2:
+        case 1:
             offset = dataOffset + 1 - parse->length;
             Serial.printf("Valid u-blox message: %d bytes at 0x%08x (%d)\r\n",
                           parse->length, offset, offset);

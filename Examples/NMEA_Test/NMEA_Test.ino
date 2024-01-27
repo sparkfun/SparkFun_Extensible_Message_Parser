@@ -120,7 +120,7 @@ void loop()
 
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
-void processMessage(SEMP_PARSE_STATE *parse, uint8_t type)
+void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;

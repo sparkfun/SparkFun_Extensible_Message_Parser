@@ -51,7 +51,7 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Process this message if checksum is valid
     if (badChecksum == false)
-        parse->eomCallback(parse, parse->type);
+        parse->eomCallback(parse, parse->type); // Pass parser array index
     else
         sempPrintf(parse->printDebug,
                    "SEMP %s: UBLOX bad checksum expected 0x%02x%02x actual 0x%02x%02x",

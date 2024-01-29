@@ -218,6 +218,7 @@ void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError);
 
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 
 // RTCM parse routines

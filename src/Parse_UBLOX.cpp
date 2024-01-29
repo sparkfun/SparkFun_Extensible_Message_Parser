@@ -50,7 +50,7 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
         ((parse->buffer[parse->length - 2] != scratchPad->ublox.ck_a) || (parse->buffer[parse->length - 1] != scratchPad->ublox.ck_b));
 
     // Process this message if checksum is valid
-    if (badChecksum == false)
+    if ((badChecksum == false) || (parse->badCrc && (!parse->badCrc(parse))))
         parse->eomCallback(parse, parse->type); // Pass parser array index
     else
         sempPrintf(parse->printDebug,

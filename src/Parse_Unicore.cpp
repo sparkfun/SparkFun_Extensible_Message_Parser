@@ -116,7 +116,7 @@ bool sempUnicoreReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         return true;
 
     // Call the end-of-message routine with this message
-    if (!parse->crc)
+    if ((!parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
         parse->eomCallback(parse, parse->type); // Pass parser array index
     else
     {

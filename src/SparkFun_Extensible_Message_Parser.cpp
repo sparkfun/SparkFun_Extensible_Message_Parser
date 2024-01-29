@@ -220,7 +220,8 @@ SEMP_PARSE_STATE *sempBeginParser(
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
     const char *parserName,
-    Print *printError
+    Print *printError,
+    SEMP_BAD_CRC_CALLBACK badCrc
     )
 {
     SEMP_PARSE_STATE *parse = nullptr;
@@ -284,6 +285,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->state = sempFirstByte;
         parse->eomCallback = eomCallback;
         parse->parserName = parserName;
+        parse->badCrc = badCrc;
 
         // Display the parser configuration
         if (sempPrintErrorMessages)

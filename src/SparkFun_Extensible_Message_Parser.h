@@ -27,8 +27,15 @@ typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
                                    uint8_t data); // Incoming data byte
 
 // CRC callback routine
-typedef uint32_t (*SEMP_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
-                                      uint8_t dataByte); // Data byte
+typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
+                                     uint8_t dataByte); // Data byte
+
+// Normally this routine pointer is set to nullptr.  The parser calls
+// the badCrcCallback routine when the default CRC or checksum calculation
+// fails.  This allows an upper layer to adjust the CRC calculation if
+// necessary.  Return true when the CRC calculation fails otherwise
+// return false if the alternate CRC or checksum calculation is successful.
+typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
 
 // Call the application back at specified routine address.  Pass in the
 // parse data structure containing the buffer containing the address of
@@ -93,7 +100,8 @@ typedef struct _SEMP_PARSE_STATE
     const char * const *parserNames;   // Table of parser names
     SEMP_PARSE_ROUTINE state;      // Parser state routine
     SEMP_EOM_CALLBACK eomCallback; // End of message callback routine
-    SEMP_CRC_CALLBACK computeCrc;  // Routine to compute the CRC when set
+    SEMP_BAD_CRC_CALLBACK badCrc;  // Bad CRC callback routine
+    SEMP_COMPUTE_CRC computeCrc;   // Routine to compute the CRC when set
     const char *parserName;        // Name of parser
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
@@ -168,7 +176,8 @@ SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
                                    size_t bufferLength, \
                                    SEMP_EOM_CALLBACK eomCallback, \
                                    const char *name, \
-                                   Print *printError = &Serial);
+                                   Print *printError = &Serial,
+                                   SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
 
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state

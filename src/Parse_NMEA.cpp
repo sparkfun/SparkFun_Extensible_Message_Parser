@@ -94,7 +94,7 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
     // Display the checksum error
     sempPrintf(parse->printDebug,
                "SEMP: %s NMEA %s, %2d bytes, bad checksum, "
-               "expecting 0x%c%c, computed: 0x%02x",
+               "received 0x%c%c, computed: 0x%02x",
                parse->parserName,
                scratchPad->nmea.messageName,
                parse->length,
@@ -156,15 +156,18 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+sempPrintf(parse->printError, "crc: 0x%02x", parse->crc);
     parse->crc ^= data;
     if ((data != ',') || (scratchPad->nmea.messageNameLength == 0))
     {
         // Invalid data, start searching for a preamble byte
-        if ((data < 'A') || (data > 'Z'))
+        uint8_t upper = data & ~0x20;
+sempPrintf(parse->printError, "upper: 0x%02x", upper);
+        if (((upper < 'A') || (upper > 'Z')) && ((data < '0') || (data > '9')))
         {
             sempPrintf(parse->printDebug,
-                       "SEMP %s: NMEA invalid message name character",
-                       parse->parserName);
+                       "SEMP %s: NMEA invalid message name character 0x%02x",
+                       parse->parserName, data);
             return sempFirstByte(parse, data);
         }
 

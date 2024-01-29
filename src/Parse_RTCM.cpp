@@ -64,14 +64,16 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     else
         sempPrintf(parse->printDebug,
                    "SEMP: %s RTCM %d, %2d bytes, bad CRC, "
-                   "expecting 0x%06x, actual: 0x%02x%02x%02x",
+                   "received %02x %02x %02x, computed: %02x %02x %02x",
                    parse->parserName,
                    scratchPad->rtcm.message,
                    parse->length,
-                   scratchPad->rtcm.crc,
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1]);
+                   parse->buffer[parse->length - 1],
+                   (scratchPad->rtcm.crc >> 16) & 0xff,
+                   (scratchPad->rtcm.crc >> 8) & 0xff,
+                   scratchPad->rtcm.crc & 0xff);
 
     // Search for another preamble byte
     parse->state = sempFirstByte;

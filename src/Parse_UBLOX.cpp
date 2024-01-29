@@ -54,9 +54,10 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->eomCallback(parse, parse->type); // Pass parser array index
     else
         sempPrintf(parse->printDebug,
-                   "SEMP %s: UBLOX bad checksum expected 0x%02x%02x actual 0x%02x%02x",
-                   parse->parserName, scratchPad->ublox.ck_a, scratchPad->ublox.ck_b,
-                   parse->buffer[parse->length - 2], parse->buffer[parse->length - 1]);
+                   "SEMP %s: UBLOX bad checksum received 0x%02x%02x computed 0x%02x%02x",
+                   parse->parserName,
+                   parse->buffer[parse->length - 2], parse->buffer[parse->length - 1],
+                   scratchPad->ublox.ck_a, scratchPad->ublox.ck_b);
 
     // Search for the next preamble byte
     parse->length = 0;

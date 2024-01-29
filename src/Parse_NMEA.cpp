@@ -203,6 +203,17 @@ bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+// Alternate NMEA parser with hash (#) as the preamble
+bool sempNmeaHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    if (data != '#')
+        return false;
+    scratchPad->nmea.messageNameLength = 0;
+    parse->state = sempNmeaFindFirstComma;
+    return true;
+}
+
 // Translates state value into an string, returns nullptr if not found
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
 {

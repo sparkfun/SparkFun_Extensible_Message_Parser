@@ -229,6 +229,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+bool sempNmeaHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 

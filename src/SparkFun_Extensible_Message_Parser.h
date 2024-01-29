@@ -212,11 +212,13 @@ const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
 // Translate the type value into an ASCII type name
 const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type);
 
-// Enable or disable debug output.  Specify nullptr to disable output.
-void sempSetPrintDebug(SEMP_PARSE_STATE *parse, Print *printDebug);
+// Enable or disable debug output
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
 
-// Enable or disable error output.  Specify nullptr to disable output.
-void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError);
+// Enable or disable error output
+void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration

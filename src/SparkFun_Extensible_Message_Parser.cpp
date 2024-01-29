@@ -192,18 +192,28 @@ const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
     return "Unknown state";
 }
 
-// Enable or disable debug output.  Specify nullptr to disable output.
-void sempSetPrintDebug(SEMP_PARSE_STATE *parse, Print *printDebug)
+// Disable debug output
+void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
 {
-    // Set the class to print debug output
-    parse->printDebug = printDebug;
+    parse->printDebug = nullptr;
 }
 
-// Enable or disable error output.  Specify nullptr to disable output.
-void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError)
+// Enable debug output
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print)
 {
-    // Set the class to print error output
-    parse->printError = printError;
+    parse->printDebug = print;
+}
+
+// Disable error output
+void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
+{
+    parse->printError = nullptr;
+}
+
+// Enable error output
+void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
+{
+    parse->printError = print;
 }
 
 //----------------------------------------

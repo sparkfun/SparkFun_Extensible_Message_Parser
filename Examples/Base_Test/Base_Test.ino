@@ -121,7 +121,7 @@ void setup()
     Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
 
     // Obtain a raw data stream from somewhere
-    sempSetPrintDebug(parse, &Serial);
+    sempEnableDebugOutput(parse);
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
     // The raw data stream is passed to the parser one byte at a time

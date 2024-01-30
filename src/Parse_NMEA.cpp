@@ -43,7 +43,7 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
     int checksum;
 
     // Process the line termination
-    if ((data == '\r') && (data == '\n'))
+    if ((data == '\r') || (data == '\n'))
         return true;
 
     // Start searching for a preamble byte
@@ -80,7 +80,7 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->buffer[parse->length++] = '\n';
 
         // Zero terminate the string
-        parse->buffer[parse->length++] = 0;
+        parse->buffer[parse->length] = 0;
 
         // Process this NMEA message
         parse->eomCallback(parse, parse->type);

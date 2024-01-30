@@ -167,7 +167,7 @@ void setup()
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
     // The raw data stream is passed to the parser one byte at a time
-    sempSetPrintDebug(parse, &Serial);
+    sempEnableDebugOutput(parse);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
     {
         uint8_t data;

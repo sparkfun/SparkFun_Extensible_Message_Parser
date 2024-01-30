@@ -74,7 +74,7 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
                 parse->buffer[parse->length - 3],
                 parse->buffer[parse->length - 2],
                 parse->buffer[parse->length - 1]);
-        sempExtPrintLineOfText(error);
+        sempPrintln(error);
     }
 
     // Search for another preamble byte

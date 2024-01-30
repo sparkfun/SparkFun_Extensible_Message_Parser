@@ -184,6 +184,12 @@ void sempShutdownParser(SEMP_PARSE_STATE **parse);
 // Print the contents of the parser data structure
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse);
 
+// Print a debug line of text
+void sempDebugPrintln(const char *string);
+
+// Print a line of text
+void sempPrintln(const char *string);
+
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration
 // proceed the routine use and eliminates the need for forward declaration.

@@ -58,7 +58,7 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
         sprintf(line, "SEMP %s: UBLOX bad checksum expected 0x%02x%02x actual 0x%02x%02x",
                 parse->parserName, scratchPad->ublox.ck_a, scratchPad->ublox.ck_b,
                 parse->buffer[parse->length - 2], parse->buffer[parse->length - 1]);
-        sempExtPrintLineOfText(line);
+        sempPrintln(line);
     }
 
     // Search for the next preamble byte
@@ -162,7 +162,7 @@ bool sempUbloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
             char line[128];
             sprintf(line, "SEMP %s: UBLOX invalid second sync byte",
                     parse->parserName);
-            sempExtPrintLineOfText(line);
+            sempPrintln(line);
         }
 
         // Invalid sync 2 byte, start searching for a preamble byte

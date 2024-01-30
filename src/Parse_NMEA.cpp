@@ -229,5 +229,7 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
         return "sempNmeaChecksumByte2";
     if (parse->state == sempNmeaLineTermination)
         return "sempNmeaLineTermination";
+    if (parse->state == sempNmeaHashPreamble)
+        return "sempNmeaHashPreamble";
     return nullptr;
 }

@@ -116,6 +116,31 @@ typedef struct _SEMP_PARSE_STATE
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
+// Protocol specific types
+//----------------------------------------
+
+// Define the Unicore message header
+typedef struct _SEMP_UNICORE_HEADER
+{
+    uint8_t syncA;            // 0xaa
+    uint8_t syncB;            // 0x44
+    uint8_t syncC;            // 0xb5
+    uint8_t cpuIdlePercent;   // CPU Idle Percentage 0-100
+    uint16_t messageId;       // Message ID
+    uint16_t messageLength;   // Message Length
+    uint8_t referenceTime;    // Reference time（GPST or BDST)
+    uint8_t timeStatus;       // Time status
+    uint16_t weekNumber;      // Reference week number
+    uint32_t secondsOfWeek;   // GPS seconds from the beginning of the
+                              // reference week, accurate to the millisecond
+    uint32_t RESERVED;
+
+    uint8_t releasedVersion;  // Release version
+    uint8_t leapSeconds;      // Leap sec
+    uint16_t outputDelayMSec; // Output delay time, ms
+} SEMP_UNICORE_HEADER;
+
+//----------------------------------------
 // Support routines
 //----------------------------------------
 

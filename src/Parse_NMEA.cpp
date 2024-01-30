@@ -64,13 +64,9 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
     if (checksum < 0)
     {
         // Invalid checksum character
-        if (sempPrintErrorMessages)
-        {
-            char line[128];
-            sprintf(line, "SEMP %s: NMEA invalid second checksum character",
-                    parse->parserName);
-            sempPrintln(line);
-        }
+        sempPrintf(parse->printDebug,
+                   "SEMP %s: NMEA invalid second checksum character",
+                   parse->parserName);
 
         // Start searching for a preamble byte
         return sempFirstByte(parse, data);
@@ -96,20 +92,15 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 
     // Display the checksum error
-    if (sempPrintErrorMessages)
-    {
-        char error[128];
-        sprintf(error,
-                "SEMP: %s NMEA %s, %2d bytes, bad checksum, "
-                "expecting 0x%c%c, computed: 0x%02x",
-                parse->parserName,
-                scratchPad->nmea.messageName,
-                parse->length,
-                parse->buffer[parse->length - 2],
-                parse->buffer[parse->length - 1],
-                parse->crc);
-        sempPrintln(error);
-    }
+    sempPrintf(parse->printDebug,
+               "SEMP: %s NMEA %s, %2d bytes, bad checksum, "
+               "expecting 0x%c%c, computed: 0x%02x",
+               parse->parserName,
+               scratchPad->nmea.messageName,
+               parse->length,
+               parse->buffer[parse->length - 2],
+               parse->buffer[parse->length - 1],
+               parse->crc);
 
     // Start searching for a preamble byte
     parse->state = sempFirstByte;
@@ -127,13 +118,9 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 
     // Invalid checksum character
-    if (sempPrintErrorMessages)
-    {
-        char line[128];
-        sprintf(line, "SEMP %s: NMEA invalid first checksum character",
-                parse->parserName);
-        sempPrintln(line);
-    }
+    sempPrintf(parse->printDebug,
+               "SEMP %s: NMEA invalid first checksum character",
+               parse->parserName);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -153,14 +140,10 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         if ((parse->length + NMEA_BUFFER_OVERHEAD) > parse->bufferLength)
         {
             // Message too long
-            if (sempPrintErrorMessages)
-            {
-                char line[128];
-                sprintf(line, "SEMP %s: NMEA message too long, increase the buffer size > %d",
-                        parse->parserName,
-                        parse->bufferLength);
-                sempPrintln(line);
-            }
+            sempPrintf(parse->printDebug,
+                       "SEMP %s: NMEA message too long, increase the buffer size > %d",
+                       parse->parserName,
+                       parse->bufferLength);
 
             // Start searching for a preamble byte
             return sempFirstByte(parse, data);
@@ -179,27 +162,19 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         // Invalid data, start searching for a preamble byte
         if ((data < 'A') || (data > 'Z'))
         {
-            if (sempPrintErrorMessages)
-            {
-                char line[128];
-                sprintf(line, "SEMP %s: NMEA invalid message name character",
-                        parse->parserName);
-                sempPrintln(line);
-            }
+            sempPrintf(parse->printDebug,
+                       "SEMP %s: NMEA invalid message name character",
+                       parse->parserName);
             return sempFirstByte(parse, data);
         }
 
         // Name too long, start searching for a preamble byte
         if (scratchPad->nmea.messageNameLength == (sizeof(scratchPad->nmea.messageName) - 1))
         {
-            if (sempPrintErrorMessages)
-            {
-                char line[128];
-                sprintf(line, "SEMP %s: NMEA message name > %d characters",
-                        parse->parserName,
-                        sizeof(scratchPad->nmea.messageName) - 1);
-                sempPrintln(line);
-            }
+            sempPrintf(parse->printDebug,
+                       "SEMP %s: NMEA message name > %d characters",
+                       parse->parserName,
+                       sizeof(scratchPad->nmea.messageName) - 1);
             return sempFirstByte(parse, data);
         }
 

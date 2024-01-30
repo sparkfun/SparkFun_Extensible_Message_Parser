@@ -7,9 +7,7 @@ SparkFun_Extensible_Message_Parser.h
 #ifndef __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__
 #define __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <unistd.h>
+#include <Arduino.h>
 
 //----------------------------------------
 // Constants
@@ -82,6 +80,8 @@ typedef struct _SEMP_PARSE_STATE
     SEMP_CRC_CALLBACK computeCrc;  // Routine to compute the CRC when set
     const char *parserName;        // Name of parser
     void *scratchPad;              // Parser scratchpad area
+    Print *printError;             // Class to use for error output
+    Print *printDebug;             // Class to use for debug output
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
     uint32_t bufferLength;         // Length of the buffer in bytes
@@ -89,22 +89,6 @@ typedef struct _SEMP_PARSE_STATE
     uint16_t length;               // Message length including line termination
     uint8_t type;                  // Active parser type
 } SEMP_PARSE_STATE;
-
-//----------------------------------------
-// Application defined routines
-//----------------------------------------
-
-// The sempExtPrintLineOfText routine must be implemented by the
-// application layer.  A typical implementation is Serial.println(string).
-void sempExtPrintLineOfText(const char *string);
-
-//----------------------------------------
-// Globals values
-//----------------------------------------
-
-// sempPrintErrorMessages controls when parse error messages may be
-// displayed.  This value enables message display during sempInitParser.
-extern bool sempPrintErrorMessages;
 
 //----------------------------------------
 // Support routines
@@ -153,6 +137,11 @@ int sempAsciiToNibble(int data);
 // identify the parse data structure associated with the error.  This
 // is helpful when multiple parsers are running at the same time.
 //
+// The printError value specifies a class address to use when printing
+// errors.  A nullptr value prevents any error from being output.  It is
+// possible to call sempSetPrintError later to enable or disable error
+// output.
+//
 // Allocate and initialize a parse data structure
 SEMP_PARSE_STATE * sempInitParser(const SEMP_PARSE_ROUTINE *parseTable, \
                                   uint16_t parserCount, \
@@ -161,7 +150,8 @@ SEMP_PARSE_STATE * sempInitParser(const SEMP_PARSE_ROUTINE *parseTable, \
                                   uint16_t scratchPadBytes, \
                                   size_t bufferLength, \
                                   SEMP_EOM_CALLBACK eomCallback, \
-                                  const char *name);
+                                  const char *name, \
+                                  Print *printError = &Serial);
 
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state
@@ -184,11 +174,17 @@ void sempShutdownParser(SEMP_PARSE_STATE **parse);
 // Print the contents of the parser data structure
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse);
 
-// Print a debug line of text
-void sempDebugPrintln(const char *string);
+// Format and print a line of text
+void sempPrintf(Print *print, const char *format, ...);
 
 // Print a line of text
-void sempPrintln(const char *string);
+void sempPrintln(Print *print, const char *string = "");
+
+// Enable or disable debug output.  Specify nullptr to disable output.
+void sempSetPrintDebug(SEMP_PARSE_STATE *parse, Print *printDebug);
+
+// Enable or disable error output.  Specify nullptr to disable output.
+void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError);
 
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration

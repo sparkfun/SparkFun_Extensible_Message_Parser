@@ -102,7 +102,6 @@ void setup()
 
     // Initialize the parser, specify a large scratch pad area
     // Display the parser allocation
-    sempPrintErrorMessages = true;
     parse = sempInitParser(parserTable, parserCount,
                            parserNames, parserNameCount,
                            4091, 3000, processMessage, "Base Test Example");
@@ -114,6 +113,7 @@ void setup()
     sempPrintParserConfiguration(parse);
 
     // Obtain a raw data stream from somewhere
+    sempSetPrintDebug(parse, &Serial);
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
     // The raw data stream is passed to the parser one byte at a time
@@ -135,12 +135,6 @@ bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Preamble not found
     return false;
-}
-
-// Print a line of text
-void sempExtPrintLineOfText(const char *string)
-{
-    Serial.println(string);
 }
 
 // Call back from within parser, for end of message

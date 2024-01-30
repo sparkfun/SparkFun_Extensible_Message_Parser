@@ -50,12 +50,9 @@ bool userSecondPreambleByte(SEMP_PARSE_STATE *parse, uint8_t data)
     if (data != 'B')
     {
         // Print the error
-        if (sempPrintErrorMessages)
-        {
-            char line[128];
-            sprintf(line, "USER_Parser: Bad second preamble byte after message %d", scratchPad->messageNumber);
-            sempExtPrintLineOfText(line);
-        }
+        sempPrintf(parse->printDebug,
+                   "USER_Parser: Bad second preamble byte after message %d",
+                   scratchPad->messageNumber);
 
         // Start searching for a preamble byte
         return sempFirstByte(parse, data);
@@ -148,7 +145,6 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    sempPrintErrorMessages = true;
     parse = sempInitParser(userParserTable, userParserCount,
                            userParserNames, userParserNameCount,
                            sizeof(USER_SCRATCH_PAD),
@@ -160,6 +156,7 @@ void setup()
     Serial.printf("Raw data stream: %d bytes\r\n", rawDataBytes);
 
     // The raw data stream is passed to the parser one byte at a time
+    sempSetPrintDebug(parse, &Serial);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
         // Update the parser state based on the incoming byte
         sempParseNextByte(parse, rawDataStream[dataOffset]);
@@ -172,12 +169,6 @@ void setup()
 // Main loop processing after system is initialized
 void loop()
 {
-}
-
-// Output a line of text for the SparkFun Extensible Message Parser
-void sempExtPrintLineOfText(const char *string)
-{
-    Serial.println(string);
 }
 
 // Call back from within parser, for end of message

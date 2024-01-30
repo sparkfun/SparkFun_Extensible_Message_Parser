@@ -131,9 +131,9 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    parse = sempInitParser(parserTable, parserCount,
-                           parserNames, parserNameCount,
-                           0, BUFFER_LENGTH, processMessage, "UBLOX_Test");
+    parse = sempBeginParser(parserTable, parserCount,
+                            parserNames, parserNameCount,
+                            0, BUFFER_LENGTH, processMessage, "UBLOX_Test");
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -147,7 +147,7 @@ void setup()
         sempParseNextByte(parse, rawDataStream[dataOffset]);
 
     // Done parsing the data
-    sempShutdownParser(&parse);
+    sempStopParser(&parse);
 }
 
 // Main loop processing after system is initialized

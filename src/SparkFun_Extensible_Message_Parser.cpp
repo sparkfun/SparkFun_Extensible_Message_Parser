@@ -201,7 +201,7 @@ void sempSetPrintError(SEMP_PARSE_STATE *parse, Print *printError)
 //----------------------------------------
 
 // Initialize the parser
-SEMP_PARSE_STATE *sempInitParser(
+SEMP_PARSE_STATE *sempBeginParser(
     const SEMP_PARSE_ROUTINE *parserTable,
     uint16_t parserCount,
     const char * const *parserNameTable,
@@ -341,7 +341,7 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Shutdown the parser
-void sempShutdownParser(SEMP_PARSE_STATE **parse)
+void sempStopParser(SEMP_PARSE_STATE **parse)
 {
     // Free the parse structure if it was specified
     if (parse && *parse)

@@ -145,10 +145,10 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    parse = sempInitParser(userParserTable, userParserCount,
-                           userParserNames, userParserNameCount,
-                           sizeof(USER_SCRATCH_PAD),
-                           BUFFER_LENGTH, userMessage, "User_Parser");
+    parse = sempBeginParser(userParserTable, userParserCount,
+                            userParserNames, userParserNameCount,
+                            sizeof(USER_SCRATCH_PAD),
+                            BUFFER_LENGTH, userMessage, "User_Parser");
     if (!parse)
         reportFatalError("Failed to initialize the user parser");
 
@@ -162,7 +162,7 @@ void setup()
         sempParseNextByte(parse, rawDataStream[dataOffset]);
 
     // Done parsing the data
-    sempShutdownParser(&parse);
+    sempStopParser(&parse);
     free(parse);
 }
 

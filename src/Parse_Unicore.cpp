@@ -123,16 +123,16 @@ bool sempUnicoreReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         SEMP_UNICORE_HEADER *header = (SEMP_UNICORE_HEADER *)parse->buffer;
         sempPrintf(parse->printDebug,
                    "SEMP: %s Unicore, bad CRC, "
-                   "expecting %02x %02x %02x %02x, actual: %02x %02x %02x %02x",
+                   "received %02x %02x %02x %02x, computed: %02x %02x %02x %02x",
                    parse->parserName,
-                   scratchPad->unicore.crc & 0xff,
-                   (scratchPad->unicore.crc >> 8) & 0xff,
-                   (scratchPad->unicore.crc >> 16) & 0xff,
-                   (scratchPad->unicore.crc >> 24) & 0xff,
                    parse->buffer[parse->length - 4],
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1]);
+                   parse->buffer[parse->length - 1],
+                   scratchPad->unicore.crc & 0xff,
+                   (scratchPad->unicore.crc >> 8) & 0xff,
+                   (scratchPad->unicore.crc >> 16) & 0xff,
+                   (scratchPad->unicore.crc >> 24) & 0xff);
     }
     parse->state = sempFirstByte;
     return false;

@@ -174,3 +174,27 @@ bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     parse->state = sempUbloxSync2;
     return true;
 }
+
+// Translates state value into an string, returns nullptr if not found
+const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse->state == sempUbloxPreamble)
+        return "sempUbloxPreamble";
+    if (parse->state == sempUbloxSync2)
+        return "sempUbloxSync2";
+    if (parse->state == sempUbloxClass)
+        return "sempUbloxClass";
+    if (parse->state == sempUbloxId)
+        return "sempUbloxId";
+    if (parse->state == sempUbloxLength1)
+        return "sempUbloxLength1";
+    if (parse->state == sempUbloxLength2)
+        return "sempUbloxLength2";
+    if (parse->state == sempUbloxPayload)
+        return "sempUbloxPayload";
+    if (parse->state == sempUbloxCkA)
+        return "sempUbloxCkA";
+    if (parse->state == sempUbloxCkB)
+        return "sempUbloxCkB";
+    return nullptr;
+}

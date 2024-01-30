@@ -112,11 +112,11 @@ int sempAsciiToNibble(int data)
     return -1;
 }
 
-// Translate the type value into a name
+// Translate the type value into an ASCII type name
 const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint8_t type)
 {
     if (!type)
-        return "Scanning for preamble";
+        return "No active parser, scanning for preamble";
     if (type > parse->parserCount)
         return "Unknown parser";
     return parse->parserNames[type - 1];
@@ -180,6 +180,14 @@ void sempPrintln(Print *print, const char *string)
 {
     if (print)
         print->println(string);
+}
+
+// Translates state value into an ASCII state name
+const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse->state == sempFirstByte)
+        return "sempFirstByte";
+    return "Unknown state";
 }
 
 // Enable or disable debug output.  Specify nullptr to disable output.

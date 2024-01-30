@@ -112,6 +112,12 @@ void setup()
     // Display the parser configuration
     sempPrintParserConfiguration(parse);
 
+    // Display the parser type
+    Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
+
+    // Display the parse state
+    Serial.printf("Parse State: %s\r\n", sempGetStateName(parse));
+
     // Obtain a raw data stream from somewhere
     sempSetPrintDebug(parse, &Serial);
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);

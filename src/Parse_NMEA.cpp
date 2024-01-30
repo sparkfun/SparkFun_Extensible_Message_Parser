@@ -200,3 +200,21 @@ bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     parse->state = sempNmeaFindFirstComma;
     return true;
 }
+
+// Translates state value into an string, returns nullptr if not found
+const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse->state == sempNmeaPreamble)
+        return "sempNmeaPreamble";
+    if (parse->state == sempNmeaFindFirstComma)
+        return "sempNmeaFindFirstComma";
+    if (parse->state == sempNmeaFindAsterisk)
+        return "sempNmeaFindAsterisk";
+    if (parse->state == sempNmeaChecksumByte1)
+        return "sempNmeaChecksumByte1";
+    if (parse->state == sempNmeaChecksumByte2)
+        return "sempNmeaChecksumByte2";
+    if (parse->state == sempNmeaLineTermination)
+        return "sempNmeaLineTermination";
+    return nullptr;
+}

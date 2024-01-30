@@ -76,6 +76,18 @@ bool userPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+// Translates state value into an string, returns nullptr if not found
+const char * userParserStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse->state == userPreamble)
+        return "userPreamble";
+    if (parse->state == userSecondPreambleByte)
+        return "userSecondPreambleByte";
+    if (parse->state == userFindNumber)
+        return "userFindNumber";
+    return nullptr;
+}
+
 //----------------------------------------
 // Constants
 //----------------------------------------
@@ -135,13 +147,12 @@ SEMP_PARSE_STATE *parse;
 void setup()
 {
     int dataIndex;
-    int rawDataBytes;
 
     delay(1000);
 
     Serial.begin(115200);
     Serial.println();
-    Serial.println("Muliple_Parser example sketch");
+    Serial.println("User_Parser example sketch");
     Serial.println();
 
     // Initialize the parser
@@ -153,13 +164,31 @@ void setup()
         reportFatalError("Failed to initialize the user parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", rawDataBytes);
+    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
     // The raw data stream is passed to the parser one byte at a time
     sempSetPrintDebug(parse, &Serial);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
+    {
+        uint8_t data;
+        const char * endState;
+        const char * startState;
+
+        // Get the parse state before entering the parser to enable
+        // printing of the parser transition
+        startState = getParseStateName(parse);
+
         // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
+        data = rawDataStream[dataOffset];
+        sempParseNextByte(parse, data);
+
+        // Print the parser transition
+        endState = getParseStateName(parse);
+        Serial.printf("0x%02x (%c), state: (%p) %s --> %s (%p)\r\n",
+                      rawDataStream[dataOffset],
+                      ((data >= ' ') && (data < 0x7f)) ? data : '.',
+                      startState, startState, endState, endState);
+    }
 
     // Done parsing the data
     sempStopParser(&parse);
@@ -193,6 +222,21 @@ void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         Serial.println();
         sempPrintParserConfiguration(parse);
     }
+}
+
+// Translate the state value into an ASCII state name
+const char *getParseStateName(SEMP_PARSE_STATE *parse)
+{
+    const char *name;
+
+    do
+    {
+        name = userParserStateName(parse);
+        if (name)
+            break;
+        name = sempGetStateName(parse);
+    } while (0);
+    return name;
 }
 
 // Display the contents of a buffer

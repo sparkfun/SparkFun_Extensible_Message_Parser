@@ -72,16 +72,17 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
         return sempFirstByte(parse, data);
     }
 
+    // Add CR and LF to the message
+    parse->buffer[parse->length++] = '\r';
+    parse->buffer[parse->length++] = '\n';
+
+    // Zero terminate the string, don't count this in the length
+    parse->buffer[parse->length] = 0;
+
     // Validate the checksum
-    if (checksum == parse->crc)
+    if ((checksum == parse->crc)
+        || (parse->badCrc && (!parse->badCrc(parse))))
     {
-        // Add CR and LF to the message
-        parse->buffer[parse->length++] = '\r';
-        parse->buffer[parse->length++] = '\n';
-
-        // Zero terminate the string
-        parse->buffer[parse->length] = 0;
-
         // Process this NMEA message
         parse->eomCallback(parse, parse->type); // Pass parser array index
 
@@ -98,8 +99,8 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
                parse->parserName,
                scratchPad->nmea.messageName,
                parse->length,
-               parse->buffer[parse->length - 2],
-               parse->buffer[parse->length - 1],
+               parse->buffer[parse->length - 4],
+               parse->buffer[parse->length - 3],
                parse->crc);
 
     // Start searching for a preamble byte
@@ -156,13 +157,11 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-sempPrintf(parse->printError, "crc: 0x%02x", parse->crc);
     parse->crc ^= data;
     if ((data != ',') || (scratchPad->nmea.messageNameLength == 0))
     {
         // Invalid data, start searching for a preamble byte
         uint8_t upper = data & ~0x20;
-sempPrintf(parse->printError, "upper: 0x%02x", upper);
         if (((upper < 'A') || (upper > 'Z')) && ((data < '0') || (data > '9')))
         {
             sempPrintf(parse->printDebug,

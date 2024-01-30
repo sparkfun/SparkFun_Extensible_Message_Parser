@@ -333,7 +333,7 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
                    parse->bufferLength);
 
         // Start searching for a preamble byte
-        parse->type = sempFirstByte(parse, data);
+        sempFirstByte(parse, data);
         return;
     }
 

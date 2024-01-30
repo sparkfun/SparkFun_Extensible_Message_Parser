@@ -30,9 +30,17 @@ typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
 typedef uint32_t (*SEMP_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
                                       uint8_t dataByte); // Data byte
 
+// Call the application back at specified routine address.  Pass in the
+// parse data structure containing the buffer containing the address of
+// the message data and the length field containing the number of valid
+// data bytes in the buffer.
+//
+// The type field contains the index into the parseTable which specifies
+// the parser that successfully processed the incoming data.
+//
 // End of message callback routine
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
-                                  uint8_t type); // Message type
+                                  uint16_t type); // Index into parseTable
 
 // Length of the message name array
 #define SEMP_NMEA_MESSAGE_NAME_BYTES    16
@@ -87,7 +95,8 @@ typedef struct _SEMP_PARSE_STATE
     uint32_t bufferLength;         // Length of the buffer in bytes
     uint16_t parserCount;          // Number of parsers
     uint16_t length;               // Message length including line termination
-    uint8_t type;                  // Active parser type
+    uint16_t type;                 // Active parser type, a value of
+                                   // parserCount means searching for preamble
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
@@ -184,7 +193,7 @@ void sempPrintln(Print *print, const char *string = "");
 const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
 
 // Translate the type value into an ASCII type name
-const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint8_t type);
+const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type);
 
 // Enable or disable debug output.  Specify nullptr to disable output.
 void sempSetPrintDebug(SEMP_PARSE_STATE *parse, Print *printDebug);

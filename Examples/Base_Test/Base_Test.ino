@@ -112,7 +112,7 @@ void setup()
     // Display the parser configuration
     Serial.printf("&parserTable: %p\r\n", parserTable);
     Serial.printf("&parserNames: %p\r\n", parserNames);
-    sempPrintParserConfiguration(parse);
+    sempPrintParserConfiguration(parse, &Serial);
 
     // Display the parse state
     Serial.printf("Parse State: %s\r\n", sempGetStateName(parse));
@@ -164,7 +164,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         displayOnce = false;
         Serial.println();
-        sempPrintParserConfiguration(parse);
+        sempPrintParserConfiguration(parse, &Serial);
     }
 }
 

@@ -132,7 +132,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         displayOnce = false;
         Serial.println();
-        sempPrintParserConfiguration(parse);
+        sempPrintParserConfiguration(parse, &Serial);
     }
 }
 

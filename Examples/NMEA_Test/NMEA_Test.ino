@@ -51,7 +51,7 @@ const uint8_t rawDataStream[] =
     //1234567890123456
     "$ABCDEFGHIJKLMNOP,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130*6A\r\n"  // 561
 
-    // Invalid character in the message name
+    // Invalid character in the sentence name
     "$G@RMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 631
     "$G[RMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 701
     "$GaRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 771
@@ -129,8 +129,8 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // Display the raw message
     Serial.println();
     offset = dataOffset + 1 + 2 - parse->length;
-    Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
-                  scratchPad->nmea.messageName, parse->length, offset, offset);
+    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+                  scratchPad->nmea.sentenceName, parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state

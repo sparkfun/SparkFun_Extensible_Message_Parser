@@ -9,6 +9,8 @@ proceed the routine use and eliminates the need for forward declaration.
 Removing the forward declaration helps reduce the exposure of the
 routines to the application layer.  As such only the preamble routine
 should need to be listed in SparkFun_Extensible_Message_Parser.h.
+
+License: MIT. Please see LICENSE.md for more details
 ------------------------------------------------------------------------------*/
 
 #include <stdio.h>

@@ -10,6 +10,10 @@
 // Constants
 //----------------------------------------
 
+// Define the indexes into the parserTable array
+#define NMEA_PARSER_INDEX       0
+#define UBLOX_PARSER_INDEX      1
+
 // Build the table listing all of the parsers
 SEMP_PARSE_ROUTINE const parserTable[] =
 {
@@ -144,6 +148,8 @@ const DataStream dataStream[] =
 // Locals
 //----------------------------------------
 
+int byteOffset;
+int dataIndex;
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -154,7 +160,6 @@ SEMP_PARSE_STATE *parse;
 // Initialize the system
 void setup()
 {
-    int dataIndex;
     int rawDataBytes;
 
     delay(1000);
@@ -181,10 +186,10 @@ void setup()
     sempEnableDebugOutput(parse);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
-        for (int offset = 0; offset < dataStream[dataIndex].length; offset++)
+        for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)
         {
             // Update the parser state based on the incoming byte
-            sempParseNextByte(parse, dataStream[dataIndex].data[offset]);
+            sempParseNextByte(parse, dataStream[dataIndex].data[byteOffset]);
             dataOffset += 1;
         }
     }
@@ -204,19 +209,27 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;
+    uint32_t byteIndex;
     uint32_t offset;
 
     // Display the raw message
     Serial.println();
     switch (type) // Index into parserTable array
     {
-        case 0:
-            offset = dataOffset + 1 + 2 - parse->length;
+        case NMEA_PARSER_INDEX:
+            // Determine the raw data stream offset
+            offset = dataOffset + 2 - parse->length;
+            byteIndex = byteOffset + 2 - parse->length;
+            while (dataStream[dataIndex].data[byteIndex] != '$')
+            {
+                offset -= 1;
+                byteIndex -= 1;
+            }
             Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
                           scratchPad->nmea.sentenceName, parse->length, offset, offset);
             break;
 
-        case 1:
+        case UBLOX_PARSER_INDEX:
             offset = dataOffset + 1 - parse->length;
             Serial.printf("Valid u-blox message: %d bytes at 0x%08x (%d)\r\n",
                           parse->length, offset, offset);

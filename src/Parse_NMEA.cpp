@@ -39,14 +39,114 @@ License: MIT. Please see LICENSE.md for more details
 //               |<-------- Checksum -------->|
 //
 
+// Validate the checksum
+void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
+{
+    int checksum;
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+
+    // Convert the checksum characters into binary
+    checksum = sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
+    checksum |= sempAsciiToNibble(parse->buffer[parse->length - 1]);
+
+    // Validate the checksum
+    if ((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
+    {
+        // Always add the carriage return and line feed
+        parse->buffer[parse->length++] = '\r';
+        parse->buffer[parse->length++] = '\n';
+
+        // Zero terminate the NMEA sentence, don't count this in the length
+        parse->buffer[parse->length] = 0;
+
+        // Process this NMEA sentence
+        parse->eomCallback(parse, parse->type); // Pass parser array index
+    }
+    else
+        // Display the checksum error
+        sempPrintf(parse->printDebug,
+                   "SEMP: %s NMEA %s, 0x%04x (%d) bytes, bad checksum, "
+                   "received 0x%c%c, computed: 0x%02x",
+                   parse->parserName,
+                   scratchPad->nmea.sentenceName,
+                   parse->length, parse->length,
+                   parse->buffer[parse->length - 2],
+                   parse->buffer[parse->length - 1],
+                   parse->crc);
+}
+
+// Read the linefeed
+bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
+{
+    int checksum;
+
+    // Don't add the current character to the length
+    parse->length -= 1;
+
+    // Process the LF
+    if (data == '\n')
+    {
+        // Pass the sentence to the upper layer
+        sempNmeaValidateChecksum(parse);
+
+        // Start searching for a preamble byte
+        parse->state = sempFirstByte;
+        return true;
+    }
+
+    // Pass the sentence to the upper layer
+    sempNmeaValidateChecksum(parse);
+
+    // Start searching for a preamble byte
+    return sempFirstByte(parse, data);
+}
+
+// Read the remaining carriage return
+bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
+{
+    // Don't add the current character to the length
+    parse->length -= 1;
+
+    // Process the CR
+    if (data == '\r')
+    {
+        // Pass the sentence to the upper layer
+        sempNmeaValidateChecksum(parse);
+
+        // Start searching for a preamble byte
+        parse->state = sempFirstByte;
+        return true;
+    }
+
+    // Pass the sentence to the upper layer
+    sempNmeaValidateChecksum(parse);
+
+    // Start searching for a preamble byte
+    return sempFirstByte(parse, data);
+}
+
 // Read the line termination
 bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     int checksum;
 
+    // Don't add the current character to the length
+    parse->length -= 1;
+
     // Process the line termination
-    if ((data == '\r') || (data == '\n'))
+    if (data == '\r')
+    {
+        parse->state = sempNmeaLineFeed;
         return true;
+    }
+    else if (data == '\n')
+    {
+        parse->state = sempNmeaCarriageReturn;
+        return true;
+    }
+
+    // Pass the sentence to the upper layer
+    sempNmeaValidateChecksum(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -55,59 +155,20 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the second checksum byte
 bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    int checksum;
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
-    // Convert the checksum characters into binary
-    checksum = sempAsciiToNibble(parse->buffer[parse->length - 1]);
-    checksum |= sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
-
     // Validate the checksum character
-    if (checksum < 0)
+    if (sempAsciiToNibble(parse->buffer[parse->length - 1]) >= 0)
     {
-        // Invalid checksum character
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: NMEA invalid second checksum character",
-                   parse->parserName);
-
-        // Start searching for a preamble byte
-        return sempFirstByte(parse, data);
-    }
-
-    // Add CR and LF to the sentence
-    parse->buffer[parse->length++] = '\r';
-    parse->buffer[parse->length++] = '\n';
-
-    // Zero terminate the string, don't count this in the length
-    parse->buffer[parse->length] = 0;
-
-    // Validate the checksum
-    if ((checksum == parse->crc)
-        || (parse->badCrc && (!parse->badCrc(parse))))
-    {
-        // Process this NMEA sentence
-        parse->eomCallback(parse, parse->type); // Pass parser array index
-
-        // Remove any CR or LF that follow
         parse->state = sempNmeaLineTermination;
-        parse->length = 0;
         return true;
     }
 
-    // Display the checksum error
+    // Invalid checksum character
     sempPrintf(parse->printDebug,
-               "SEMP: %s NMEA %s, %2d bytes, bad checksum, "
-               "received 0x%c%c, computed: 0x%02x",
-               parse->parserName,
-               scratchPad->nmea.sentenceName,
-               parse->length,
-               parse->buffer[parse->length - 4],
-               parse->buffer[parse->length - 3],
-               parse->crc);
+               "SEMP %s: NMEA invalid second checksum character",
+               parse->parserName);
 
     // Start searching for a preamble byte
-    parse->state = sempFirstByte;
-    return false;
+    return sempFirstByte(parse, data);
 }
 
 // Read the first checksum byte
@@ -231,6 +292,10 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
         return "sempNmeaChecksumByte2";
     if (parse->state == sempNmeaLineTermination)
         return "sempNmeaLineTermination";
+    if (parse->state == sempNmeaCarriageReturn)
+        return "sempNmeaCarriageReturn";
+    if (parse->state == sempNmeaLineFeed)
+        return "sempNmeaLineFeed";
     if (parse->state == sempNmeaHashPreamble)
         return "sempNmeaHashPreamble";
     return nullptr;

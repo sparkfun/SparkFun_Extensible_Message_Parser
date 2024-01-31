@@ -33,7 +33,7 @@ bool sempPrintErrorMessages;
 
 // Allocate the parse structure
 SEMP_PARSE_STATE * sempAllocateParseStructure(
-    Print *printError,
+    Print *printDebug,
     uint16_t scratchPadBytes,
     size_t bufferLength
     )
@@ -43,14 +43,14 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     int parseBytes;
 
     // Print the scratchPad area size
-    sempPrintf(printError, "scratchPadBytes: 0x%04x (%d) bytes",
+    sempPrintf(printDebug, "scratchPadBytes: 0x%04x (%d) bytes",
                scratchPadBytes, scratchPadBytes);
 
     // Align the scratch patch area
     if (scratchPadBytes < SEMP_ALIGN(scratchPadBytes))
     {
         scratchPadBytes = SEMP_ALIGN(scratchPadBytes);
-        sempPrintf(printError,
+        sempPrintf(printDebug,
                    "scratchPadBytes: 0x%04x (%d) bytes after alignment",
                    scratchPadBytes, scratchPadBytes);
     }
@@ -60,17 +60,17 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     if (scratchPadBytes < length)
     {
         scratchPadBytes = length;
-        sempPrintf(printError,
+        sempPrintf(printDebug,
                    "scratchPadBytes: 0x%04x (%d) bytes after mimimum size adjustment",
                    scratchPadBytes, scratchPadBytes);
     }
     parseBytes = SEMP_ALIGN(sizeof(SEMP_PARSE_STATE));
-    sempPrintf(printError, "parseBytes: 0x%04x (%d)", parseBytes, parseBytes);
+    sempPrintf(printDebug, "parseBytes: 0x%04x (%d)", parseBytes, parseBytes);
 
     // Verify the minimum bufferLength
     if (bufferLength < SEMP_MINIMUM_BUFFER_LENGTH)
     {
-        sempPrintf(printError,
+        sempPrintf(printDebug,
                    "SEMP: Increasing bufferLength from %d to %d bytes, minimum size adjustment",
                    bufferLength, SEMP_MINIMUM_BUFFER_LENGTH);
         bufferLength = SEMP_MINIMUM_BUFFER_LENGTH;
@@ -79,7 +79,7 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     // Allocate the parser
     length = parseBytes + scratchPadBytes;
     parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-    sempPrintf(printError, "parse: %p", parse);
+    sempPrintf(printDebug, "parse: %p", parse);
 
     // Initialize the parse structure
     if (parse)
@@ -89,13 +89,13 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
 
         // Set the scratch pad area address
         parse->scratchPad = ((void *)parse) + parseBytes;
-        parse->printError = printError;
-        sempPrintf(parse->printError, "parse->scratchPad: %p", parse->scratchPad);
+        parse->printDebug = printDebug;
+        sempPrintf(parse->printDebug, "parse->scratchPad: %p", parse->scratchPad);
 
         // Set the buffer address and length
         parse->bufferLength = bufferLength;
         parse->buffer = (uint8_t *)(parse->scratchPad + scratchPadBytes);
-        sempPrintf(parse->printError, "parse->buffer: %p", parse->buffer);
+        sempPrintf(parse->printDebug, "parse->buffer: %p", parse->buffer);
     }
     return parse;
 }
@@ -231,6 +231,7 @@ SEMP_PARSE_STATE *sempBeginParser(
     SEMP_EOM_CALLBACK eomCallback,
     const char *parserName,
     Print *printError,
+    Print *printDebug,
     SEMP_BAD_CRC_CALLBACK badCrc
     )
 {
@@ -281,7 +282,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         }
 
         // Validate the parser address is not nullptr
-        parse = sempAllocateParseStructure(printError, scratchPadBytes, bufferLength);
+        parse = sempAllocateParseStructure(printDebug, scratchPadBytes, bufferLength);
         if (!parse)
         {
             sempPrintln(printError, "SEMP: Failed to allocate the parse structure");
@@ -289,6 +290,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         }
 
         // Initialize the parser
+        parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
         parse->parserNames = parserNameTable;
@@ -298,8 +300,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->badCrc = badCrc;
 
         // Display the parser configuration
-        if (sempPrintErrorMessages)
-            sempPrintParserConfiguration(parse);
+        sempPrintParserConfiguration(parse, parse->printDebug);
     } while (0);
 
     // Return the parse structure address

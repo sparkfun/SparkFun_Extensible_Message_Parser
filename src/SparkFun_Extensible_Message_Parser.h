@@ -202,6 +202,7 @@ SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
                                    SEMP_EOM_CALLBACK eomCallback, \
                                    const char *name, \
                                    Print *printError = &Serial,
+                                   Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
 
 // Only parsers should call the routine sempFirstByte when an unexpected

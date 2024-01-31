@@ -113,17 +113,20 @@ const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     const char *name = "Unknown parser";
 
-    if (type == parse->parserCount)
-        name = "No active parser, scanning for preamble";
-    else if (parse->parserNames && (type < parse->parserCount))
-        name = parse->parserNames[type];
+    if (parse)
+    {
+        if (type == parse->parserCount)
+            name = "No active parser, scanning for preamble";
+        else if (parse->parserNames && (type < parse->parserCount))
+            name = parse->parserNames[type];
+    }
     return name;
 }
 
 // Print the parser's configuration
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
 {
-    if (print)
+    if (print && parse)
     {
         sempPrintln(print, "SparkFun Extensible Message Parser");
         sempPrintf(print, "    Name: %p (%s)", parse->parserName, parse->parserName);
@@ -183,7 +186,7 @@ void sempPrintln(Print *print, const char *string)
 // Translates state value into an ASCII state name
 const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
 {
-    if (parse->state == sempFirstByte)
+    if (parse && (parse->state == sempFirstByte))
         return "sempFirstByte";
     return "Unknown state";
 }
@@ -191,25 +194,29 @@ const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
 // Disable debug output
 void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
 {
-    parse->printDebug = nullptr;
+    if (parse)
+        parse->printDebug = nullptr;
 }
 
 // Enable debug output
 void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print)
 {
-    parse->printDebug = print;
+    if (parse)
+        parse->printDebug = print;
 }
 
 // Disable error output
 void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
 {
-    parse->printError = nullptr;
+    if (parse)
+        parse->printError = nullptr;
 }
 
 // Enable error output
 void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
 {
-    parse->printError = print;
+    if (parse)
+        parse->printError = print;
 }
 
 //----------------------------------------
@@ -309,54 +316,60 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
     int index;
     SEMP_PARSE_ROUTINE parseRoutine;
 
-    // Add this byte to the buffer
-    parse->crc = 0;
-    parse->computeCrc = nullptr;
-    parse->length = 0;
-    parse->type = parse->parserCount;
-    parse->buffer[parse->length++] = data;
-
-    // Walk through the parse table
-    for (index = 0; index < parse->parserCount; index++)
+    if (parse)
     {
-        parseRoutine = parse->parsers[index];
-        if (parseRoutine(parse, data))
-        {
-            parse->type = index;
-            return true;
-        }
-    }
+        // Add this byte to the buffer
+        parse->crc = 0;
+        parse->computeCrc = nullptr;
+        parse->length = 0;
+        parse->type = parse->parserCount;
+        parse->buffer[parse->length++] = data;
 
-    // Preamble byte not found, continue searching for a preamble byte
-    parse->state = sempFirstByte;
+        // Walk through the parse table
+        for (index = 0; index < parse->parserCount; index++)
+        {
+            parseRoutine = parse->parsers[index];
+            if (parseRoutine(parse, data))
+            {
+                parse->type = index;
+                return true;
+            }
+        }
+
+        // Preamble byte not found, continue searching for a preamble byte
+        parse->state = sempFirstByte;
+    }
     return false;
 }
 
 // Parse the next byte
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Verify that enough space exists in the buffer
-    if (parse->length >= parse->bufferLength)
+    if (parse)
     {
-        // Message too long
-        sempPrintf(parse->printError, "SEMP %s NMEA: Message too long, increase the buffer size > %d",
-                   parse->parserName,
-                   parse->bufferLength);
+        // Verify that enough space exists in the buffer
+        if (parse->length >= parse->bufferLength)
+        {
+            // Message too long
+            sempPrintf(parse->printError, "SEMP %s NMEA: Message too long, increase the buffer size > %d",
+                       parse->parserName,
+                       parse->bufferLength);
 
-        // Start searching for a preamble byte
-        sempFirstByte(parse, data);
-        return;
+            // Start searching for a preamble byte
+            sempFirstByte(parse, data);
+            return;
+        }
+
+        // Save the data byte
+        parse->buffer[parse->length++] = data;
+
+        // Compute the CRC value for the message
+        if (parse->computeCrc)
+            parse->crc = parse->computeCrc(parse, data);
+
+        // Update the parser state based on the incoming byte
+        parse->state(parse, data);
     }
-
-    // Save the data byte
-    parse->buffer[parse->length++] = data;
-
-    // Compute the CRC value for the message
-    if (parse->computeCrc)
-        parse->crc = parse->computeCrc(parse, data);
-
-    // Update the parser state based on the incoming byte
-    parse->state(parse, data);
 }
 
 // Shutdown the parser

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------
-Parse_Unicore.cpp
+Parse_Unicore_Binary.cpp
 
 Unicore message parsing support routines
 
@@ -22,7 +22,7 @@ License: MIT. Please see LICENSE.md for more details
 //----------------------------------------
 
 // Compute the CRC for the Unicore data
-uint32_t sempUnicoreComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
+uint32_t sempUnicoreBinaryComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     uint32_t crc;
 
@@ -32,7 +32,7 @@ uint32_t sempUnicoreComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 // Print the Unicore message header
-void sempUnicorePrintHeader(SEMP_PARSE_STATE *parse)
+void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
 {
     SEMP_UNICORE_HEADER * header;
 
@@ -77,12 +77,12 @@ void sempUnicorePrintHeader(SEMP_PARSE_STATE *parse)
 //
 
 // Read the CRC
-bool sempUnicoreReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
     // Determine if the entire message was read
-    if (--scratchPad->unicore.bytesRemaining)
+    if (--scratchPad->unicoreBinary.bytesRemaining)
         // Need more bytes
         return true;
 
@@ -100,27 +100,27 @@ bool sempUnicoreReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],
-                   scratchPad->unicore.crc & 0xff,
-                   (scratchPad->unicore.crc >> 8) & 0xff,
-                   (scratchPad->unicore.crc >> 16) & 0xff,
-                   (scratchPad->unicore.crc >> 24) & 0xff);
+                   scratchPad->unicoreBinary.crc & 0xff,
+                   (scratchPad->unicoreBinary.crc >> 8) & 0xff,
+                   (scratchPad->unicoreBinary.crc >> 16) & 0xff,
+                   (scratchPad->unicoreBinary.crc >> 24) & 0xff);
     }
     parse->state = sempFirstByte;
     return false;
 }
 
 // Read the message data
-bool sempUnicoreReadData(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
     // Determine if the entire message was read
-    if (!--scratchPad->unicore.bytesRemaining)
+    if (!--scratchPad->unicoreBinary.bytesRemaining)
     {
         // The message data is complete, read the CRC
-        scratchPad->unicore.bytesRemaining = 4;
-        scratchPad->unicore.crc = parse->crc;
-        parse->state = sempUnicoreReadCrc;
+        scratchPad->unicoreBinary.bytesRemaining = 4;
+        scratchPad->unicoreBinary.crc = parse->crc;
+        parse->state = sempUnicoreBinaryReadCrc;
     }
     return true;
 }
@@ -143,7 +143,7 @@ bool sempUnicoreReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 //      2       Output delay time, ms
 //
 // Read the header
-bool sempUnicoreReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
@@ -151,14 +151,14 @@ bool sempUnicoreReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         // The header is complete, read the message data next
         SEMP_UNICORE_HEADER *header = (SEMP_UNICORE_HEADER *)parse->buffer;
-        scratchPad->unicore.bytesRemaining = header->messageLength;
-        parse->state = sempUnicoreReadData;
+        scratchPad->unicoreBinary.bytesRemaining = header->messageLength;
+        parse->state = sempUnicoreBinaryReadData;
     }
     return true;
 }
 
 // Read the third sync byte
-bool sempUnicoreBinarySync3(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryBinarySync3(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Verify sync byte 3
     if (data != 0xB5)
@@ -166,12 +166,12 @@ bool sempUnicoreBinarySync3(SEMP_PARSE_STATE *parse, uint8_t data)
         return sempFirstByte(parse, data);
 
     // Read the header next
-    parse->state = sempUnicoreReadHeader;
+    parse->state = sempUnicoreBinaryReadHeader;
     return true;
 }
 
 // Read the second sync byte
-bool sempUnicoreBinarySync2(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryBinarySync2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Verify sync byte 2
     if (data != 0x44)
@@ -179,12 +179,12 @@ bool sempUnicoreBinarySync2(SEMP_PARSE_STATE *parse, uint8_t data)
         return sempFirstByte(parse, data);
 
     // Look for the last sync byte
-    parse->state = sempUnicoreBinarySync3;
+    parse->state = sempUnicoreBinaryBinarySync3;
     return true;
 }
 
 // Check for the preamble
-bool sempUnicorePreamble(SEMP_PARSE_STATE *parse, uint8_t data)
+bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Determine if this is the beginning of a Unicore message
     if (data != 0xAA)
@@ -192,26 +192,26 @@ bool sempUnicorePreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Look for the second sync byte
     parse->crc = 0;
-    parse->computeCrc = sempUnicoreComputeCrc;
+    parse->computeCrc = sempUnicoreBinaryComputeCrc;
     parse->crc = parse->computeCrc(parse, data);
-    parse->state = sempUnicoreBinarySync2;
+    parse->state = sempUnicoreBinaryBinarySync2;
     return true;
 }
 
 // Translates state value into an string, returns nullptr if not found
-const char * sempUnicoreGetStateName(const SEMP_PARSE_STATE *parse)
+const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse)
 {
-    if (parse->state == sempUnicorePreamble)
-        return "sempUnicorePreamble";
-    if (parse->state == sempUnicoreBinarySync2)
-        return "sempUnicoreBinarySync2";
-    if (parse->state == sempUnicoreBinarySync3)
-        return "sempUnicoreBinarySync3";
-    if (parse->state == sempUnicoreReadHeader)
-        return "sempUnicoreReadHeader";
-    if (parse->state == sempUnicoreReadData)
-        return "sempUnicoreReadData";
-    if (parse->state == sempUnicoreReadCrc)
-        return "sempUnicoreReadCrc";
+    if (parse->state == sempUnicoreBinaryPreamble)
+        return "sempUnicoreBinaryPreamble";
+    if (parse->state == sempUnicoreBinaryBinarySync2)
+        return "sempUnicoreBinaryBinarySync2";
+    if (parse->state == sempUnicoreBinaryBinarySync3)
+        return "sempUnicoreBinaryBinarySync3";
+    if (parse->state == sempUnicoreBinaryReadHeader)
+        return "sempUnicoreBinaryReadHeader";
+    if (parse->state == sempUnicoreBinaryReadData)
+        return "sempUnicoreBinaryReadData";
+    if (parse->state == sempUnicoreBinaryReadCrc)
+        return "sempUnicoreBinaryReadCrc";
     return nullptr;
 }

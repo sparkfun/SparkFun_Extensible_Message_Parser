@@ -65,11 +65,11 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     // Display the RTCM messages with bad CRC
     else
         sempPrintf(parse->printDebug,
-                   "SEMP: %s RTCM %d, %2d bytes, bad CRC, "
+                   "SEMP: %s RTCM %d, 0x%04x (%d) bytes, bad CRC, "
                    "received %02x %02x %02x, computed: %02x %02x %02x",
                    parse->parserName,
                    scratchPad->rtcm.message,
-                   parse->length,
+                   parse->length, parse->length,
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],

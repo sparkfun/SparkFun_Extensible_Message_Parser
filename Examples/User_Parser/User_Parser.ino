@@ -88,6 +88,13 @@ const char * userParserStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+// Return the message number value
+uint32_t userParserGetMessageNumber(const SEMP_PARSE_STATE *parse)
+{
+    USER_SCRATCH_PAD *scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
+    return scratchPad->messageNumber;
+}
+
 //----------------------------------------
 // Constants
 //----------------------------------------
@@ -204,7 +211,6 @@ void loop()
 // Process a complete message incoming from parser
 void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    USER_SCRATCH_PAD *scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;
     uint32_t offset;
 
@@ -212,7 +218,7 @@ void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     Serial.println();
     offset = dataOffset + 1 - parse->length;
     Serial.printf("Valid Message %d, %d bytes at 0x%08x (%d)\r\n",
-                  scratchPad->messageNumber, parse->length, offset, offset);
+                  userParserGetMessageNumber(parse), parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state

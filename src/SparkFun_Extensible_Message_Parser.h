@@ -85,6 +85,18 @@ typedef struct _SEMP_UNICORE_BINARY_VALUES
     uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
 } SEMP_UNICORE_BINARY_VALUES;
 
+// Length of the sentence name array
+#define SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES    16
+
+// Unicore hash (#) parser scratch area
+typedef struct _SEMP_UNICORE_HASH_VALUES
+{
+    uint8_t bytesRemaining;     // Bytes remaining in field
+    uint8_t checksumBytes;      // Number of checksum bytes
+    uint8_t sentenceName[SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES]; // Sentence name
+    uint8_t sentenceNameLength; // Length of the sentence name
+} SEMP_UNICORE_HASH_VALUES;
+
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
 {
@@ -92,6 +104,7 @@ typedef union
     SEMP_RTCM_VALUES rtcm;       // RTCM specific values
     SEMP_UBLOX_VALUES ublox;     // U-blox specific values
     SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
+    SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -257,7 +270,6 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-bool sempNmeaHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 
@@ -273,5 +285,10 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
+
+// Unicore hash (#) parse routines
+bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
+void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

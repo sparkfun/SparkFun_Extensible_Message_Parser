@@ -122,7 +122,6 @@ void loop()
 // Process a complete message incoming from parser
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;
     uint32_t offset;
 
@@ -134,7 +133,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // Display the raw message
     Serial.println();
         Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
-                  scratchPad->nmea.sentenceName, parse->length, offset, offset);
+                  sempNmeaGetSentenceName(parse), parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state

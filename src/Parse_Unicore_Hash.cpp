@@ -358,3 +358,10 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse)
         return "sempUnicoreHashLineFeed";
     return nullptr;
 }
+
+// Return the Unicore hash (#) sentence name as a string
+const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    return (const char *)scratchPad->unicoreHash.sentenceName;
+}

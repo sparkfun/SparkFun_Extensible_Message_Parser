@@ -153,6 +153,8 @@ const int ubloxParserNameCount = sizeof(ubloxParserNames) / sizeof(ubloxParserNa
 // Locals
 //----------------------------------------
 
+int byteOffset;
+int dataIndex;
 uint32_t dataOffset;
 SEMP_PARSE_STATE *nmeaParser;
 SEMP_PARSE_STATE *ubloxParser;
@@ -164,7 +166,6 @@ SEMP_PARSE_STATE *ubloxParser;
 // Initialize the system
 void setup()
 {
-    int dataIndex;
     int rawDataBytes;
 
     delay(1000);
@@ -197,11 +198,11 @@ void setup()
     sempEnableDebugOutput(ubloxParser);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
-        for (int offset = 0; offset < dataStream[dataIndex].length; offset++)
+        for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)
         {
             // Update the parser state based on the incoming byte
-            sempParseNextByte(nmeaParser, dataStream[dataIndex].data[offset]);
-            sempParseNextByte(ubloxParser, dataStream[dataIndex].data[offset]);
+            sempParseNextByte(nmeaParser, dataStream[dataIndex].data[byteOffset]);
+            sempParseNextByte(ubloxParser, dataStream[dataIndex].data[byteOffset]);
             dataOffset += 1;
         }
     }
@@ -223,12 +224,21 @@ void loop()
 void nmeaSentence(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    uint32_t byteIndex;
     static bool displayOnce = true;
     uint32_t offset;
 
+    // Determine the raw data stream offset
+    offset = dataOffset + 2 - parse->length;
+    byteIndex = byteOffset + 2 - parse->length;
+    while (dataStream[dataIndex].data[byteIndex] != '$')
+    {
+        offset -= 1;
+        byteIndex -= 1;
+    }
+
     // Display the raw sentence
     Serial.println();
-    offset = dataOffset + 1 + 2 - parse->length;
     Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
                   scratchPad->nmea.sentenceName, parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);

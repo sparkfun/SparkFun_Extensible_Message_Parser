@@ -54,10 +54,10 @@ const uint8_t rawDataStream[] =
     // Invalid character in the sentence name
     "$G@RMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 631
     "$G[RMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 701
-    "$GaRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 771
-    "$GzRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 841
 
     // Bad checksum
+    "$GaRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 771
+    "$GzRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 841
     "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*68\r\n"  // 911
 
     // Sentence too long by a single byte
@@ -126,10 +126,14 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     static bool displayOnce = true;
     uint32_t offset;
 
+    // Determine the raw data stream offset
+    offset = dataOffset + 1 + 2 - parse->length;
+    while (rawDataStream[offset] != '$')
+        offset -= 1;
+
     // Display the raw message
     Serial.println();
-    offset = dataOffset + 1 + 2 - parse->length;
-    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+        Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
                   scratchPad->nmea.sentenceName, parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 

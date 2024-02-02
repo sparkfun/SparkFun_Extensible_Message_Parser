@@ -22,12 +22,6 @@ SparkFun_Extensible_Message_Parser.cpp
 #define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
 //----------------------------------------
-// Globals
-//----------------------------------------
-
-bool sempPrintErrorMessages;
-
-//----------------------------------------
 // Support routines
 //----------------------------------------
 
@@ -125,28 +119,28 @@ const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
 }
 
 // Print the parser's configuration
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse)
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
 {
-    if (parse->printError)
+    if (print)
     {
-        sempPrintln(parse->printError, "SparkFun Extensible Message Parser");
-        sempPrintf(parse->printError, "    Name: %p (%s)", parse->parserName, parse->parserName);
-        sempPrintf(parse->printError, "    parsers: %p", parse->parsers);
-        sempPrintf(parse->printError, "    parserNames: %p", parse->parserNames);
-        sempPrintf(parse->printError, "    parserCount: %d", parse->parserCount);
-        sempPrintf(parse->printError, "    printError: %p", parse->printError);
-        sempPrintf(parse->printError, "    printDebug: %p", parse->printDebug);
-        sempPrintf(parse->printError, "    Scratch Pad: %p (%d bytes)",
+        sempPrintln(print, "SparkFun Extensible Message Parser");
+        sempPrintf(print, "    Name: %p (%s)", parse->parserName, parse->parserName);
+        sempPrintf(print, "    parsers: %p", parse->parsers);
+        sempPrintf(print, "    parserNames: %p", parse->parserNames);
+        sempPrintf(print, "    parserCount: %d", parse->parserCount);
+        sempPrintf(print, "    printError: %p", parse->printError);
+        sempPrintf(print, "    printDebug: %p", parse->printDebug);
+        sempPrintf(print, "    Scratch Pad: %p (%d bytes)",
                    (void *)parse->scratchPad, parse->buffer - (uint8_t *)parse->scratchPad);
-        sempPrintf(parse->printError, "    computeCrc: %p", (void *)parse->computeCrc);
-        sempPrintf(parse->printError, "    crc: 0x%08x", parse->crc);
-        sempPrintf(parse->printError, "    State: %p%s", (void *)parse->state,
+        sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
+        sempPrintf(print, "    crc: 0x%08x", parse->crc);
+        sempPrintf(print, "    State: %p%s", (void *)parse->state,
                    (parse->state == sempFirstByte) ? " (sempFirstByte)" : "");
-        sempPrintf(parse->printError, "    EomCallback: %p", (void *)parse->eomCallback);
-        sempPrintf(parse->printError, "    Buffer: %p (%d bytes)",
+        sempPrintf(print, "    EomCallback: %p", (void *)parse->eomCallback);
+        sempPrintf(print, "    Buffer: %p (%d bytes)",
                    (void *)parse->buffer, parse->bufferLength);
-        sempPrintf(parse->printError, "    length: %d message bytes", parse->length);
-        sempPrintf(parse->printError, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
+        sempPrintf(print, "    length: %d message bytes", parse->length);
+        sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
     }
 }
 

@@ -1,5 +1,5 @@
 /*
-  SparkFun Unicore test example sketch
+  SparkFun Unicore binary test example sketch
 
   License: MIT. Please see LICENSE.md for more details
 */
@@ -14,13 +14,13 @@
 // Build the table listing all of the parsers
 SEMP_PARSE_ROUTINE const parserTable[] =
 {
-    sempUnicorePreamble
+    sempUnicoreBinaryPreamble
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 
 const char * const parserNames[] =
 {
-    "Unicore parser"
+    "Unicore binary parser"
 };
 const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 

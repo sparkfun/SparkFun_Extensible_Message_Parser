@@ -79,11 +79,11 @@ typedef struct _SEMP_UBLOX_VALUES
 } SEMP_UBLOX_VALUES;
 
 // Unicore parser scratch area
-typedef struct _SEMP_UNICORE_VALUES
+typedef struct _SEMP_UNICORE_BINARY_VALUES
 {
     uint32_t crc;            // Copy of CRC calculation before CRC bytes
     uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
-} SEMP_UNICORE_VALUES;
+} SEMP_UNICORE_BINARY_VALUES;
 
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
@@ -91,7 +91,7 @@ typedef union
     SEMP_NMEA_VALUES nmea;       // NMEA specific values
     SEMP_RTCM_VALUES rtcm;       // RTCM specific values
     SEMP_UBLOX_VALUES ublox;     // U-blox specific values
-    SEMP_UNICORE_VALUES unicore; // Unicore specific values
+    SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -269,9 +269,9 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 
-// Unicore parse routines
-bool sempUnicorePreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempUnicoreGetStateName(const SEMP_PARSE_STATE *parse);
-void sempUnicorePrintHeader(SEMP_PARSE_STATE *parse);
+// Unicore binary parse routines
+bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
+void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

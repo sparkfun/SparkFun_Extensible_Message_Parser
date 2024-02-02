@@ -25,7 +25,7 @@ const char * const parserNames[] =
 };
 const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 
-// Provide a mix of NMEa and u-blox messages
+// Provide a mix of NMEA sentences and u-blox messages
 const uint8_t nmea_1[] =
 {
     "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69"   //0
@@ -212,8 +212,8 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         case 0:
             offset = dataOffset + 1 + 2 - parse->length;
-            Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
-                          scratchPad->nmea.messageName, parse->length, offset, offset);
+            Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+                          scratchPad->nmea.sentenceName, parse->length, offset, offset);
             break;
 
         case 1:

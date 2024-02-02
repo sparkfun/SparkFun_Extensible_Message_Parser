@@ -51,14 +51,14 @@ typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
                                   uint16_t type); // Index into parseTable
 
-// Length of the message name array
-#define SEMP_NMEA_MESSAGE_NAME_BYTES    16
+// Length of the sentence name array
+#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
 
 // NMEA parser scratch area
 typedef struct _SEMP_NMEA_VALUES
 {
-    uint8_t messageName[SEMP_NMEA_MESSAGE_NAME_BYTES]; // Message name
-    uint8_t messageNameLength; // Length of the message name
+    uint8_t sentenceName[SEMP_NMEA_SENTENCE_NAME_BYTES]; // Sentence name
+    uint8_t sentenceNameLength; // Length of the sentence name
 } SEMP_NMEA_VALUES;
 
 // RTCM parser scratch area

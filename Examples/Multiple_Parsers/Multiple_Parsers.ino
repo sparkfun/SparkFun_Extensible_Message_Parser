@@ -10,7 +10,7 @@
 // Constants
 //----------------------------------------
 
-// Provide a mix of NMEa and u-blox messages
+// Provide a mix of NMEA sentences and u-blox messages
 const uint8_t nmea_1[] =
 {
     "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69"   //0
@@ -177,7 +177,7 @@ void setup()
     // Initialize the parsers
     nmeaParser = sempBeginParser(nmeaParserTable, nmeaParserCount,
                                  nmeaParserNames, nmeaParserNameCount,
-                                 0, BUFFER_LENGTH, nmeaMessage, "NMEA_Parser");
+                                 0, BUFFER_LENGTH, nmeaSentence, "NMEA_Parser");
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
     ubloxParser = sempBeginParser(ubloxParserTable, ubloxParserCount,
@@ -220,17 +220,17 @@ void loop()
 
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
-void nmeaMessage(SEMP_PARSE_STATE *parse, uint16_t type)
+void nmeaSentence(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     static bool displayOnce = true;
     uint32_t offset;
 
-    // Display the raw message
+    // Display the raw sentence
     Serial.println();
     offset = dataOffset + 1 + 2 - parse->length;
-    Serial.printf("Valid NMEA Message: %s, %d bytes at 0x%08x (%d)\r\n",
-                  scratchPad->nmea.messageName, parse->length, offset, offset);
+    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+                  scratchPad->nmea.sentenceName, parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state

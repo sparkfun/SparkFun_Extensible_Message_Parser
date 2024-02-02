@@ -1,7 +1,9 @@
 /*------------------------------------------------------------------------------
 SparkFun_Extensible_Message_Parser.h
 
-  Constant and routine declarations for the extensible message parser.
+Constant and routine declarations for the extensible message parser.
+
+License: MIT. Please see LICENSE.md for more details
 ------------------------------------------------------------------------------*/
 
 #ifndef __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

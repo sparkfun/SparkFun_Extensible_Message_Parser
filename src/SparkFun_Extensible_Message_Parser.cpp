@@ -1,7 +1,9 @@
 /*------------------------------------------------------------------------------
 SparkFun_Extensible_Message_Parser.cpp
 
-  Parse messages from GNSS radios
+Parse messages from GNSS radios
+
+License: MIT. Please see LICENSE.md for more details
 ------------------------------------------------------------------------------*/
 
 #include <malloc.h>

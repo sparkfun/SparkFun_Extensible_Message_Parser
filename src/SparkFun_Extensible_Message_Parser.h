@@ -239,7 +239,7 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
 void sempStopParser(SEMP_PARSE_STATE **parse);
 
 // Print the contents of the parser data structure
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print);
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
 
 // Format and print a line of text
 void sempPrintf(Print *print, const char *format, ...);

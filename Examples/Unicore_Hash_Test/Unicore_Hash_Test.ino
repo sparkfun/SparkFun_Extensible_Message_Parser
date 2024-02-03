@@ -153,7 +153,6 @@ bool badUnicoreHashChecksum(SEMP_PARSE_STATE *parse)
 // Process a complete message incoming from parser
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     uint32_t offset;
 
     // Determine the raw data stream offset
@@ -164,7 +163,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // Display the raw message
     Serial.println();
     Serial.printf("Valid Unicore Hash (#) Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
-              scratchPad->unicoreHash.sentenceName, parse->length, offset, offset);
+              sempUnicoreHashGetSentenceName(parse), parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 }
 

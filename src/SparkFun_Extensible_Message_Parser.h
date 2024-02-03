@@ -272,6 +272,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
+const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 
 // RTCM parse routines
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -290,5 +291,6 @@ void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
+const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

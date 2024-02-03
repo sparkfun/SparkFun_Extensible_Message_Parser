@@ -277,10 +277,12 @@ const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 // RTCM parse routines
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
+uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse);
 
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

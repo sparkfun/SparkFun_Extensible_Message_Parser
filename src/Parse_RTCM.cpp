@@ -183,3 +183,10 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
         return "sempRtcmReadCrc";
     return nullptr;
 }
+
+// Get the message number
+uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    return scratchPad->rtcm.message;
+}

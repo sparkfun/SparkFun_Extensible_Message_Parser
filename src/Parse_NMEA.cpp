@@ -49,6 +49,10 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
     checksum = sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
     checksum |= sempAsciiToNibble(parse->buffer[parse->length - 1]);
 
+    // If this is a command response from a Unicore module, include the '$' in the checksum
+    if(strcmp((char *)scratchPad->nmea.sentenceName, "command") == 0)
+        parse->crc ^= '$';
+
     // Validate the checksum
     if ((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
     {
@@ -63,6 +67,7 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
         parse->eomCallback(parse, parse->type); // Pass parser array index
     }
     else
+    {
         // Display the checksum error
         sempPrintf(parse->printDebug,
                    "SEMP: %s NMEA %s, 0x%04x (%d) bytes, bad checksum, "
@@ -73,6 +78,10 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],
                    parse->crc);
+        
+        // Dump the buffer
+        sempPrintf(parse->printDebug, "SEMP Buffer: %s", parse->buffer);
+    }
 }
 
 // Read the linefeed

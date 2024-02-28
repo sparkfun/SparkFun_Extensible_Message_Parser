@@ -104,8 +104,11 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
                    (scratchPad->unicoreBinary.crc >> 8) & 0xff,
                    (scratchPad->unicoreBinary.crc >> 16) & 0xff,
                    (scratchPad->unicoreBinary.crc >> 24) & 0xff);
+    
+        (void)header; // Fix warning as error
     }
     parse->state = sempFirstByte;
+
     return false;
 }
 

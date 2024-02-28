@@ -172,6 +172,8 @@ bool sempUnicoreHashLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
     // Pass the sentence to the upper layer
     sempUnicoreHashValidateChecksum(parse);
 
+    (void)checksum; // Fix warning as error
+
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
 }
@@ -222,6 +224,8 @@ bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Pass the sentence to the upper layer
     sempUnicoreHashValidateChecksum(parse);
+
+    (void)checksum; // Fix warning as error
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);

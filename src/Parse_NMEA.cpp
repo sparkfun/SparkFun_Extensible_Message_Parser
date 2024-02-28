@@ -97,6 +97,8 @@ bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
     // Pass the sentence to the upper layer
     sempNmeaValidateChecksum(parse);
 
+    (void)checksum; // Fix warning as error
+
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
 }
@@ -147,6 +149,8 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Pass the sentence to the upper layer
     sempNmeaValidateChecksum(parse);
+
+    (void)checksum; // Fix warning as error
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);

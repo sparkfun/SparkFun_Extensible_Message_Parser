@@ -237,7 +237,7 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         if (scratchPad->nmea.sentenceNameLength == (sizeof(scratchPad->nmea.sentenceName) - 1))
         {
             sempPrintf(parse->printDebug,
-                       "SEMP %s: NMEA sentence name > %d characters",
+                       "SEMP %s: NMEA sentence name > %ld characters",
                        parse->parserName,
                        sizeof(scratchPad->nmea.sentenceName) - 1);
             return sempFirstByte(parse, data);

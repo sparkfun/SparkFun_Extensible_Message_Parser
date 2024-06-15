@@ -67,7 +67,7 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     if (bufferLength < SEMP_MINIMUM_BUFFER_LENGTH)
     {
         sempPrintf(printDebug,
-                   "SEMP: Increasing bufferLength from %d to %d bytes, minimum size adjustment",
+                   "SEMP: Increasing bufferLength from %ld to %d bytes, minimum size adjustment",
                    bufferLength, SEMP_MINIMUM_BUFFER_LENGTH);
         bufferLength = SEMP_MINIMUM_BUFFER_LENGTH;
     }
@@ -135,7 +135,7 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
         sempPrintf(print, "    parserCount: %d", parse->parserCount);
         sempPrintf(print, "    printError: %p", parse->printError);
         sempPrintf(print, "    printDebug: %p", parse->printDebug);
-        sempPrintf(print, "    Scratch Pad: %p (%d bytes)",
+        sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
                    (void *)parse->scratchPad, parse->buffer - (uint8_t *)parse->scratchPad);
         sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
         sempPrintf(print, "    crc: 0x%08x", parse->crc);

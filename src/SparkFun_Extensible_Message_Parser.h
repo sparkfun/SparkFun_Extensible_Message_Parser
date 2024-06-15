@@ -18,6 +18,13 @@ License: MIT. Please see LICENSE.md for more details
 #define SEMP_MINIMUM_BUFFER_LENGTH      32
 
 //----------------------------------------
+// Externals
+//----------------------------------------
+
+extern const int unsigned semp_crc24qTable[256];
+extern const unsigned long semp_crc32Table[256];
+
+//----------------------------------------
 // Types
 //----------------------------------------
 

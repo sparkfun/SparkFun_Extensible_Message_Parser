@@ -29,9 +29,12 @@
    SPDX-License-Identifier: BSD-2-clause
 */
 
+#ifndef __SEMP_CRC24Q_H__
+#define __SEMP_CRC24Q_H__
+
 //This file is originally from: https://gitlab.com/gpsd/gpsd/-/blob/master/gpsd/crc24q.c
 
-static const int unsigned semp_crc24qTable[256] =
+const int unsigned semp_crc24qTable[256] =
 {
   0x00000000u, 0x01864CFBu, 0x028AD50Du, 0x030C99F6u,
   0x0493E6E1u, 0x0515AA1Au, 0x061933ECu, 0x079F7F17u,
@@ -98,3 +101,5 @@ static const int unsigned semp_crc24qTable[256] =
   0xF842FA2Fu, 0xF9C4B6D4u, 0xFAC82F22u, 0xFB4E63D9u,
   0xFCD11CCEu, 0xFD575035u, 0xFE5BC9C3u, 0xFFDD8538u,
 };
+
+#endif  // __SEMP_CRC24Q_H__

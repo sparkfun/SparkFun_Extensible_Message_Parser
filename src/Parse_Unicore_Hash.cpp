@@ -15,7 +15,6 @@ License: MIT. Please see LICENSE.md for more details
 
 #include <stdio.h>
 #include "SparkFun_Extensible_Message_Parser.h"
-#include "semp_crc32.h"
 
 //----------------------------------------
 // Constants

@@ -82,7 +82,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     }
 
     // Verify that enough space exists in the buffer
-    if ((parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
+    if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
     {
         // Sentence too long
         sempPrintf(parse->printDebug,
@@ -109,7 +109,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
 // Validate the checksum
 void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
 {
-    int checksum;
+    uint32_t checksum;
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
     // Determine if a CRC was used for this message
@@ -269,7 +269,7 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc ^= data;
 
         // Verify that enough space exists in the buffer
-        if ((parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
+        if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
         {
             // sentence too long
             sempPrintf(parse->printDebug,

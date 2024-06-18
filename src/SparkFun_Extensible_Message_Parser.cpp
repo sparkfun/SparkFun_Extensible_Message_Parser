@@ -352,7 +352,7 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
         if (parse->length >= parse->bufferLength)
         {
             // Message too long
-            sempPrintf(parse->printError, "SEMP %s: Message too long, increase the buffer size > %d",
+            sempPrintf(parse->printError, "SEMP %s: Message too long, increase the buffer size > %d\r\n",
                        parse->parserName,
                        parse->bufferLength);
 

@@ -76,7 +76,7 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     // Allocate the parser
     length = parseBytes + scratchPadBytes;
     parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-    sempPrintf(printDebug, "parse: %p", parse);
+    sempPrintf(printDebug, "parse: %p", (void *)parse);
 
     // Initialize the parse structure
     if (parse)
@@ -85,13 +85,13 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
         memset(parse, 0, length);
 
         // Set the scratch pad area address
-        parse->scratchPad = ((void *)parse) + parseBytes;
+        parse->scratchPad = ((uint8_t *)parse) + parseBytes;
         parse->printDebug = printDebug;
         sempPrintf(parse->printDebug, "parse->scratchPad: %p", parse->scratchPad);
 
         // Set the buffer address and length
         parse->bufferLength = bufferLength;
-        parse->buffer = (uint8_t *)(parse->scratchPad + scratchPadBytes);
+        parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
         sempPrintf(parse->printDebug, "parse->buffer: %p", parse->buffer);
     }
     return parse;
@@ -131,8 +131,8 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
     {
         sempPrintln(print, "SparkFun Extensible Message Parser");
         sempPrintf(print, "    Name: %p (%s)", parse->parserName, parse->parserName);
-        sempPrintf(print, "    parsers: %p", parse->parsers);
-        sempPrintf(print, "    parserNames: %p", parse->parserNames);
+        sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
+        sempPrintf(print, "    parserNames: %p", (void *)parse->parserNames);
         sempPrintf(print, "    parserCount: %d", parse->parserCount);
         sempPrintf(print, "    printError: %p", parse->printError);
         sempPrintf(print, "    printDebug: %p", parse->printDebug);

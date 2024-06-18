@@ -201,7 +201,7 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc ^= data;
 
         // Verify that enough space exists in the buffer
-        if ((parse->length + NMEA_BUFFER_OVERHEAD) > parse->bufferLength)
+        if ((uint32_t)(parse->length + NMEA_BUFFER_OVERHEAD) > parse->bufferLength)
         {
             // sentence too long
             sempPrintf(parse->printDebug,

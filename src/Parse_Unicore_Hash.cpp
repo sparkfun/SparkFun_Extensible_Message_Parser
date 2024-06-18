@@ -304,7 +304,7 @@ bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         if (scratchPad->unicoreHash.sentenceNameLength == (sizeof(scratchPad->unicoreHash.sentenceName) - 1))
         {
             sempPrintf(parse->printDebug,
-                       "SEMP %s: Unicore hash (#) sentence name > %d characters",
+                       "SEMP %s: Unicore hash (#) sentence name > %ld characters",
                        parse->parserName,
                        sizeof(scratchPad->unicoreHash.sentenceName) - 1);
             return sempFirstByte(parse, data);

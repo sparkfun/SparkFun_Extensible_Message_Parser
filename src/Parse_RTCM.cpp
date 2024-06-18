@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------
-Parse_RTCM.ino
+Parse_RTCM.cpp
 
 RTCM message parsing support routines
 

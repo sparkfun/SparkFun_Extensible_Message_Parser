@@ -1,7 +1,7 @@
 SparkFun Extensible Message Parser
 ========================================
 
-The SparkFun Extensible Message Parser provides a base set of routines to construct serial stream parsers. On top of this are several GNSS protocol parsers for NMEA, RTCM, u-blox and Unicore. Some of SparkFun's RTK products use these parsers. Users may add protocol parse routines to enable the base routines to parse other protocols. Examples are provided for various parse configurations.
+The SparkFun Extensible Message Parser provides a base set of routines to construct serial stream parsers. On top of this are several GNSS protocol parsers for NMEA, RTCM, u-blox, SPARTN and Unicore. Some of SparkFun's RTK products use these parsers. Users may add protocol parse routines to enable the base routines to parse other protocols. Examples are provided for various parse configurations.
 
 License Information
 -------------------

@@ -23,6 +23,11 @@ License: MIT. Please see LICENSE.md for more details
 
 extern const int unsigned semp_crc24qTable[256];
 extern const unsigned long semp_crc32Table[256];
+extern const uint8_t semp_u8Crc4Table[];
+extern const uint8_t semp_u8Crc8Table[];
+extern const uint16_t semp_u16Crc16Table[];
+extern const uint32_t semp_u32Crc24Table[];
+extern const uint32_t semp_u32Crc32Table[];
 
 //----------------------------------------
 // Types
@@ -104,6 +109,24 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
     uint8_t sentenceNameLength; // Length of the sentence name
 } SEMP_UNICORE_HASH_VALUES;
 
+// SPARTN parser scratch area
+typedef struct _SEMP_SPARTN_VALUES
+{
+    uint16_t frameCount;
+    uint16_t crcBytes;
+    uint16_t TF007toTF016;
+
+    uint8_t messageType;
+    uint16_t payloadLength;
+    uint16_t EAF;
+    uint8_t crcType;
+    uint8_t frameCRC;
+    uint8_t messageSubtype;
+    uint16_t timeTagType;
+    uint16_t authenticationIndicator;
+    uint16_t embeddedApplicationLengthBytes;
+} SEMP_SPARTN_VALUES;
+
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
 {
@@ -112,6 +135,7 @@ typedef union
     SEMP_UBLOX_VALUES ublox;     // U-blox specific values
     SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
     SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
+    SEMP_SPARTN_VALUES spartn;   // SPARTN specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -301,5 +325,9 @@ bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+// SPARTN parse routines
+bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

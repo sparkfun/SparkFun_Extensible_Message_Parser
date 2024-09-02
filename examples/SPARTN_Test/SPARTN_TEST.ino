@@ -26,7 +26,7 @@ const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 // Provide some valid SPARTN messages
 // 
 
-// Provide some valid and invalid u-blox messages
+// Provide some valid and invalid SPARTN messages
 const uint8_t rawDataStream[] =
 {
     // Invalid data - must skip over

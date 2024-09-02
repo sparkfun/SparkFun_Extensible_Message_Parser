@@ -127,6 +127,17 @@ typedef struct _SEMP_SPARTN_VALUES
     uint16_t embeddedApplicationLengthBytes;
 } SEMP_SPARTN_VALUES;
 
+// SBF parser scratch area
+typedef struct _SEMP_SBF_VALUES
+{
+    uint16_t expectedCRC;
+    uint16_t computedCRC;
+    uint16_t sbfID = 0;
+    uint8_t sbfIDrev = 0;
+    uint16_t length;
+    uint16_t bytesRemaining;
+} SEMP_SBF_VALUES;
+
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
 {
@@ -136,6 +147,7 @@ typedef union
     SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
     SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
     SEMP_SPARTN_VALUES spartn;   // SPARTN specific values
+    SEMP_SBF_VALUES sbf;         // SBF specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -329,5 +341,27 @@ const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 // SPARTN parse routines
 bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+// SBF parse routines
+bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
+uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
+uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
+uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
+bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
+bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
+uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
+const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

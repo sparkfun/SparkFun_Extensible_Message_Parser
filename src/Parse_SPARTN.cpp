@@ -284,8 +284,8 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
 }
 
 // Get the message number
-uint16_t sempSpartnGetMessageNumber(const SEMP_PARSE_STATE *parse)
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->rtcm.message;
+    return scratchPad->spartn.messageType;
 }

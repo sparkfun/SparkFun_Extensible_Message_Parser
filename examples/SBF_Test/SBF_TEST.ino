@@ -23,9 +23,6 @@ const char * const parserNames[] =
 };
 const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 
-// Provide some valid SBF messages
-// 
-
 // Provide some valid and invalid SBF messages
 const uint8_t rawDataStream[] =
 {

@@ -194,7 +194,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
     if (scratchPad->spartn.frameCount == 0)
     {
         scratchPad->spartn.messageType = data >> 1;
-        scratchPad->spartn.payloadLength = data & 0x0;
+        scratchPad->spartn.payloadLength = data & 0x01;
     }
     if (scratchPad->spartn.frameCount == 1)
     {
@@ -234,6 +234,13 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
             // Invalid header CRC
             parse->buffer[3] = data; // Restore the byte now we know the data is invalid
             parse->state = sempFirstByte;
+
+            sempPrintf(parse->printDebug,
+                    "SEMP: %s SPARTN %d, 0x%04x (%d) bytes, bad header CRC",
+                    parse->parserName,
+                    scratchPad->spartn.messageType,
+                    parse->length, parse->length);
+
             return false;
         }
     }

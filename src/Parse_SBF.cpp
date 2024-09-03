@@ -33,7 +33,8 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         parse->state = sempFirstByte;
 
-        if (scratchPad->sbf.computedCRC == scratchPad->sbf.expectedCRC)
+        if ((scratchPad->sbf.computedCRC == scratchPad->sbf.expectedCRC)
+            || (parse->badCrc && (!parse->badCrc(parse))))
         {
             parse->eomCallback(parse, parse->type); // Pass parser array index
         }

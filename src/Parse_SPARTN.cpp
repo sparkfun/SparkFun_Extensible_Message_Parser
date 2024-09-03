@@ -36,7 +36,9 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
         case 0:
         {
             uint8_t expected = *ptr;
-            valid = (semp_uSpartnCrc8(&parse->buffer[1], numBytes - 1) == expected); // Don't include the preamble in the CRC
+            // Don't include the preamble in the CRC
+            valid =  ((semp_uSpartnCrc8(&parse->buffer[1], numBytes - 1) == expected)
+                      || (parse->badCrc && (!parse->badCrc(parse))));
         }
         break;
         case 1:
@@ -44,7 +46,9 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
             uint16_t expected = *ptr++;
             expected <<= 8;
             expected |= *ptr;
-            valid = (semp_uSpartnCrc16(&parse->buffer[1], numBytes - 1) == expected); // Don't include the preamble in the CRC
+            // Don't include the preamble in the CRC
+            valid =  ((semp_uSpartnCrc16(&parse->buffer[1], numBytes - 1) == expected)
+                      || (parse->badCrc && (!parse->badCrc(parse))));
         }
         break;
         case 2:
@@ -54,7 +58,9 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
             expected |= *ptr++;
             expected <<= 8;
             expected |= *ptr;
-            valid = (semp_uSpartnCrc24(&parse->buffer[1], numBytes - 1) == expected); // Don't include the preamble in the CRC
+            // Don't include the preamble in the CRC
+            valid =  ((semp_uSpartnCrc24(&parse->buffer[1], numBytes - 1) == expected)
+                      || (parse->badCrc && (!parse->badCrc(parse))));
         }
         break;
         default:
@@ -66,7 +72,9 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
             expected |= *ptr++;
             expected <<= 8;
             expected |= *ptr;
-            valid = (semp_uSpartnCrc32(&parse->buffer[1], numBytes - 1) == expected); // Don't include the preamble in the CRC
+            // Don't include the preamble in the CRC
+            valid =  ((semp_uSpartnCrc32(&parse->buffer[1], numBytes - 1) == expected)
+                      || (parse->badCrc && (!parse->badCrc(parse))));
         }
         break;
         }

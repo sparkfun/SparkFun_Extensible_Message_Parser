@@ -1,9 +1,10 @@
 /*
-  SparkFun SBF in SPARTN test example sketch
+  SparkFun SBF-in-SPARTN test example sketch
 
   The mosaic-X5 can output raw L-Band (LBandBeam1) data, interspersed with SBF messages
 
-  This example demonstrates how to use two parsers to extract the SBF from the L-Band stream
+  This example demonstrates how to use two parsers to separate the SBF from the L-Band stream
+  and extract SPARTN from the remaining raw L-Band
 
   License: MIT. Please see LICENSE.md for more details
 */
@@ -109,7 +110,6 @@ const uint8_t rawDataStream[] =
 
 uint32_t dataOffset1;
 SEMP_PARSE_STATE *parse1;
-uint32_t dataOffset2;
 SEMP_PARSE_STATE *parse2;
 
 //----------------------------------------
@@ -133,36 +133,30 @@ void setup()
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
+    sempEnableDebugOutput(parse1); // Debug - comment if desired
+
+    // Add the callback for invalid SBF data,
+    // to allow it to be passed to the SPARTN parser
+    sempSbfSetInvalidDataCallback(parse1, invalidSbfData);
+
     parse2 = sempBeginParser(parserTable2, parserCount2,
                             parser2Names, parser2NameCount,
                             0, BUFFER_LENGTH, processSpartnMessage, "SPARTN_Test");
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 
+    sempEnableDebugOutput(parse2); // Debug - comment if desired
+
     // Obtain a raw data stream from somewhere
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
     // The raw data stream is passed to the SBF parser one byte at a time
-    sempEnableDebugOutput(parse1);
-
-    // Any data which is not SBF is passed to the SPARTN parser
-    sempEnableDebugOutput(parse2);
-
+    // Any data which is not SBF is passed to the SPARTN parser via the callback
     for (dataOffset1 = 0; dataOffset1 < RAW_DATA_BYTES; dataOffset1++)
     {
         // Update the SBF parser state based on the incoming byte
+        // Non-SBF data is parsed automatically by invalidSbfData
         sempParseNextByte(parse1, rawDataStream[dataOffset1]);
-
-        // If the data is not SBF, the state will return to sempFirstByte
-        if (parse1->state == sempFirstByte)
-        {
-            // Data is not SBF, so pass it to the SPARTN parser
-            for (dataOffset2 = 0; dataOffset2 < parse1->length; dataOffset2++)
-            {
-                // Update the SPARTN parser state based on the non-SBF byte
-                sempParseNextByte(parse2, parse1->buffer[dataOffset2]);
-            }
-        }
     }
 
     // Done parsing the data
@@ -174,6 +168,18 @@ void setup()
 void loop()
 {
     // Nothing to do here...
+}
+
+// Callback from within the SBF parser when invalid data is identified
+// The data is passed on to the SPARTN parser
+void invalidSbfData(SEMP_PARSE_STATE *parse)
+{
+    // Data is not SBF, so pass it to the SPARTN parser
+    for (uint32_t dataOffset = 0; dataOffset < parse->length; dataOffset++)
+    {
+        // Update the SPARTN parser state based on the non-SBF byte
+        sempParseNextByte(parse2, parse->buffer[dataOffset]);
+    }
 }
 
 // Call back from within parser, for end of message
@@ -213,15 +219,13 @@ void processSpartnMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     
     static bool displayOnce = true;
-    uint32_t offset;
 
     // Display the raw message
     Serial.println();
-    offset = dataOffset2 + 1 - parse->length;
-    Serial.printf("Valid SPARTN message, type %d, subtype %d : %d bytes at 0x%08lx (%ld)\r\n",
+    Serial.printf("Valid SPARTN message, type %d, subtype %d : %d bytes\r\n",
                   scratchPad->spartn.messageType,
                   scratchPad->spartn.messageSubtype,
-                  parse->length, offset, offset);
+                  parse->length);
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state

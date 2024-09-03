@@ -63,6 +63,16 @@ typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
                                   uint16_t type); // Index into parseTable
 
+// Invalid data callback:
+// This is parser-specific and should be added to the parser scrtachpad if
+// needed. Normally this routine pointer is set to nullptr. The parser calls
+// the invalidDataCallback routine when the data is recognised as invalid.
+// This allows an upper layer to pass the data to a second parser if needed.
+// This is useful when parsing SBF which is interspersed in raw SPARTN L-Band data.
+// Data is passed to the SBF parser first. Any data which is invalid SBF is passed
+// to a separate SPARTN parser via this callback.
+typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+
 // Length of the sentence name array
 #define SEMP_NMEA_SENTENCE_NAME_BYTES    16
 
@@ -136,6 +146,8 @@ typedef struct _SEMP_SBF_VALUES
     uint8_t sbfIDrev = 0;
     uint16_t length;
     uint16_t bytesRemaining;
+    // Invalid data callback routine (parser-specific)
+    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
 } SEMP_SBF_VALUES;
 
 // Overlap the scratch areas since only one parser is active at a time
@@ -325,7 +337,7 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
-uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
 
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -346,6 +358,7 @@ uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
 // SBF parse routines
 bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
+void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
 uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);

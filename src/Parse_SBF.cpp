@@ -45,6 +45,9 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
                     parse->parserName,
                     scratchPad->sbf.sbfID,
                     parse->length, parse->length);
+
+            if (scratchPad->sbf.invalidDataCallback)
+                scratchPad->sbf.invalidDataCallback(parse);
         }
 
         return false;
@@ -68,11 +71,14 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempSbfReadBytes;
         return true;
     }
-
+    // else
     sempPrintf(parse->printDebug,
             "SEMP: %s SBF, 0x%04x (%d) bytes, length not modulo 4",
             parse->parserName,
             parse->length, parse->length);
+
+    if (scratchPad->sbf.invalidDataCallback)
+        scratchPad->sbf.invalidDataCallback(parse);
 
     parse->state = sempFirstByte;
     return false;
@@ -150,11 +156,15 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempSbfCRC1;
         return true;
     }
-
+    // else
     sempPrintf(parse->printDebug,
             "SEMP: %s SBF, 0x%04x (%d) bytes, invalid preamble2",
             parse->parserName,
             parse->length, parse->length);
+
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    if (scratchPad->sbf.invalidDataCallback)
+        scratchPad->sbf.invalidDataCallback(parse);
 
     parse->state = sempFirstByte;
     return false;
@@ -168,6 +178,10 @@ bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempSbfPreamble2;
         return true;
     }
+    // else
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    if (scratchPad->sbf.invalidDataCallback)
+        scratchPad->sbf.invalidDataCallback(parse);
     return false;
 }
 
@@ -193,6 +207,13 @@ const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse)
     if (parse->state == sempSbfReadBytes)
         return "sempSbfReadBytes";
     return nullptr;
+}
+
+// Set the invalid data callback
+void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    scratchPad->sbf.invalidDataCallback = invalidDataCallback;
 }
 
 // Get the Block Number

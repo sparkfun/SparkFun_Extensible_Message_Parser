@@ -1,6 +1,9 @@
 /*
   SparkFun multiple parser example sketch
 
+  This example demonstrates how to use multiple parsers -
+  here two separate parsers parse u-blox UBX and NMEA
+
   License: MIT. Please see LICENSE.md for more details
 */
 

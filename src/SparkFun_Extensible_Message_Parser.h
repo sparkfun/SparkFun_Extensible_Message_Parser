@@ -23,6 +23,11 @@ License: MIT. Please see LICENSE.md for more details
 
 extern const int unsigned semp_crc24qTable[256];
 extern const unsigned long semp_crc32Table[256];
+extern const uint8_t semp_u8Crc4Table[];
+extern const uint8_t semp_u8Crc8Table[];
+extern const uint16_t semp_u16Crc16Table[];
+extern const uint32_t semp_u32Crc24Table[];
+extern const uint32_t semp_u32Crc32Table[];
 
 //----------------------------------------
 // Types
@@ -57,6 +62,16 @@ typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
 // End of message callback routine
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
                                   uint16_t type); // Index into parseTable
+
+// Invalid data callback:
+// This is parser-specific and should be added to the parser scrtachpad if
+// needed. Normally this routine pointer is set to nullptr. The parser calls
+// the invalidDataCallback routine when the data is recognised as invalid.
+// This allows an upper layer to pass the data to a second parser if needed.
+// This is useful when parsing SBF which is interspersed in raw SPARTN L-Band data.
+// Data is passed to the SBF parser first. Any data which is invalid SBF is passed
+// to a separate SPARTN parser via this callback.
+typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
 
 // Length of the sentence name array
 #define SEMP_NMEA_SENTENCE_NAME_BYTES    16
@@ -104,6 +119,37 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
     uint8_t sentenceNameLength; // Length of the sentence name
 } SEMP_UNICORE_HASH_VALUES;
 
+// SPARTN parser scratch area
+typedef struct _SEMP_SPARTN_VALUES
+{
+    uint16_t frameCount;
+    uint16_t crcBytes;
+    uint16_t TF007toTF016;
+
+    uint8_t messageType;
+    uint16_t payloadLength;
+    uint16_t EAF;
+    uint8_t crcType;
+    uint8_t frameCRC;
+    uint8_t messageSubtype;
+    uint16_t timeTagType;
+    uint16_t authenticationIndicator;
+    uint16_t embeddedApplicationLengthBytes;
+} SEMP_SPARTN_VALUES;
+
+// SBF parser scratch area
+typedef struct _SEMP_SBF_VALUES
+{
+    uint16_t expectedCRC;
+    uint16_t computedCRC;
+    uint16_t sbfID = 0;
+    uint8_t sbfIDrev = 0;
+    uint16_t length;
+    uint16_t bytesRemaining;
+    // Invalid data callback routine (parser-specific)
+    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
+} SEMP_SBF_VALUES;
+
 // Overlap the scratch areas since only one parser is active at a time
 typedef union
 {
@@ -112,6 +158,8 @@ typedef union
     SEMP_UBLOX_VALUES ublox;     // U-blox specific values
     SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
     SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
+    SEMP_SPARTN_VALUES spartn;   // SPARTN specific values
+    SEMP_SBF_VALUES sbf;         // SBF specific values
 } SEMP_SCRATCH_PAD;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -289,7 +337,7 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
-uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
 
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -301,5 +349,32 @@ bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+// SPARTN parse routines
+bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+// SBF parse routines
+bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
+const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
+void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
+uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
+uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
+uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
+bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
+bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
+uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
+const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

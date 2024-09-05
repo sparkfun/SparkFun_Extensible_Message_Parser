@@ -1,6 +1,9 @@
 /*
   SparkFun mixed parser example sketch
 
+  This example demonstrates how to create a mixed parser -
+  here we parse u-blox UBX and NMEA using a single mixed parser
+
   License: MIT. Please see LICENSE.md for more details
 */
 

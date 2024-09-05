@@ -1,6 +1,9 @@
 /*
   SparkFun user parser example sketch
 
+  This example demonstrates how to write your own parser -
+  with its own state machine and support methods
+
   License: MIT. Please see LICENSE.md for more details
 */
 

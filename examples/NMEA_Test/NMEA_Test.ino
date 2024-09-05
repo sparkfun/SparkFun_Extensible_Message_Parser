@@ -1,6 +1,8 @@
 /*
   SparkFun NMEA test example sketch
 
+  This example demonstrates how to parse a NMEA data stream
+
   License: MIT. Please see LICENSE.md for more details
 */
 

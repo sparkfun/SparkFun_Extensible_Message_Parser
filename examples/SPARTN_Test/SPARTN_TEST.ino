@@ -1,6 +1,8 @@
 /*
   SparkFun SPARTN test example sketch
 
+  This example demonstrates how to parse a u-blox SPARTN data stream
+
   License: MIT. Please see LICENSE.md for more details
 */
 

@@ -1,7 +1,7 @@
 /*
   SparkFun SBF-in-SPARTN test example sketch
 
-  The mosaic-X5 can output raw L-Band (LBandBeam1) data, interspersed with SBF messages
+  The Septentrio mosaic-X5 can output raw L-Band (LBandBeam1) data, interspersed with SBF messages
 
   This example demonstrates how to use two parsers to separate the SBF from the L-Band stream
   and extract SPARTN from the remaining raw L-Band

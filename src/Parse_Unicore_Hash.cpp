@@ -320,7 +320,7 @@ bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 
         // Determine the number of checksum bytes
         scratchPad->unicoreHash.checksumBytes = 2;
-        if (strcasestr("VERSION", (const char *)scratchPad->unicoreHash.sentenceName))
+        if (strstr("VERSION", (const char *)scratchPad->unicoreHash.sentenceName))
             scratchPad->unicoreHash.checksumBytes = 8;
         parse->state = sempUnicoreHashFindAsterisk;
     }

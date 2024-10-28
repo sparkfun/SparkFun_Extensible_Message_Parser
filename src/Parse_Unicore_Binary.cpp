@@ -90,7 +90,6 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->eomCallback(parse, parse->type); // Pass parser array index
     else
     {
-        SEMP_UNICORE_HEADER *header = (SEMP_UNICORE_HEADER *)parse->buffer;
         sempPrintf(parse->printDebug,
                    "SEMP: %s Unicore, bad CRC, "
                    "received %02x %02x %02x %02x, computed: %02x %02x %02x %02x",

@@ -78,8 +78,6 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
 // Read the linefeed
 bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    int checksum;
-
     // Don't add the current character to the length
     parse->length -= 1;
 
@@ -128,8 +126,6 @@ bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the line termination
 bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    int checksum;
-
     // Don't add the current character to the length
     parse->length -= 1;
 

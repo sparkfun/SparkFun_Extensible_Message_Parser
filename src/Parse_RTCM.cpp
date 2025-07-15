@@ -190,3 +190,121 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     return scratchPad->rtcm.message;
 }
+
+// Get unsigned integer with width bits, starting at bit start
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width)
+{
+    uint8_t *ptr = parse->buffer;
+    ptr += 3; // Skip the preamble and length bytes
+
+    uint64_t result = 0;
+    uint16_t count = 0;
+    uint8_t bitMask = 0x80;
+
+    // Skip whole bytes (8 bits)
+    ptr += start / 8;
+    count += (start / 8) * 8;
+
+    // Loop until we reach the start bit
+    while (count < start)
+    {
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+    }
+
+    // We have reached the start bit and ptr is pointing at the correct byte
+    // Now extract width bits, incrementing ptr and shifting bitMask as we go
+    while (count < (start + width))
+    {
+        if (*ptr & bitMask) // Is the bit set?
+            result |= 1;      // Set the corresponding bit in result
+
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+
+        if (count < (start + width)) // Do we need to shift result?
+            result <<= 1;              // Shift the result
+    }
+
+    return result;
+}
+
+// Get signed integer with width bits, starting at bit start
+int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width)
+{
+    uint8_t *ptr = parse->buffer;
+    ptr += 3; // Skip the preamble and length bytes
+
+    union
+    {
+        uint64_t unsigned64;
+        int64_t signed64;
+    } result;
+
+    result.unsigned64 = 0;
+
+    uint64_t twosComplement = 0xFFFFFFFFFFFFFFFF;
+
+    bool isNegative;
+
+    uint16_t count = 0;
+    uint8_t bitMask = 0x80;
+
+    // Skip whole bytes (8 bits)
+    ptr += start / 8;
+    count += (start / 8) * 8;
+
+    // Loop until we reach the start bit
+    while (count < start)
+    {
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+    }
+
+    isNegative = *ptr & bitMask; // Record the first bit - indicates in the number is negative
+
+    // We have reached the start bit and ptr is pointing at the correct byte
+    // Now extract width bits, incrementing ptr and shifting bitMask as we go
+    while (count < (start + width))
+    {
+        if (*ptr & bitMask)       // Is the bit set?
+            result.unsigned64 |= 1; // Set the corresponding bit in result
+
+        bitMask >>= 1;        // Shift the bit mask
+        count++;              // Increment the count
+        twosComplement <<= 1; // Shift the two's complement mask (clear LSB)
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+
+        if (count < (start + width)) // Do we need to shift result?
+            result.unsigned64 <<= 1;   // Shift the result
+    }
+
+    // Handle negative number
+    if (isNegative)
+        result.unsigned64 |= twosComplement; // OR in the two's complement mask
+
+    return result.signed64;
+}

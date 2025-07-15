@@ -288,6 +288,10 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 // from a raw data stream.
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
 
+// The routine sempParseNextBytes is used to parse the next bytes
+// from a raw data stream.
+void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len);
+
 // The routine sempStopParser frees the parse data structure and sets
 // the pointer value to nullptr to prevent future references to the
 // freed structure.
@@ -333,6 +337,8 @@ const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

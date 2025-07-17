@@ -125,9 +125,18 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // Display the raw message
     Serial.println();
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid RTCM message: %d bytes at 0x%08x (%d)\r\n",
-                  parse->length, offset, offset);
+    Serial.printf("Valid RTCM %d message: %d bytes at 0x%08x (%d)\r\n",
+                  sempRtcmGetMessageNumber(parse), (int)parse->length, (unsigned int)offset, (int)offset);
     dumpBuffer(parse->buffer, parse->length);
+    Serial.printf("Using sempRtcmGetUnsignedBits: message number is: %lld\r\n",
+                  sempRtcmGetUnsignedBits(parse, 0, 12));
+    if (sempRtcmGetMessageNumber(parse) == 1005)
+    {
+        Serial.printf("RTCM 1005 ARP is: X %lld Y %lld Z %lld\r\n",
+                      sempRtcmGetSignedBits(parse, 34, 38),
+                      sempRtcmGetSignedBits(parse, 74, 38),
+                      sempRtcmGetSignedBits(parse, 114, 38));
+    }
 
     // Display the parser state
     if (displayOnce)
@@ -156,7 +165,7 @@ void dumpBuffer(const uint8_t *buffer, uint16_t length)
             bytes = 16 - (offset & 0xf);
 
         // Display the offset
-        Serial.printf("0x%08lx: ", offset);
+        Serial.printf("0x%08x: ", offset);
 
         // Skip leading bytes
         for (index = 0; index < (offset & 0xf); index++)

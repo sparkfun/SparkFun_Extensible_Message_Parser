@@ -1,0 +1,62 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SEMP_PARSE_STATE	KEYWORD1
+SEMP_SCRATCH_PAD	KEYWORD1
+SEMP_PARSE_STATE	KEYWORD1
+SEMP_PARSE_ROUTINE	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+sempAsciiToNibble	KEYWORD2
+sempGetTypeName	KEYWORD2
+sempPrintParserConfiguration	KEYWORD2
+sempGetStateName	KEYWORD2
+sempDisableDebugOutput	KEYWORD2
+sempEnableDebugOutput	KEYWORD2
+sempDisableErrorOutput	KEYWORD2
+sempEnableErrorOutput	KEYWORD2
+sempBeginParser	KEYWORD2
+sempFirstByte	KEYWORD2
+sempParseNextByte	KEYWORD2
+sempParseNextBytes	KEYWORD2
+sempStopParser	KEYWORD2
+sempNmeaGetSentenceName	KEYWORD2
+sempRtcmGetMessageNumber	KEYWORD2
+sempRtcmGetUnsignedBits	KEYWORD2
+sempRtcmGetSignedBits	KEYWORD2
+sempUbloxGetMessageNumber	KEYWORD2
+sempUnicoreHashGetSentenceName	KEYWORD2
+sempSpartnGetMessageType	KEYWORD2
+sempSbfSetInvalidDataCallback	KEYWORD2
+sempSbfGetBlockNumber	KEYWORD2
+sempSbfGetBlockRevision	KEYWORD2
+sempSbfGetU1	KEYWORD2
+sempSbfGetU2	KEYWORD2
+sempSbfGetU4	KEYWORD2
+sempSbfGetU8	KEYWORD2
+sempSbfGetI1	KEYWORD2
+sempSbfGetI2	KEYWORD2
+sempSbfGetI4	KEYWORD2
+sempSbfGetI8	KEYWORD2
+sempSbfGetF4	KEYWORD2
+sempSbfGetF8	KEYWORD2
+sempSbfGetString	KEYWORD2
+sempSbfIsEncapsulatedNMEA	KEYWORD2
+sempSbfIsEncapsulatedRTCMv3	KEYWORD2
+sempSbfGetEncapsulatedPayloadLength	KEYWORD2
+sempSbfGetEncapsulatedPayload	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+SEMP_MINIMUM_BUFFER_LENGTH	LITERAL1

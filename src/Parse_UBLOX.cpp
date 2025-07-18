@@ -101,7 +101,10 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the second length byte
     scratchPad->ublox.bytesRemaining |= ((uint16_t)data) << 8;
-    parse->state = sempUbloxPayload;
+    if (scratchPad->ublox.bytesRemaining == 0) // Handle zero length messages - e.g. UBX-UPD
+        parse->state = sempUbloxCkA; // Jump to CRC
+    else
+        parse->state = sempUbloxPayload;
     return true;
 }
 

@@ -60,7 +60,14 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Process the message if CRC is valid
     if ((parse->crc == 0) || (parse->badCrc && (!parse->badCrc(parse))))
+    {
+        if (parse->length == 6)
+            sempPrintf(parse->printDebug,
+                    "SEMP: %s RTCM 0x%04x (%d) bytes, \"filler\" message",
+                    parse->parserName,
+                    parse->length, parse->length);
         parse->eomCallback(parse, parse->type); // Pass parser array index
+    }
 
     // Display the RTCM messages with bad CRC
     else
@@ -128,7 +135,15 @@ bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
 
     scratchPad->rtcm.bytesRemaining |= data;
-    parse->state = sempRtcmReadMessage1;
+    if (scratchPad->rtcm.bytesRemaining == 0) // Handle zero length messages - 10403 "filler" messages
+    {
+        scratchPad->rtcm.message = 0; // Clear the previous message number
+        scratchPad->rtcm.crc = parse->crc;
+        scratchPad->rtcm.bytesRemaining = 3;
+        parse->state = sempRtcmReadCrc; // Jump to the CRC
+    }
+    else
+        parse->state = sempRtcmReadMessage1;
     return true;
 }
 

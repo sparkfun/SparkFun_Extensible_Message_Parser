@@ -22,6 +22,7 @@ License: MIT. Please see LICENSE.md for more details
 // Macros
 //----------------------------------------
 
+// Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
 #define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
 //----------------------------------------

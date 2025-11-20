@@ -91,11 +91,16 @@ typedef struct _SEMP_RTCM_VALUES
     uint16_t message;        // Message number
 } SEMP_RTCM_VALUES;
 
+// UBLOX payload offset
+#define SEMP_UBLOX_PAYLOAD_OFFSET   6
+
 // UBLOX parser scratch area
 typedef struct _SEMP_UBLOX_VALUES
 {
     uint16_t bytesRemaining; // Bytes remaining in field
-    uint16_t message;        // Message number
+    uint8_t messageClass;    // Message Class
+    uint8_t messageId;       // Message ID
+    uint16_t payloadLength;  // Payload length
     uint8_t ck_a;            // U-blox checksum byte 1
     uint8_t ck_b;            // U-blox checksum byte 2
 } SEMP_UBLOX_VALUES;
@@ -176,6 +181,7 @@ typedef struct _SEMP_PARSE_STATE
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
     Print *printDebug;             // Class to use for debug output
+    bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
     uint32_t bufferLength;         // Length of the buffer in bytes
@@ -183,6 +189,8 @@ typedef struct _SEMP_PARSE_STATE
     uint16_t length;               // Message length including line termination
     uint16_t type;                 // Active parser type, a value of
                                    // parserCount means searching for preamble
+    bool abortNmeaOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
+    bool abortHashOnNonPrintable;  // Abort Unicore hash parsing on the arrival of a non-printable char
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
@@ -313,12 +321,18 @@ const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
 const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type);
 
 // Enable or disable debug output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial, bool verbose = false);
 void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
 
 // Enable or disable error output
 void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
 void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
+
+// Additional settings to help cope with erroneous data
+// Abort NMEA on a non-printable char
+void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+// Abort Unicore hash on a non-printable char
+void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration
@@ -344,6 +358,20 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uin
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
+uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
+uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
+uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset); // offset is the Payload offset
+uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset);
+double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
 
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

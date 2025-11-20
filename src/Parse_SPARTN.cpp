@@ -82,7 +82,7 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->eomCallback(parse, parse->type); // Pass parser array index
         else
             sempPrintf(parse->printDebug,
-                    "SEMP: %s SPARTN %d %d, 0x%04x (%d) bytes, bad CRC",
+                    "SEMP %s: SPARTN %d %d, 0x%04x (%d) bytes, bad CRC",
                     parse->parserName,
                     scratchPad->spartn.messageType,
                     scratchPad->spartn.messageSubtype,
@@ -235,6 +235,13 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
         if (semp_uSpartnCrc4(&parse->buffer[1], 3) == scratchPad->spartn.frameCRC)
         {
             parse->buffer[3] = data; // Restore TF005 and TF006 now we know the data is valid
+            if (parse->verboseDebug)
+                sempPrintf(parse->printDebug,
+                        "SEMP %s: Incoming SPARTN %d %d, 0x%04x (%d) bytes",
+                        parse->parserName,
+                        scratchPad->spartn.messageType,
+                        scratchPad->spartn.messageSubtype,
+                        scratchPad->spartn.payloadLength, scratchPad->spartn.payloadLength);
             parse->state = sempSpartnReadTF007;
         }
         else
@@ -244,7 +251,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->state = sempFirstByte;
 
             sempPrintf(parse->printDebug,
-                    "SEMP: %s SPARTN %d, 0x%04x (%d) bytes, bad header CRC",
+                    "SEMP %s: SPARTN %d, 0x%04x (%d) bytes, bad header CRC",
                     parse->parserName,
                     scratchPad->spartn.messageType,
                     parse->length, parse->length);

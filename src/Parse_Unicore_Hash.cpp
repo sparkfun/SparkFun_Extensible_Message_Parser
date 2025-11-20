@@ -72,7 +72,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     {
         // Display the checksum error
         sempPrintf(parse->printDebug,
-                   "SEMP: %s Unicore hash (#) %s, 0x%04x (%d) bytes, bad CRC, "
+                   "SEMP %s: Unicore hash (#) %s, 0x%04x (%d) bytes, bad CRC, "
                    "received 0x%08x, computed: 0x%08x",
                    parse->parserName,
                    scratchPad->unicoreHash.sentenceName,
@@ -139,7 +139,7 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
     else
         // Display the checksum error
         sempPrintf(parse->printDebug,
-                   "SEMP: %s Unicore hash (#) %s, 0x%04x (%d) bytes, bad checksum, "
+                   "SEMP %s: Unicore hash (#) %s, 0x%04x (%d) bytes, bad checksum, "
                    "received 0x%c%c, computed: 0x%02x",
                    parse->parserName,
                    scratchPad->unicoreHash.sentenceName,
@@ -262,6 +262,21 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         // Include this byte in the checksum
         parse->crc ^= data;
+
+        // Abort on a non-printable char - if enabled
+        if (parse->abortHashOnNonPrintable)
+        {
+            if ((data < ' ') || (data > '~'))
+            {
+                sempPrintf(parse->printDebug,
+                        "SEMP %s: Unicore hash %s abort on non-printable char",
+                        parse->parserName,
+                        scratchPad->unicoreHash.sentenceName);
+
+                // Start searching for a preamble byte
+                return sempFirstByte(parse, data);
+            }
+        }
 
         // Verify that enough space exists in the buffer
         if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)

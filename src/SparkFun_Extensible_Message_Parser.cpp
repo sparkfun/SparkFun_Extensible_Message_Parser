@@ -137,6 +137,9 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
         sempPrintf(print, "    parserCount: %d", parse->parserCount);
         sempPrintf(print, "    printError: %p", parse->printError);
         sempPrintf(print, "    printDebug: %p", parse->printDebug);
+        sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
+        sempPrintf(print, "    abortNmeaOnNonPrintable: %d", parse->abortNmeaOnNonPrintable);
+        sempPrintf(print, "    abortHashOnNonPrintable: %d", parse->abortHashOnNonPrintable);
         sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
                    (void *)parse->scratchPad, parse->buffer - (uint8_t *)parse->scratchPad);
         sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
@@ -201,10 +204,13 @@ void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
 }
 
 // Enable debug output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print)
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print, bool verbose)
 {
     if (parse)
+    {
         parse->printDebug = print;
+        parse->verboseDebug = verbose;
+    }
 }
 
 // Disable error output
@@ -219,6 +225,20 @@ void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
 {
     if (parse)
         parse->printError = print;
+}
+
+// Additional settings to cope with erroneous data
+// Abort NMEA on a non-printable char
+void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->abortNmeaOnNonPrintable = abort;
+}
+// Abort Unicore hash on a non-printable char
+void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->abortHashOnNonPrintable = abort;
 }
 
 //----------------------------------------
@@ -377,8 +397,12 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 // Parse the next bytes
 void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len)
 {
+    uint8_t *ptr = data;
     for (uint16_t i = 0; i < len; i++)
-        sempParseNextByte(parse, *(data++));
+    {
+        sempParseNextByte(parse, *ptr);
+        ptr++;
+    }
 }
 
 // Shutdown the parser

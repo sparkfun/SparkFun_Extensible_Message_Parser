@@ -41,7 +41,7 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
         else
         {
             sempPrintf(parse->printDebug,
-                    "SEMP: %s SBF %d, 0x%04x (%d) bytes, bad CRC",
+                    "SEMP %s: SBF %d, 0x%04x (%d) bytes, bad CRC",
                     parse->parserName,
                     scratchPad->sbf.sbfID,
                     parse->length, parse->length);
@@ -69,11 +69,17 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         scratchPad->sbf.bytesRemaining = scratchPad->sbf.length - 8; // Subtract 8 header bytes
         parse->state = sempSbfReadBytes;
+        if (parse->verboseDebug)
+            sempPrintf(parse->printDebug,
+                      "SEMP %s: Incoming SBF %d, 0x%04x (%d) bytes",
+                      parse->parserName,
+                      scratchPad->sbf.sbfID,
+                      scratchPad->sbf.bytesRemaining, scratchPad->sbf.bytesRemaining);
         return true;
     }
     // else
     sempPrintf(parse->printDebug,
-            "SEMP: %s SBF, 0x%04x (%d) bytes, length not modulo 4",
+            "SEMP %s: SBF, 0x%04x (%d) bytes, length not modulo 4",
             parse->parserName,
             parse->length, parse->length);
 
@@ -158,7 +164,7 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
     }
     // else
     sempPrintf(parse->printDebug,
-            "SEMP: %s SBF, 0x%04x (%d) bytes, invalid preamble2",
+            "SEMP %s: SBF, 0x%04x (%d) bytes, invalid preamble2",
             parse->parserName,
             parse->length, parse->length);
 

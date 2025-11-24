@@ -65,7 +65,7 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
     else
         // Display the checksum error
         sempPrintf(parse->printDebug,
-                   "SEMP: %s NMEA %s, 0x%04x (%d) bytes, bad checksum, "
+                   "SEMP %s: NMEA %s, 0x%04x (%d) bytes, bad checksum, "
                    "received 0x%c%c, computed: 0x%02x",
                    parse->parserName,
                    scratchPad->nmea.sentenceName,
@@ -189,12 +189,29 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the sentence data
 bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+
     if (data == '*')
         parse->state = sempNmeaChecksumByte1;
     else
     {
         // Include this byte in the checksum
         parse->crc ^= data;
+
+        // Abort on a non-printable char - if enabled
+        if (parse->abortNmeaOnNonPrintable)
+        {
+            if ((data < ' ') || (data > '~'))
+            {
+                sempPrintf(parse->printDebug,
+                        "SEMP %s: NMEA %s abort on non-printable char",
+                        parse->parserName,
+                        scratchPad->nmea.sentenceName);
+
+                // Start searching for a preamble byte
+                return sempFirstByte(parse, data);
+            }
+        }
 
         // Verify that enough space exists in the buffer
         if ((uint32_t)(parse->length + NMEA_BUFFER_OVERHEAD) > parse->bufferLength)

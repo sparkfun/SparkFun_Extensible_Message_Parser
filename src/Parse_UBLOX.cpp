@@ -101,10 +101,19 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 
     // Save the second length byte
     scratchPad->ublox.bytesRemaining |= ((uint16_t)data) << 8;
+    scratchPad->ublox.payloadLength = scratchPad->ublox.bytesRemaining;
     if (scratchPad->ublox.bytesRemaining == 0) // Handle zero length messages - e.g. UBX-UPD
         parse->state = sempUbloxCkA; // Jump to CRC
     else
+    {
+        if (parse->verboseDebug)
+            sempPrintf(parse->printDebug,
+                       "SEMP %s: Incoming UBLOX 0x%02X:0x%02X, 0x%04x (%d) bytes",
+                       parse->parserName,
+                       scratchPad->ublox.messageClass, scratchPad->ublox.messageId,
+                       scratchPad->ublox.payloadLength, scratchPad->ublox.payloadLength);
         parse->state = sempUbloxPayload;
+    }
     return true;
 }
 
@@ -132,8 +141,7 @@ bool sempUbloxId(SEMP_PARSE_STATE *parse, uint8_t data)
     scratchPad->ublox.ck_a += data;
     scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
 
-    // Save the ID as the lower 8-bits of the message
-    scratchPad->ublox.message |= data;
+    scratchPad->ublox.messageId = data; // Save the ID
     parse->state = sempUbloxLength1;
     return true;
 }
@@ -147,8 +155,7 @@ bool sempUbloxClass(SEMP_PARSE_STATE *parse, uint8_t data)
     scratchPad->ublox.ck_a = data;
     scratchPad->ublox.ck_b = data;
 
-    // Save the class as the upper 8-bits of the message
-    scratchPad->ublox.message = ((uint16_t)data) << 8;
+    scratchPad->ublox.messageClass = data; // Save the Class
     parse->state = sempUbloxId;
     return true;
 }
@@ -205,9 +212,116 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-// Get the message number
+// Get the message number: |- Class (8 bits) -||- ID (8 bits) -|
 uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->ublox.message;
+    uint16_t message = ((uint16_t)scratchPad->ublox.messageClass) << 8;
+    message |= (uint16_t)scratchPad->ublox.messageId;
+    return message;
+}
+
+// Get the message Class
+uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    return scratchPad->ublox.messageClass;
+}
+
+// Get the message ID
+uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    return scratchPad->ublox.messageId;
+}
+
+// Get the Payload Length
+uint16_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    return scratchPad->ublox.payloadLength;
+}
+
+// Get data
+uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    return parse->buffer[offset + SEMP_UBLOX_PAYLOAD_OFFSET];
+}
+uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    uint16_t data = parse->buffer[offset + SEMP_UBLOX_PAYLOAD_OFFSET];
+    data |= ((uint16_t)parse->buffer[offset + SEMP_UBLOX_PAYLOAD_OFFSET + 1]) << 8;
+    return data;
+}
+uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    uint32_t data = 0;
+    for (uint16_t i = 0; i < sizeof(data); i++)
+        data |= ((uint32_t)parse->buffer[offset + SEMP_UBLOX_PAYLOAD_OFFSET + i]) << (8 * i);
+    return data;
+}
+uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    uint64_t data = 0;
+    for (uint16_t i = 0; i < sizeof(data); i++)
+        data |= ((uint64_t)parse->buffer[offset + SEMP_UBLOX_PAYLOAD_OFFSET + i]) << (8 * i);
+    return data;
+}
+int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint8_t unsignedN;
+        int8_t signedN;
+    } unsignedSignedN;
+    unsignedSignedN.unsignedN = sempUbloxGetU1(parse, offset);
+    return unsignedSignedN.signedN;
+}
+int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint16_t unsignedN;
+        int16_t signedN;
+    } unsignedSignedN;
+    unsignedSignedN.unsignedN = sempUbloxGetU2(parse, offset);
+    return unsignedSignedN.signedN;
+}
+int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint32_t unsignedN;
+        int32_t signedN;
+    } unsignedSignedN;
+    unsignedSignedN.unsignedN = sempUbloxGetU4(parse, offset);
+    return unsignedSignedN.signedN;
+}
+int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint64_t unsignedN;
+        int64_t signedN;
+    } unsignedSignedN;
+    unsignedSignedN.unsignedN = sempUbloxGetU8(parse, offset);
+    return unsignedSignedN.signedN;
+}
+float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint32_t unsignedN;
+        float flt;
+    } unsignedFloat;
+    unsignedFloat.unsignedN = sempUbloxGetU4(parse, offset);
+    return unsignedFloat.flt;
+}
+double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    union {
+        uint64_t unsignedN;
+        double flt;
+    } unsignedFloat;
+    unsignedFloat.unsignedN = sempUbloxGetU8(parse, offset);
+    return unsignedFloat.flt;
+}
+const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset)
+{
+    return (const char *)(&parse->buffer[offset]);
 }

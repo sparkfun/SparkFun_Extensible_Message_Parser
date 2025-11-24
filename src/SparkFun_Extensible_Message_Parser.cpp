@@ -397,8 +397,12 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 // Parse the next bytes
 void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len)
 {
+    uint8_t *ptr = data;
     for (uint16_t i = 0; i < len; i++)
-        sempParseNextByte(parse, *(data++));
+    {
+        sempParseNextByte(parse, *ptr);
+        ptr++;
+    }
 }
 
 // Shutdown the parser

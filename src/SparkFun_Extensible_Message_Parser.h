@@ -191,6 +191,7 @@ typedef struct _SEMP_PARSE_STATE
                                    // parserCount means searching for preamble
     bool abortNmeaOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
     bool abortHashOnNonPrintable;  // Abort Unicore hash parsing on the arrival of a non-printable char
+    bool usePSRAM;                 // Enable / disable PSRAM use
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
@@ -410,5 +411,8 @@ bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
 uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
 const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
+
+// Determine if PSRAM is being used by SEMP
+bool sempPsramInUse(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

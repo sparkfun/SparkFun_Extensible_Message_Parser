@@ -81,8 +81,10 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
 #if defined(ESP32)
       parse = (SEMP_PARSE_STATE *)ps_malloc(length + bufferLength);
 #else
-      parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-      sempPrintln(print, "PSRAM: Platform not supported");
+      {
+        parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
+        sempPrintln(printDebug, "PSRAM: Platform not supported");
+      }
 #endif
     else
       parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
@@ -322,6 +324,8 @@ SEMP_PARSE_STATE *sempBeginParser(
 
         // Attempt to use PSRAM
         psramSize = 0;
+
+#if defined(ESP32)
         if (psramInit())
             psramSize = ESP.getPsramSize();
         usePSRAM = (psramSize != 0);
@@ -329,6 +333,7 @@ SEMP_PARSE_STATE *sempBeginParser(
             sempPrintln(printError, "SEMP: PSRAM failed to initialize!");
         else
             sempPrintf(printError, "SEMP: PSRAM Size (bytes): %d\r\n", psramSize);
+#endif
 
         // Validate the parser address is not nullptr
         parse = sempAllocateParseStructure(usePSRAM, printDebug, scratchPadBytes, bufferLength);

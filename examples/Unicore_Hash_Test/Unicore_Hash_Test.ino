@@ -97,9 +97,11 @@ void setup()
     Serial.println();
 
     // Initialize the parser
+    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, parserNameCount,
-                            0, BUFFER_LENGTH, processMessage, "Unicore_Hash_Test",
+                            0, buffer, bufferLength, processMessage, "Unicore_Hash_Test",
                             &Serial, nullptr, badUnicoreHashChecksum);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
@@ -115,6 +117,8 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
+    free(buffer);
+    Serial.printf("All done\r\n");
 }
 
 // Main loop processing after system is initialized

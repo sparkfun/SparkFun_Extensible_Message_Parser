@@ -29,29 +29,16 @@ License: MIT. Please see LICENSE.md for more details
 // Support routines
 //----------------------------------------
 
-// Allocate the parse structure
-SEMP_PARSE_STATE * sempAllocateParseStructure(
-    Print *printDebug,
-    uint16_t scratchPadBytes,
-    size_t bufferLength
-    )
+// Compute the scratch pad length
+// Inputs:
+//   scratchPadBytes: Desired size of the scratch pad in bytes
+//   printDebug: Device to output any debug messages, may be nullptr
+//
+// Outputs:
+//    Returns the number of bytes needed for the scratch pad
+size_t sempGetScratchPadLength(size_t scratchPadBytes, Print *printDebug)
 {
-    int length;
-    SEMP_PARSE_STATE *parse = nullptr;
-    int parseBytes;
-
-    // Print the scratchPad area size
-    sempPrintf(printDebug, "scratchPadBytes: 0x%04x (%d) bytes",
-               scratchPadBytes, scratchPadBytes);
-
-    // Align the scratch patch area
-    if (scratchPadBytes < SEMP_ALIGN(scratchPadBytes))
-    {
-        scratchPadBytes = SEMP_ALIGN(scratchPadBytes);
-        sempPrintf(printDebug,
-                   "scratchPadBytes: 0x%04x (%d) bytes after alignment",
-                   scratchPadBytes, scratchPadBytes);
-    }
+    size_t length;
 
     // Determine the minimum length for the scratch pad
     length = SEMP_ALIGN(sizeof(SEMP_SCRATCH_PAD));
@@ -59,42 +46,83 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     {
         scratchPadBytes = length;
         sempPrintf(printDebug,
-                   "scratchPadBytes: 0x%04x (%d) bytes after mimimum size adjustment",
+                   "scratchPadBytes: 0x%08lx (%ld) bytes after mimimum size adjustment",
                    scratchPadBytes, scratchPadBytes);
     }
-    parseBytes = SEMP_ALIGN(sizeof(SEMP_PARSE_STATE));
-    sempPrintf(printDebug, "parseBytes: 0x%04x (%d)", parseBytes, parseBytes);
 
-    // Verify the minimum bufferLength
-    if (bufferLength < SEMP_MINIMUM_BUFFER_LENGTH)
+    // Align the scratch patch area
+    if (scratchPadBytes < SEMP_ALIGN(scratchPadBytes))
     {
+        scratchPadBytes = SEMP_ALIGN(scratchPadBytes);
         sempPrintf(printDebug,
-                   "SEMP: Increasing bufferLength from %ld to %d bytes, minimum size adjustment",
-                   bufferLength, SEMP_MINIMUM_BUFFER_LENGTH);
-        bufferLength = SEMP_MINIMUM_BUFFER_LENGTH;
+                   "scratchPadBytes: 0x%08lx (%ld) bytes after alignment",
+                   scratchPadBytes, scratchPadBytes);
     }
 
-    // Allocate the parser
-    length = parseBytes + scratchPadBytes;
-    parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-    sempPrintf(printDebug, "parse: %p", (void *)parse);
+    // Return the scratch pad length
+    return scratchPadBytes;
+}
 
-    // Initialize the parse structure
-    if (parse)
+// Locate the parse structure
+// Inputs:
+//   scratchPadBytes: Desired size of the scratch pad in bytes
+//   buffer: Address of the buffer
+//   bufferLength: Total number of bytes in the buffer
+//   printDebug: Device to output any debug messages, may be nullptr
+//
+// Outputs:
+//    Returns the number of bytes needed for the scratch pad
+SEMP_PARSE_STATE * sempLocateParseStructure(uint16_t scratchPadBytes,
+                                            uint8_t *buffer,
+                                            size_t bufferLength,
+                                            Print *printDebug)
+{
+    int length;
+    SEMP_PARSE_STATE * parse;
+    size_t parseDataBytes;
+    size_t parseStateBytes;
+
+    // Determine the size needed for the parse state
+    parseStateBytes = SEMP_ALIGN(sizeof(SEMP_PARSE_STATE));
+    sempPrintf(printDebug, "0x%08lx (%ld): parseStateBytes",
+               parseStateBytes, parseStateBytes);
+
+    // Determine the minimum length for the scratch pad
+    scratchPadBytes = sempGetScratchPadLength(scratchPadBytes, printDebug);
+    sempPrintf(printDebug, "0x%08lx (%ld): scratchPadBytes",
+               scratchPadBytes, scratchPadBytes);
+
+    // Determine the remaining length for the parser data
+    parseDataBytes = bufferLength - parseStateBytes - scratchPadBytes;
+    if ((parseDataBytes > bufferLength) || (parseDataBytes < SEMP_MINIMUM_BUFFER_LENGTH))
     {
-        // Zero the parse structure
-        memset(parse, 0, length);
+        // Determine the minimum buffer size
+        length = parseStateBytes + scratchPadBytes + SEMP_MINIMUM_BUFFER_LENGTH;
+        sempPrintf(printDebug, "SEMP ERROR: Increase buffer size to >= %d bytes for >= %d bytes of parse data\r\n",
+                   length, SEMP_MINIMUM_BUFFER_LENGTH);
 
-        // Set the scratch pad area address
-        parse->scratchPad = ((uint8_t *)parse) + parseBytes;
-        parse->printDebug = printDebug;
-        sempPrintf(parse->printDebug, "parse->scratchPad: %p", parse->scratchPad);
-
-        // Set the buffer address and length
-        parse->bufferLength = bufferLength;
-        parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
-        sempPrintf(parse->printDebug, "parse->buffer: %p", parse->buffer);
+        // Handle the buffer error cases
+        return nullptr;
     }
+    sempPrintf(printDebug, "0x%08lx (%ld): parseDataBytes",
+               parseDataBytes, parseDataBytes);
+
+    // Set the parser
+    parse = (SEMP_PARSE_STATE *)buffer;
+    sempPrintf(printDebug, "%p: parse state", (void *)parse);
+
+    // Zero the parse structure
+    memset(parse, 0, parseStateBytes + scratchPadBytes + parseDataBytes);
+
+    // Set the scratch pad area address
+    parse->scratchPad = ((uint8_t *)parse) + parseStateBytes;
+    parse->printDebug = printDebug;
+    sempPrintf(parse->printDebug, "%p: parse->scratchPad", parse->scratchPad);
+
+    // Set the buffer address and length
+    parse->bufferLength = parseDataBytes;
+    parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
+    sempPrintf(parse->printDebug, "%p: parse->buffer", parse->buffer);
     return parse;
 }
 
@@ -238,6 +266,7 @@ SEMP_PARSE_STATE *sempBeginParser(
     const char * const *parserNameTable,
     uint16_t parserNameCount,
     uint16_t scratchPadBytes,
+    uint8_t * buffer,
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
     const char *parserName,
@@ -271,6 +300,13 @@ SEMP_PARSE_STATE *sempBeginParser(
             break;
         }
 
+        // Validate the buffer is specified
+        if (!buffer)
+        {
+            sempPrintln(printError, "SEMP: Please specify a buffer");
+            break;
+        }
+
         // Validate the end-of-message callback routine address is not nullptr
         if (!eomCallback)
         {
@@ -293,14 +329,17 @@ SEMP_PARSE_STATE *sempBeginParser(
         }
 
         // Validate the parser address is not nullptr
-        parse = sempAllocateParseStructure(printDebug, scratchPadBytes, bufferLength);
+        parse = sempLocateParseStructure(scratchPadBytes,
+                                         buffer,
+                                         bufferLength,
+                                         printDebug);
         if (!parse)
         {
             sempPrintln(printError, "SEMP: Failed to allocate the parse structure");
             break;
         }
 
-        // Initialize the parser
+        // Initialize the parse state
         parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
@@ -350,6 +389,44 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+// Compute the necessary buffer length in bytes to support the scratch pad
+// and parse buffer lengths.
+// Inputs:
+//   scratchPadBytes: Desired size of the scratch pad in bytes
+//   parseBufferBytes: Desired size of the parse buffer in bytes
+//   printDebug: Device to output any debug messages, may be nullptr
+//
+// Outputs:
+//    Returns the number of bytes needed for the buffer that contains
+//    the SEMP parser state, a scratch pad area and the parse buffer
+size_t sempGetBufferLength(size_t scratchPadBytes,
+                           size_t parserBufferBytes,
+                           Print *printDebug)
+{
+    size_t length;
+    size_t parseStateBytes;
+
+    // Determine the size needed to maintain the parser state
+    parseStateBytes = SEMP_ALIGN(sizeof(SEMP_PARSE_STATE));
+
+    // Determine the minimum length for the scratch pad
+    scratchPadBytes = sempGetScratchPadLength(scratchPadBytes, printDebug);
+
+    // Verify the minimum bufferLength
+    if (parserBufferBytes < SEMP_MINIMUM_BUFFER_LENGTH)
+    {
+        sempPrintf(printDebug,
+                   "SEMP: Increasing parserBufferBytes from %ld to %ld bytes, minimum size adjustment",
+                   parserBufferBytes, SEMP_MINIMUM_BUFFER_LENGTH);
+        parserBufferBytes = SEMP_MINIMUM_BUFFER_LENGTH;
+    }
+
+    // Determine the final buffer length
+    length = parseStateBytes + scratchPadBytes + parserBufferBytes;
+    sempPrintf(printDebug, "SEMP: Buffer length needed is %ld bytes", length);
+    return length;
+}
+
 // Parse the next byte
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -396,10 +473,7 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
 {
     // Free the parse structure if it was specified
     if (parse && *parse)
-    {
-        free(*parse);
         *parse = nullptr;
-    }
 }
 
 //----------------------------------------

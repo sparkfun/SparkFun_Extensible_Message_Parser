@@ -44,6 +44,9 @@ SEMP_PARSE_STATE *parse;
 
 void setup()
 {
+    uint8_t * buffer;
+    size_t bufferLength;
+
     delay(1000);
 
     Serial.begin(115200);
@@ -52,59 +55,76 @@ void setup()
     Serial.println();
 
     // No parser table specified
+    bufferLength = sempGetBufferLength(0, 3000);
+    buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser(nullptr, parserCount,
                             parserNames, parserNameCount,
-                            0, 3000, processMessage, "No parser");
+                            0, buffer, bufferLength, processMessage,
+                            "No parser");
     if (parse)
         reportFatalError("Failed to detect parserTable set to nullptr (0)");
 
     // Parser count is zero
     parse = sempBeginParser(parserTable, 0,
                             parserNames, parserCount,
-                            0, 3000, processMessage, "No parser");
+                            0, buffer, bufferLength, processMessage,
+                            "No parser");
     if (parse)
         reportFatalError("Failed because parserCount != nameTableCount");
 
     // No parser name table specified
     parse = sempBeginParser(parserTable, parserCount,
                             nullptr, parserNameCount,
-                            0, 3000, processMessage, "No parser");
+                            0, buffer, bufferLength, processMessage,
+                            "No parser");
     if (parse)
         reportFatalError("Failed to detect parserNameTable set to nullptr (0)");
 
     // Parser name count is zero
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, 0,
-                            0, 3000, processMessage, "No parser");
+                            0, buffer, bufferLength, processMessage,
+                            "No parser");
     if (parse)
         reportFatalError("Failed because parserCount != nameTableCount");
+
+    // No buffer specified
+    parse = sempBeginParser(parserTable, parserCount,
+                            parserNames, parserNameCount,
+                            0, nullptr, bufferLength, processMessage,
+                            "No parser");
+    if (parse)
+        reportFatalError("Failed to detect buffer set to nullptr (0)");
 
     // No end-of-message callback specified
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, nullptr, "No parser");
+                            0, buffer, bufferLength, nullptr, "No parser");
     if (parse)
         reportFatalError("Failed to detect eomCallback set to nullptr (0)");
 
     // No name specified
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, processMessage, nullptr);
+                            0, buffer, bufferLength, processMessage, nullptr);
     if (parse)
         reportFatalError("Failed to detect parserName set to nullptr (0)");
 
     // No name specified
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, processMessage, "");
+                            0, buffer, bufferLength, processMessage, "");
     if (parse)
         reportFatalError("Failed to detect parserName set to empty string");
 
     // Initialize the parser, specify a large scratch pad area
     // Display the parser allocation
+    free(buffer);
+    bufferLength = sempGetBufferLength(4091, 3000);
+    buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser(parserTable, parserCount,
                             parserNames, parserNameCount,
-                            4091, 3000, processMessage, "Base Test Example");
+                            4091, buffer, bufferLength, processMessage, "Base Test Example");
     if (!parse)
         reportFatalError("Failed to initialize the parser");
     Serial.println("Parser successfully initialized");
@@ -131,7 +151,8 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.println("Parser shutdown");
+    free(buffer);
+    Serial.printf("All done\r\n");
 }
 
 void loop()

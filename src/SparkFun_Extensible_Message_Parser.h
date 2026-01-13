@@ -271,14 +271,15 @@ int sempAsciiToNibble(int data);
 // output.
 //
 // Allocate and initialize a parse data structure
-SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
-                                   uint16_t parserCount, \
-                                   const char * const *parserNameTable, \
-                                   uint16_t parserNameCount, \
-                                   uint16_t scratchPadBytes, \
-                                   size_t bufferLength, \
-                                   SEMP_EOM_CALLBACK eomCallback, \
-                                   const char *name, \
+SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable,
+                                   uint16_t parserCount,
+                                   const char * const *parserNameTable,
+                                   uint16_t parserNameCount,
+                                   uint16_t scratchPadBytes,
+                                   uint8_t * buffer,
+                                   size_t bufferLength,
+                                   SEMP_EOM_CALLBACK eomCallback,
+                                   const char *name,
                                    Print *printError = &Serial,
                                    Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
@@ -291,6 +292,20 @@ SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
 // a message.  The first parser to acknowledge the preamble byte by
 // returning true is the parser that gets called for the following data.
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
+
+// Compute the necessary buffer length in bytes to support the scratch pad
+// and parse buffer lengths.
+// Inputs:
+//   scratchPadBytes: Desired size of the scratch pad in bytes
+//   parseBufferBytes: Desired size of the parse buffer in bytes
+//   printDebug: Device to output any debug messages, may be nullptr
+//
+// Outputs:
+//    Returns the number of bytes needed for the buffer that contains
+//    the SEMP parser state, a scratch pad area and the parse buffer
+size_t sempGetBufferLength(size_t scratchPadBytes,
+                           size_t parserBufferBytes,
+                           Print *printDebug = &Serial);
 
 // The routine sempParseNextByte is used to parse the next data byte
 // from a raw data stream.

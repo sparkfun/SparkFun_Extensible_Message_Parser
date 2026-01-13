@@ -95,7 +95,7 @@ const uint8_t rawDataStream[] =
     0x56, 0x60, 0xB0, 0xFE, 0x18, 0x94, 0x40, 0xB3, 0xC1, 0x6E, 0x5D, 0x5D, 0x90, 0xD7, 0x72, 0x46,
     0x58, 0x95, 0x5C, 0x69, 0x1C, 0x64, 0x1A, 0xA6, 0x5C, 0xF3, 0xCD, 0x32, 0xFA, 0x00, 0xCE, 0xD7,
     0x71, 0x5E, 0x8D,
-    
+
 };
 
 // Number of bytes in the rawDataStream
@@ -127,9 +127,12 @@ void setup()
     Serial.println();
 
     // Initialize the parsers
+    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
+    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
     parse1 = sempBeginParser(parserTable1, parserCount1,
                             parser1Names, parser1NameCount,
-                            0, BUFFER_LENGTH, processSbfMessage, "SBF_Test");
+                            0, buffer1, bufferLength, processSbfMessage, "SBF_Test");
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
@@ -141,7 +144,7 @@ void setup()
 
     parse2 = sempBeginParser(parserTable2, parserCount2,
                             parser2Names, parser2NameCount,
-                            0, BUFFER_LENGTH, processSpartnMessage, "SPARTN_Test");
+                            0, buffer2, bufferLength, processSpartnMessage, "SPARTN_Test");
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 
@@ -161,7 +164,10 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse1);
+    free(buffer1);
     sempStopParser(&parse2);
+    free(buffer2);
+    Serial.printf("All done\r\n");
 }
 
 // Main loop processing after system is initialized
@@ -187,7 +193,7 @@ void invalidSbfData(SEMP_PARSE_STATE *parse)
 void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    
+
     uint32_t offset;
 
     // Display the raw message
@@ -217,7 +223,7 @@ void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 void processSpartnMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    
+
     static bool displayOnce = true;
 
     // Display the raw message

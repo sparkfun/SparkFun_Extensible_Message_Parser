@@ -334,6 +334,10 @@ void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 // Abort Unicore hash on a non-printable char
 void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
+//----------------------------------------
+// Parsers
+//----------------------------------------
+
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration
 // proceed the routine use and eliminates the need for forward declaration.
@@ -341,11 +345,19 @@ void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 // routines to the application layer.  As such only the preamble routine
 // should need to be listed below.
 
+//----------------------------------------
+// NMEA
+//----------------------------------------
+
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+//----------------------------------------
+// RTCM
+//----------------------------------------
 
 // RTCM parse routines
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -353,6 +365,10 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+
+//----------------------------------------
+// u-blox
+//----------------------------------------
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -373,10 +389,18 @@ float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset);
 double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset);
 const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
 
+//----------------------------------------
+// Unicore Binary
+//----------------------------------------
+
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
+
+//----------------------------------------
+// Unicore Hash (#)
+//----------------------------------------
 
 // Unicore hash (#) parse routines
 bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -384,10 +408,18 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 
+//----------------------------------------
+// SPARTN
+//----------------------------------------
+
 // SPARTN parse routines
 bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+//----------------------------------------
+// SBF
+//----------------------------------------
 
 // SBF parse routines
 bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

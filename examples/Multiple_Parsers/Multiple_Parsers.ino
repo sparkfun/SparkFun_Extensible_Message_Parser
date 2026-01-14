@@ -128,29 +128,17 @@ const DataStream dataStream[] =
 // Account for the largest u-blox messages
 #define BUFFER_LENGTH   3000
 
-SEMP_PARSE_ROUTINE const nmeaParserTable[] =
+SEMP_PARSER_DESCRIPTION * nmeaParserTable[] =
 {
-    sempNmeaPreamble
+    &sempNmeaParserDescription
 };
 const int nmeaParserCount = sizeof(nmeaParserTable) / sizeof(nmeaParserTable[0]);
 
-const char * const nmeaParserNames[] =
+SEMP_PARSER_DESCRIPTION * ubloxParserTable[] =
 {
-    "NMEA parser"
-};
-const int nmeaParserNameCount = sizeof(nmeaParserNames) / sizeof(nmeaParserNames[0]);
-
-SEMP_PARSE_ROUTINE const ubloxParserTable[] =
-{
-    sempUbloxPreamble
+    &sempUbloxParserDescription
 };
 const int ubloxParserCount = sizeof(ubloxParserTable) / sizeof(ubloxParserTable[0]);
-
-const char * const ubloxParserNames[] =
-{
-    "U-Blox parser"
-};
-const int ubloxParserNameCount = sizeof(ubloxParserNames) / sizeof(ubloxParserNames[0]);
 
 //----------------------------------------
 // Locals
@@ -182,14 +170,12 @@ void setup()
     size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
     uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
     uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
-    nmeaParser = sempBeginParser(nmeaParserTable, nmeaParserCount,
-                                 nmeaParserNames, nmeaParserNameCount,
-                                 0, buffer1, bufferLength, nmeaSentence, "NMEA_Parser");
+    nmeaParser = sempBeginParser("NMEA_Parser", nmeaParserTable, nmeaParserCount,
+                                 0, buffer1, bufferLength, nmeaSentence);
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
-    ubloxParser = sempBeginParser(ubloxParserTable, ubloxParserCount,
-                                  ubloxParserNames, ubloxParserNameCount,
-                                  0, buffer2, bufferLength, ubloxMessage, "U-Blox_Parser");
+    ubloxParser = sempBeginParser("U-Blox_Parser", ubloxParserTable, ubloxParserCount,
+                                  0, buffer2, bufferLength, ubloxMessage);
     if (!ubloxParser)
         reportFatalError("Failed to initialize the U-Blox parser");
 

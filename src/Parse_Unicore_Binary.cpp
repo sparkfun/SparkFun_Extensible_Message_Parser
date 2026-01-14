@@ -219,3 +219,10 @@ const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse)
         return "sempUnicoreBinaryReadCrc";
     return nullptr;
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
+{
+    "Unicore binary parser",            // parserName
+    sempUnicoreBinaryPreamble,          // preamble
+};

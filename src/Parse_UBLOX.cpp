@@ -325,3 +325,10 @@ const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset)
 {
     return (const char *)(&parse->buffer[offset]);
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempUbloxParserDescription =
+{
+    "U-Blox parser",    // parserName
+    sempUbloxPreamble,  // preamble
+};

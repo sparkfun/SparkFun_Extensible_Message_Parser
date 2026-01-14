@@ -375,3 +375,10 @@ const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     return (const char *)scratchPad->unicoreHash.sentenceName;
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
+{
+    "Unicore hash parser",              // parserName
+    sempUnicoreHashPreamble,            // preamble
+};

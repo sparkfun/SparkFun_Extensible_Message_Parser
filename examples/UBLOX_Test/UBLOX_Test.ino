@@ -13,17 +13,11 @@
 //----------------------------------------
 
 // Build the table listing all of the parsers
-SEMP_PARSE_ROUTINE const parserTable[] =
+SEMP_PARSER_DESCRIPTION * parserTable[] =
 {
-    sempUbloxPreamble
+    &sempUbloxParserDescription
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-const char * const parserNames[] =
-{
-    "U-Blox parser"
-};
-const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 
 // Provide some valid and invalid u-blox messages
 const uint8_t rawDataStream[] =
@@ -143,9 +137,8 @@ void setup()
     // Initialize the parser
     size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, buffer, bufferLength, processMessage, "UBLOX_Test");
+    parse = sempBeginParser("UBLOX_Test", parserTable, parserCount,
+                            0, buffer, bufferLength, processMessage);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

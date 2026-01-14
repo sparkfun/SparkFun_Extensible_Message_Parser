@@ -16,29 +16,17 @@
 //----------------------------------------
 
 // Build the table listing all of the parsers
-SEMP_PARSE_ROUTINE const parserTable1[] =
+SEMP_PARSER_DESCRIPTION * parserTable1[] =
 {
-    sempSbfPreamble
+    &sempSbfParserDescription
 };
 const int parserCount1 = sizeof(parserTable1) / sizeof(parserTable1[0]);
 
-const char * const parser1Names[] =
+SEMP_PARSER_DESCRIPTION * parserTable2[] =
 {
-    "SBF parser"
-};
-const int parser1NameCount = sizeof(parser1Names) / sizeof(parser1Names[0]);
-
-SEMP_PARSE_ROUTINE const parserTable2[] =
-{
-    sempSpartnPreamble
+    &sempSpartnParserDescription
 };
 const int parserCount2 = sizeof(parserTable2) / sizeof(parserTable2[0]);
-
-const char * const parser2Names[] =
-{
-    "SPARTN parser"
-};
-const int parser2NameCount = sizeof(parser2Names) / sizeof(parser2Names[0]);
 
 // Provide some valid L-Band SPARTN data, interspersed with valid SBF messages
 const uint8_t rawDataStream[] =
@@ -130,9 +118,8 @@ void setup()
     size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
     uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
     uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
-    parse1 = sempBeginParser(parserTable1, parserCount1,
-                            parser1Names, parser1NameCount,
-                            0, buffer1, bufferLength, processSbfMessage, "SBF_Test");
+    parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1,
+                             0, buffer1, bufferLength, processSbfMessage);
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
@@ -142,9 +129,8 @@ void setup()
     // to allow it to be passed to the SPARTN parser
     sempSbfSetInvalidDataCallback(parse1, invalidSbfData);
 
-    parse2 = sempBeginParser(parserTable2, parserCount2,
-                            parser2Names, parser2NameCount,
-                            0, buffer2, bufferLength, processSpartnMessage, "SPARTN_Test");
+    parse2 = sempBeginParser("SPARTN_Test", parserTable2, parserCount2,
+                             0, buffer2, bufferLength, processSpartnMessage);
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 

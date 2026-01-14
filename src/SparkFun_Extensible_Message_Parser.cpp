@@ -227,20 +227,6 @@ void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
         parse->printError = print;
 }
 
-// Additional settings to cope with erroneous data
-// Abort NMEA on a non-printable char
-void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
-{
-    if (parse)
-        parse->abortNmeaOnNonPrintable = abort;
-}
-// Abort Unicore hash on a non-printable char
-void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
-{
-    if (parse)
-        parse->abortHashOnNonPrintable = abort;
-}
-
 //----------------------------------------
 // Parse routines
 //----------------------------------------
@@ -414,4 +400,30 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
         free(*parse);
         *parse = nullptr;
     }
+}
+
+//----------------------------------------
+// Parser specific routines
+//----------------------------------------
+
+// Abort NMEA parsing on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->abortNmeaOnNonPrintable = abort;
+}
+
+// Abort Unicore hash parsing on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->abortHashOnNonPrintable = abort;
 }

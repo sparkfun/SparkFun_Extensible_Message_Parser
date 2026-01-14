@@ -328,12 +328,6 @@ void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
 void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
 void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
-// Additional settings to help cope with erroneous data
-// Abort NMEA on a non-printable char
-void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
-// Abort Unicore hash on a non-printable char
-void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
-
 //----------------------------------------
 // Parsers
 //----------------------------------------
@@ -354,6 +348,13 @@ bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+// Abort NMEA on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 //----------------------------------------
 // RTCM
@@ -407,6 +408,13 @@ bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+// Abort Unicore hash on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 //----------------------------------------
 // SPARTN

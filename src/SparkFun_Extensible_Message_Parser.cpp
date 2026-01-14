@@ -78,15 +78,9 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
     // Allocate the parser
     length = parseBytes + scratchPadBytes;
     if (usePSRAM)
-#if defined(ESP32)
-      parse = (SEMP_PARSE_STATE *)ps_malloc(length + bufferLength);
-#else
-      parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-      sempPrintln(print, "PSRAM: Platform not supported");
-#endif
+        parse = (SEMP_PARSE_STATE *)ps_malloc(length + bufferLength);
     else
-      parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-
+        parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
     sempPrintf(printDebug, "parse: %p", (void *)parse);
 
     // Initialize the parse structure

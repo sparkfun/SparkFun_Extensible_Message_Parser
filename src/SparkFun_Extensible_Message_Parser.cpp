@@ -332,7 +332,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         if (usePSRAM == false)
             sempPrintln(printError, "SEMP: PSRAM failed to initialize!");
         else
-            sempPrintf(printDebug, "SEMP: PSRAM Size (bytes): %d\r\n", psramSize);
+            sempPrintf(printError, "SEMP: PSRAM Size (bytes): %d\r\n", psramSize);
 #endif
 
         // Validate the parser address is not nullptr

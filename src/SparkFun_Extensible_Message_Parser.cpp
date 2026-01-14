@@ -471,7 +471,7 @@ void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len)
 // Shutdown the parser
 void sempStopParser(SEMP_PARSE_STATE **parse)
 {
-    // Free the parse structure if it was specified
+    // Prevent further references to the structure
     if (parse && *parse)
         *parse = nullptr;
 }
@@ -481,10 +481,6 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
 //----------------------------------------
 
 // Abort NMEA parsing on a non-printable char
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   abort: Set true to abort or false to continue when detecting a
-//          non-printable character in the input stream
 void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
 {
     if (parse)
@@ -492,10 +488,6 @@ void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
 }
 
 // Abort Unicore hash parsing on a non-printable char
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   abort: Set true to abort or false to continue when detecting a
-//          non-printable character in the input stream
 void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
 {
     if (parse)

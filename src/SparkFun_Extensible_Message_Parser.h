@@ -190,7 +190,7 @@ typedef struct _SEMP_PARSE_STATE
     uint16_t type;                 // Active parser type, a value of
                                    // parserCount means searching for preamble
     bool abortNmeaOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
-    bool abortHashOnNonPrintable;  // Abort Unicore hash parsing on the arrival of a non-printable char
+    bool unicoreHashAbortOnNonPrintable; // Abort Unicore hash parsing on the arrival of a non-printable char
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
@@ -414,7 +414,7 @@ const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 //   parse: Address of a SEMP_PARSE_STATE structure
 //   abort: Set true to abort or false to continue when detecting a
 //          non-printable character in the input stream
-void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+void sempAbortUnicoreHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 //----------------------------------------
 // SPARTN

@@ -138,7 +138,7 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
         sempPrintf(print, "    printError: %p", parse->printError);
         sempPrintf(print, "    printDebug: %p", parse->printDebug);
         sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
-        sempPrintf(print, "    abortNmeaOnNonPrintable: %d", parse->abortNmeaOnNonPrintable);
+        sempPrintf(print, "    nmeaAbortOnNonPrintable: %d", parse->nmeaAbortOnNonPrintable);
         sempPrintf(print, "    unicoreHashAbortOnNonPrintable: %d", parse->unicoreHashAbortOnNonPrintable);
         sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
                    (void *)parse->scratchPad, parse->buffer - (uint8_t *)parse->scratchPad);
@@ -411,10 +411,10 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
 //   parse: Address of a SEMP_PARSE_STATE structure
 //   abort: Set true to abort or false to continue when detecting a
 //          non-printable character in the input stream
-void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
 {
     if (parse)
-        parse->abortNmeaOnNonPrintable = abort;
+        parse->nmeaAbortOnNonPrintable = abort;
 }
 
 // Abort Unicore hash parsing on a non-printable char

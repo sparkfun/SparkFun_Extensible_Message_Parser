@@ -190,6 +190,13 @@ typedef union
     SEMP_SBF_VALUES sbf;         // SBF specific values
 } SEMP_SCRATCH_PAD;
 
+// Describe the parser
+typedef const struct _SEMP_PARSER_DESCRIPTION
+{
+    const char * parserName;        // Name of the parser
+    SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
+} SEMP_PARSER_DESCRIPTION;
+
 // Maintain the operating state of one or more parsers processing a raw
 // data stream.
 typedef struct _SEMP_PARSE_STATE

@@ -302,6 +302,211 @@ void sempParseNextBytes(SEMP_PARSE_STATE *parse,
 void sempStopParser(SEMP_PARSE_STATE **parse);
 
 //------------------------------------------------------------------------------
+// Payload access routines - Called by the applications
+//
+// The payload access routines are used by the application to extract
+// values from the payload.
+//------------------------------------------------------------------------------
+
+// Get a 32-bit floating point value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+float sempGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 32-bit floating point value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 64-bit floating point (double) value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+double sempGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 64-bit floating point (double) value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+double sempGetF8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int8_t sempGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int8_t sempGetI1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int16_t sempGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int16_t sempGetI2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int32_t sempGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int32_t sempGetI4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int64_t sempGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int64_t sempGetI8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a zero terminated string address
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the address of the string
+const char * sempGetString(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a zero terminated string address
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the address of the string
+const char * sempGetStringNoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint8_t sempGetU1(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint8_t sempGetU1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint16_t sempGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint32_t sempGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint64_t sempGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+//------------------------------------------------------------------------------
 // SparkFun Extensible Message Parser API routines - Called by parsers
 //
 // These API routines should only be called by parsers when processing

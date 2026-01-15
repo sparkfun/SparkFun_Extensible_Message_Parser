@@ -18,22 +18,39 @@ License: MIT. Please see LICENSE.md for more details
 #include "semp_crc_sbf.h" // CCITT cyclic redundancy checksum for SBF parsing
 
 //----------------------------------------
+// Types
+//----------------------------------------
+
+// SBF parser scratch area
+typedef struct _SEMP_SBF_VALUES
+{
+    uint16_t expectedCRC;
+    uint16_t computedCRC;
+    uint16_t sbfID = 0;
+    uint8_t sbfIDrev = 0;
+    uint16_t length;
+    uint16_t bytesRemaining;
+    // Invalid data callback routine (parser-specific)
+    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
+} SEMP_SBF_VALUES;
+
+//----------------------------------------
 // SBF parse routines
 //----------------------------------------
 
 bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.computedCRC = semp_ccitt_crc_update(scratchPad->sbf.computedCRC, data);
+    scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
 
-    scratchPad->sbf.bytesRemaining--;
+    scratchPad->bytesRemaining--;
 
-    if (scratchPad->sbf.bytesRemaining == 0)
+    if (scratchPad->bytesRemaining == 0)
     {
         parse->state = sempFirstByte;
 
-        if ((scratchPad->sbf.computedCRC == scratchPad->sbf.expectedCRC)
+        if ((scratchPad->computedCRC == scratchPad->expectedCRC)
             || (parse->badCrc && (!parse->badCrc(parse))))
         {
             parse->eomCallback(parse, parse->type); // Pass parser array index
@@ -43,11 +60,11 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printDebug,
                     "SEMP %s: SBF %d, 0x%04x (%d) bytes, bad CRC",
                     parse->parserName,
-                    scratchPad->sbf.sbfID,
+                    scratchPad->sbfID,
                     parse->length, parse->length);
 
-            if (scratchPad->sbf.invalidDataCallback)
-                scratchPad->sbf.invalidDataCallback(parse);
+            if (scratchPad->invalidDataCallback)
+                scratchPad->invalidDataCallback(parse);
         }
 
         return false;
@@ -59,22 +76,22 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for Length MSB
 bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.computedCRC = semp_ccitt_crc_update(scratchPad->sbf.computedCRC, data);
+    scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
 
-    scratchPad->sbf.length |= ((uint16_t)data) << 8;
+    scratchPad->length |= ((uint16_t)data) << 8;
 
-    if (scratchPad->sbf.length % 4 == 0)
+    if (scratchPad->length % 4 == 0)
     {
-        scratchPad->sbf.bytesRemaining = scratchPad->sbf.length - 8; // Subtract 8 header bytes
+        scratchPad->bytesRemaining = scratchPad->length - 8; // Subtract 8 header bytes
         parse->state = sempSbfReadBytes;
         if (parse->verboseDebug)
             sempPrintf(parse->printDebug,
                       "SEMP %s: Incoming SBF %d, 0x%04x (%d) bytes",
                       parse->parserName,
-                      scratchPad->sbf.sbfID,
-                      scratchPad->sbf.bytesRemaining, scratchPad->sbf.bytesRemaining);
+                      scratchPad->sbfID,
+                      scratchPad->bytesRemaining, scratchPad->bytesRemaining);
         return true;
     }
     // else
@@ -83,8 +100,8 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->parserName,
             parse->length, parse->length);
 
-    if (scratchPad->sbf.invalidDataCallback)
-        scratchPad->sbf.invalidDataCallback(parse);
+    if (scratchPad->invalidDataCallback)
+        scratchPad->invalidDataCallback(parse);
 
     parse->state = sempFirstByte;
     return false;
@@ -93,11 +110,11 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for Length LSB
 bool sempSbfLengthLSB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.computedCRC = semp_ccitt_crc_update(scratchPad->sbf.computedCRC, data);
+    scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
 
-    scratchPad->sbf.length = data;
+    scratchPad->length = data;
 
     parse->state = sempSbfLengthMSB;
     return true;
@@ -106,13 +123,13 @@ bool sempSbfLengthLSB(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for ID byte 2
 bool sempSbfID2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.computedCRC = semp_ccitt_crc_update(scratchPad->sbf.computedCRC, data);
+    scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
 
-    scratchPad->sbf.sbfID |= ((uint16_t)data) << 8;
-    scratchPad->sbf.sbfID &= 0x1FFF; // Limit ID to 13 bits
-    scratchPad->sbf.sbfIDrev = data >> 5; // Limit ID revision to 3 bits
+    scratchPad->sbfID |= ((uint16_t)data) << 8;
+    scratchPad->sbfID &= 0x1FFF; // Limit ID to 13 bits
+    scratchPad->sbfIDrev = data >> 5; // Limit ID revision to 3 bits
 
     parse->state = sempSbfLengthLSB;
     return true;
@@ -121,11 +138,11 @@ bool sempSbfID2(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for ID byte 1
 bool sempSbfID1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.computedCRC = semp_ccitt_crc_update(scratchPad->sbf.computedCRC, data);
+    scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
 
-    scratchPad->sbf.sbfID = data;
+    scratchPad->sbfID = data;
 
     parse->state = sempSbfID2;
     return true;
@@ -134,10 +151,10 @@ bool sempSbfID1(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for CRC byte 2
 bool sempSbfCRC2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.expectedCRC |= ((uint16_t)data) << 8;
-    scratchPad->sbf.computedCRC = 0;
+    scratchPad->expectedCRC |= ((uint16_t)data) << 8;
+    scratchPad->computedCRC = 0;
 
     parse->state = sempSbfID1;
     return true;
@@ -146,9 +163,9 @@ bool sempSbfCRC2(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for CRC byte 1
 bool sempSbfCRC1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
-    scratchPad->sbf.expectedCRC = data;
+    scratchPad->expectedCRC = data;
 
     parse->state = sempSbfCRC2;
     return true;
@@ -168,9 +185,9 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->parserName,
             parse->length, parse->length);
 
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    if (scratchPad->sbf.invalidDataCallback)
-        scratchPad->sbf.invalidDataCallback(parse);
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    if (scratchPad->invalidDataCallback)
+        scratchPad->invalidDataCallback(parse);
 
     parse->state = sempFirstByte;
     return false;
@@ -185,9 +202,9 @@ bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
         return true;
     }
     // else
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    if (scratchPad->sbf.invalidDataCallback)
-        scratchPad->sbf.invalidDataCallback(parse);
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    if (scratchPad->invalidDataCallback)
+        scratchPad->invalidDataCallback(parse);
     return false;
 }
 
@@ -218,22 +235,22 @@ const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse)
 // Set the invalid data callback
 void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    scratchPad->sbf.invalidDataCallback = invalidDataCallback;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    scratchPad->invalidDataCallback = invalidDataCallback;
 }
 
 // Get the Block Number
 uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->sbf.sbfID;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return scratchPad->sbfID;
 }
 
 // Get the Block Revision
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->sbf.sbfIDrev;
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return scratchPad->sbfIDrev;
 }
 
 // Get data
@@ -329,13 +346,13 @@ const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset)
 }
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return ((scratchPad->sbf.sbfID == 4097) && (parse->buffer[14] == 4));
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 4));
 }
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return ((scratchPad->sbf.sbfID == 4097) && (parse->buffer[14] == 2));
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 2));
 }
 uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse)
 {
@@ -351,4 +368,5 @@ SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
 {
     "SBF parser",               // parserName
     sempSbfPreamble,            // preamble
+    sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
 };

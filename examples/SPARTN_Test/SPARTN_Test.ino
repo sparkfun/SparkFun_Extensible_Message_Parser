@@ -142,10 +142,10 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("SPARTN_Test", parserTable, parserCount,
-                            0, buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -174,9 +174,8 @@ void loop()
 // Process a complete message incoming from parser
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
     static bool displayOnce = true;
+    uint8_t messageType;
     uint32_t offset;
 
     // Display the raw message
@@ -189,10 +188,11 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         "BPAC",
         "EAS"
     };
+    messageType = sempSpartnGetMessageType(parse);
     Serial.printf("Valid SPARTN message, type %d (%s), subtype %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  scratchPad->spartn.messageType,
-                  scratchPad->spartn.messageType <= 4 ? typeName[scratchPad->spartn.messageType] : "TBD / Proprietary",
-                  scratchPad->spartn.messageSubtype,
+                  messageType,
+                  messageType <= 4 ? typeName[messageType] : "TBD / Proprietary",
+                  sempSpartnGetMessageSubType(parse),
                   parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 

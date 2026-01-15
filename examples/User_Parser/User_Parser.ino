@@ -134,6 +134,7 @@ SEMP_PARSER_DESCRIPTION userParserDescription =
 {
     "User parser",              // parserName
     userPreamble,               // preamble
+    sizeof(USER_SCRATCH_PAD),
 };
 
 SEMP_PARSER_DESCRIPTION * userParserTable[] =
@@ -166,10 +167,11 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(sizeof(USER_SCRATCH_PAD), BUFFER_LENGTH);
+    size_t bufferLength = sempGetBufferLength(userParserTable,
+                                              userParserCount,
+                                              BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("User_Parser", userParserTable, userParserCount,
-                            sizeof(USER_SCRATCH_PAD),
                             buffer, bufferLength, userMessage);
     if (!parse)
         reportFatalError("Failed to initialize the user parser");

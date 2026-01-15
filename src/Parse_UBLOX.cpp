@@ -17,6 +17,28 @@ License: MIT. Please see LICENSE.md for more details
 #include "SparkFun_Extensible_Message_Parser.h"
 
 //----------------------------------------
+// Constants
+//----------------------------------------
+
+// UBLOX payload offset
+#define SEMP_UBLOX_PAYLOAD_OFFSET   6
+
+//----------------------------------------
+// Types
+//----------------------------------------
+
+// UBLOX parser scratch area
+typedef struct _SEMP_UBLOX_VALUES
+{
+    uint16_t bytesRemaining; // Bytes remaining in field
+    uint8_t messageClass;    // Message Class
+    uint8_t messageId;       // Message ID
+    uint16_t payloadLength;  // Payload length
+    uint8_t ck_a;            // U-blox checksum byte 1
+    uint8_t ck_b;            // U-blox checksum byte 2
+} SEMP_UBLOX_VALUES;
+
+//----------------------------------------
 // U-BLOX parse routines
 //----------------------------------------
 
@@ -45,11 +67,11 @@ License: MIT. Please see LICENSE.md for more details
 bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     bool badChecksum;
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Validate the checksum
     badChecksum =
-        ((parse->buffer[parse->length - 2] != scratchPad->ublox.ck_a) || (parse->buffer[parse->length - 1] != scratchPad->ublox.ck_b));
+        ((parse->buffer[parse->length - 2] != scratchPad->ck_a) || (parse->buffer[parse->length - 1] != scratchPad->ck_b));
 
     // Process this message if checksum is valid
     if ((badChecksum == false) || (parse->badCrc && (!parse->badCrc(parse))))
@@ -59,7 +81,7 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
                    "SEMP %s: UBLOX bad checksum received 0x%02x%02x computed 0x%02x%02x",
                    parse->parserName,
                    parse->buffer[parse->length - 2], parse->buffer[parse->length - 1],
-                   scratchPad->ublox.ck_a, scratchPad->ublox.ck_b);
+                   scratchPad->ck_a, scratchPad->ck_b);
 
     // Search for the next preamble byte
     parse->length = 0;
@@ -77,14 +99,14 @@ bool sempUbloxCkA(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the payload
 bool sempUbloxPayload(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Compute the checksum over the payload
-    if (scratchPad->ublox.bytesRemaining--)
+    if (scratchPad->bytesRemaining--)
     {
         // Calculate the checksum
-        scratchPad->ublox.ck_a += data;
-        scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
+        scratchPad->ck_a += data;
+        scratchPad->ck_b += scratchPad->ck_a;
         return true;
     }
     return sempUbloxCkA(parse, data);
@@ -93,16 +115,16 @@ bool sempUbloxPayload(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the second length byte
 bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Calculate the checksum
-    scratchPad->ublox.ck_a += data;
-    scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
+    scratchPad->ck_a += data;
+    scratchPad->ck_b += scratchPad->ck_a;
 
     // Save the second length byte
-    scratchPad->ublox.bytesRemaining |= ((uint16_t)data) << 8;
-    scratchPad->ublox.payloadLength = scratchPad->ublox.bytesRemaining;
-    if (scratchPad->ublox.bytesRemaining == 0) // Handle zero length messages - e.g. UBX-UPD
+    scratchPad->bytesRemaining |= ((uint16_t)data) << 8;
+    scratchPad->payloadLength = scratchPad->bytesRemaining;
+    if (scratchPad->bytesRemaining == 0) // Handle zero length messages - e.g. UBX-UPD
         parse->state = sempUbloxCkA; // Jump to CRC
     else
     {
@@ -110,8 +132,8 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printDebug,
                        "SEMP %s: Incoming UBLOX 0x%02X:0x%02X, 0x%04x (%d) bytes",
                        parse->parserName,
-                       scratchPad->ublox.messageClass, scratchPad->ublox.messageId,
-                       scratchPad->ublox.payloadLength, scratchPad->ublox.payloadLength);
+                       scratchPad->messageClass, scratchPad->messageId,
+                       scratchPad->payloadLength, scratchPad->payloadLength);
         parse->state = sempUbloxPayload;
     }
     return true;
@@ -120,14 +142,14 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the first length byte
 bool sempUbloxLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Calculate the checksum
-    scratchPad->ublox.ck_a += data;
-    scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
+    scratchPad->ck_a += data;
+    scratchPad->ck_b += scratchPad->ck_a;
 
     // Save the first length byte
-    scratchPad->ublox.bytesRemaining = data;
+    scratchPad->bytesRemaining = data;
     parse->state = sempUbloxLength2;
     return true;
 }
@@ -135,13 +157,13 @@ bool sempUbloxLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the ID byte
 bool sempUbloxId(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Calculate the checksum
-    scratchPad->ublox.ck_a += data;
-    scratchPad->ublox.ck_b += scratchPad->ublox.ck_a;
+    scratchPad->ck_a += data;
+    scratchPad->ck_b += scratchPad->ck_a;
 
-    scratchPad->ublox.messageId = data; // Save the ID
+    scratchPad->messageId = data; // Save the ID
     parse->state = sempUbloxLength1;
     return true;
 }
@@ -149,13 +171,13 @@ bool sempUbloxId(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the class byte
 bool sempUbloxClass(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
 
     // Start the checksum calculation
-    scratchPad->ublox.ck_a = data;
-    scratchPad->ublox.ck_b = data;
+    scratchPad->ck_a = data;
+    scratchPad->ck_b = data;
 
-    scratchPad->ublox.messageClass = data; // Save the Class
+    scratchPad->messageClass = data; // Save the Class
     parse->state = sempUbloxId;
     return true;
 }
@@ -215,31 +237,31 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse)
 // Get the message number: |- Class (8 bits) -||- ID (8 bits) -|
 uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    uint16_t message = ((uint16_t)scratchPad->ublox.messageClass) << 8;
-    message |= (uint16_t)scratchPad->ublox.messageId;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
+    uint16_t message = ((uint16_t)scratchPad->messageClass) << 8;
+    message |= (uint16_t)scratchPad->messageId;
     return message;
 }
 
 // Get the message Class
 uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->ublox.messageClass;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
+    return scratchPad->messageClass;
 }
 
 // Get the message ID
 uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->ublox.messageId;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
+    return scratchPad->messageId;
 }
 
 // Get the Payload Length
 uint16_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->ublox.payloadLength;
+    SEMP_UBLOX_VALUES *scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
+    return scratchPad->payloadLength;
 }
 
 // Get data
@@ -331,4 +353,5 @@ SEMP_PARSER_DESCRIPTION sempUbloxParserDescription =
 {
     "U-Blox parser",    // parserName
     sempUbloxPreamble,  // preamble
+    sizeof(SEMP_UBLOX_VALUES),  // scratchPadBytes
 };

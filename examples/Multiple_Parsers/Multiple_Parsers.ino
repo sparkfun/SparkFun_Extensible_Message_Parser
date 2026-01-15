@@ -157,6 +157,7 @@ SEMP_PARSE_STATE *ubloxParser;
 // Initialize the system
 void setup()
 {
+    size_t bufferLength;
     int rawDataBytes;
 
     delay(1000);
@@ -167,15 +168,21 @@ void setup()
     Serial.println();
 
     // Initialize the parsers
-    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    bufferLength = sempGetBufferLength(nmeaParserTable,
+                                       nmeaParserCount,
+                                       BUFFER_LENGTH);
     uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
-    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
     nmeaParser = sempBeginParser("NMEA_Parser", nmeaParserTable, nmeaParserCount,
-                                 0, buffer1, bufferLength, nmeaSentence);
+                                 buffer1, bufferLength, nmeaSentence);
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
+
+    bufferLength = sempGetBufferLength(ubloxParserTable,
+                                       ubloxParserCount,
+                                       BUFFER_LENGTH);
+    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
     ubloxParser = sempBeginParser("U-Blox_Parser", ubloxParserTable, ubloxParserCount,
-                                  0, buffer2, bufferLength, ubloxMessage);
+                                  buffer2, bufferLength, ubloxMessage);
     if (!ubloxParser)
         reportFatalError("Failed to initialize the U-Blox parser");
 

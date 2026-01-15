@@ -17,6 +17,17 @@ License: MIT. Please see LICENSE.md for more details
 #include "SparkFun_Extensible_Message_Parser.h"
 
 //----------------------------------------
+// Types
+//----------------------------------------
+
+// Unicore parser scratch area
+typedef struct _SEMP_UNICORE_BINARY_VALUES
+{
+    uint32_t crc;            // Copy of CRC calculation before CRC bytes
+    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
+} SEMP_UNICORE_BINARY_VALUES;
+
+//----------------------------------------
 // Support routines
 //----------------------------------------
 
@@ -78,10 +89,10 @@ void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
 // Read the CRC
 bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
 
     // Determine if the entire message was read
-    if (--scratchPad->unicoreBinary.bytesRemaining)
+    if (--scratchPad->bytesRemaining)
         // Need more bytes
         return true;
 
@@ -98,10 +109,10 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],
-                   scratchPad->unicoreBinary.crc & 0xff,
-                   (scratchPad->unicoreBinary.crc >> 8) & 0xff,
-                   (scratchPad->unicoreBinary.crc >> 16) & 0xff,
-                   (scratchPad->unicoreBinary.crc >> 24) & 0xff);
+                   scratchPad->crc & 0xff,
+                   (scratchPad->crc >> 8) & 0xff,
+                   (scratchPad->crc >> 16) & 0xff,
+                   (scratchPad->crc >> 24) & 0xff);
     }
     parse->state = sempFirstByte;
     return false;
@@ -110,14 +121,14 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the message data
 bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
 
     // Determine if the entire message was read
-    if (!--scratchPad->unicoreBinary.bytesRemaining)
+    if (!--scratchPad->bytesRemaining)
     {
         // The message data is complete, read the CRC
-        scratchPad->unicoreBinary.bytesRemaining = 4;
-        scratchPad->unicoreBinary.crc = parse->crc;
+        scratchPad->bytesRemaining = 4;
+        scratchPad->crc = parse->crc;
         parse->state = sempUnicoreBinaryReadCrc;
     }
     return true;
@@ -143,13 +154,13 @@ bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the header
 bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
 
     if (parse->length >= sizeof(SEMP_UNICORE_HEADER))
     {
         // The header is complete, read the message data next
         SEMP_UNICORE_HEADER *header = (SEMP_UNICORE_HEADER *)parse->buffer;
-        scratchPad->unicoreBinary.bytesRemaining = header->messageLength;
+        scratchPad->bytesRemaining = header->messageLength;
         if (parse->verboseDebug)
             sempPrintf(parse->printDebug,
                        "SEMP %s: Incoming Unicore 0x%04x (%d) bytes",
@@ -225,4 +236,5 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
 {
     "Unicore binary parser",            // parserName
     sempUnicoreBinaryPreamble,          // preamble
+    sizeof(SEMP_UNICORE_BINARY_VALUES), // scratchPadBytes
 };

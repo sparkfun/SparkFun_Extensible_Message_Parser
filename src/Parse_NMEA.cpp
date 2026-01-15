@@ -24,6 +24,17 @@ License: MIT. Please see LICENSE.md for more details
 #define NMEA_BUFFER_OVERHEAD    (1 + 2 + 2 + 1)
 
 //----------------------------------------
+// Types
+//----------------------------------------
+
+// NMEA parser scratch area
+typedef struct _SEMP_NMEA_VALUES
+{
+    uint8_t sentenceName[SEMP_NMEA_SENTENCE_NAME_BYTES]; // Sentence name
+    uint8_t sentenceNameLength; // Length of the sentence name
+} SEMP_NMEA_VALUES;
+
+//----------------------------------------
 // NMEA parse routines
 //----------------------------------------
 
@@ -43,7 +54,7 @@ License: MIT. Please see LICENSE.md for more details
 void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
 {
     int checksum;
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
 
     // Convert the checksum characters into binary
     checksum = sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
@@ -68,7 +79,7 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
                    "SEMP %s: NMEA %s, 0x%04x (%d) bytes, bad checksum, "
                    "received 0x%c%c, computed: 0x%02x",
                    parse->parserName,
-                   scratchPad->nmea.sentenceName,
+                   scratchPad->sentenceName,
                    parse->length, parse->length,
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],
@@ -189,7 +200,7 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the sentence data
 bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
 
     if (data == '*')
         parse->state = sempNmeaChecksumByte1;
@@ -206,7 +217,7 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintf(parse->printDebug,
                         "SEMP %s: NMEA %s abort on non-printable char",
                         parse->parserName,
-                        scratchPad->nmea.sentenceName);
+                        scratchPad->sentenceName);
 
                 // Start searching for a preamble byte
                 return sempFirstByte(parse, data);
@@ -232,9 +243,9 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the sentence name
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
     parse->crc ^= data;
-    if ((data != ',') || (scratchPad->nmea.sentenceNameLength == 0))
+    if ((data != ',') || (scratchPad->sentenceNameLength == 0))
     {
         // Invalid data, start searching for a preamble byte
         uint8_t upper = data & ~0x20;
@@ -247,22 +258,22 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         }
 
         // Name too long, start searching for a preamble byte
-        if (scratchPad->nmea.sentenceNameLength == (sizeof(scratchPad->nmea.sentenceName) - 1))
+        if (scratchPad->sentenceNameLength == (sizeof(scratchPad->sentenceName) - 1))
         {
             sempPrintf(parse->printDebug,
                        "SEMP %s: NMEA sentence name > %ld characters",
                        parse->parserName,
-                       sizeof(scratchPad->nmea.sentenceName) - 1);
+                       sizeof(scratchPad->sentenceName) - 1);
             return sempFirstByte(parse, data);
         }
 
         // Save the sentence name
-        scratchPad->nmea.sentenceName[scratchPad->nmea.sentenceNameLength++] = data;
+        scratchPad->sentenceName[scratchPad->sentenceNameLength++] = data;
     }
     else
     {
         // Zero terminate the sentence name
-        scratchPad->nmea.sentenceName[scratchPad->nmea.sentenceNameLength++] = 0;
+        scratchPad->sentenceName[scratchPad->sentenceNameLength++] = 0;
         parse->state = sempNmeaFindAsterisk;
     }
     return true;
@@ -271,10 +282,10 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 // Check for the preamble
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
     if (data != '$')
         return false;
-    scratchPad->nmea.sentenceNameLength = 0;
+    scratchPad->sentenceNameLength = 0;
     parse->state = sempNmeaFindFirstComma;
     return true;
 }
@@ -304,8 +315,8 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
 // Return the NMEA sentence name as a string
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return (const char *)scratchPad->nmea.sentenceName;
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
+    return (const char *)scratchPad->sentenceName;
 }
 
 // Describe the parser
@@ -313,4 +324,5 @@ SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
 {
     "NMEA parser",              // parserName
     sempNmeaPreamble,           // preamble
+    sizeof(SEMP_NMEA_VALUES),   // scratchPadBytes
 };

@@ -96,105 +96,12 @@ typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse);
 //   and false if this data is for another parser
 typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, uint8_t data);
 
-// Length of the sentence name array
-#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
-
-// NMEA parser scratch area
-typedef struct _SEMP_NMEA_VALUES
-{
-    uint8_t sentenceName[SEMP_NMEA_SENTENCE_NAME_BYTES]; // Sentence name
-    uint8_t sentenceNameLength; // Length of the sentence name
-} SEMP_NMEA_VALUES;
-
-// RTCM parser scratch area
-typedef struct _SEMP_RTCM_VALUES
-{
-    uint32_t crc;            // Copy of CRC calculation before CRC bytes
-    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
-    uint16_t message;        // Message number
-} SEMP_RTCM_VALUES;
-
-// UBLOX payload offset
-#define SEMP_UBLOX_PAYLOAD_OFFSET   6
-
-// UBLOX parser scratch area
-typedef struct _SEMP_UBLOX_VALUES
-{
-    uint16_t bytesRemaining; // Bytes remaining in field
-    uint8_t messageClass;    // Message Class
-    uint8_t messageId;       // Message ID
-    uint16_t payloadLength;  // Payload length
-    uint8_t ck_a;            // U-blox checksum byte 1
-    uint8_t ck_b;            // U-blox checksum byte 2
-} SEMP_UBLOX_VALUES;
-
-// Unicore parser scratch area
-typedef struct _SEMP_UNICORE_BINARY_VALUES
-{
-    uint32_t crc;            // Copy of CRC calculation before CRC bytes
-    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
-} SEMP_UNICORE_BINARY_VALUES;
-
-// Length of the sentence name array
-#define SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES    16
-
-// Unicore hash (#) parser scratch area
-typedef struct _SEMP_UNICORE_HASH_VALUES
-{
-    uint8_t bytesRemaining;     // Bytes remaining in field
-    uint8_t checksumBytes;      // Number of checksum bytes
-    uint8_t sentenceName[SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES]; // Sentence name
-    uint8_t sentenceNameLength; // Length of the sentence name
-} SEMP_UNICORE_HASH_VALUES;
-
-// SPARTN parser scratch area
-typedef struct _SEMP_SPARTN_VALUES
-{
-    uint16_t frameCount;
-    uint16_t crcBytes;
-    uint16_t TF007toTF016;
-
-    uint8_t messageType;
-    uint16_t payloadLength;
-    uint16_t EAF;
-    uint8_t crcType;
-    uint8_t frameCRC;
-    uint8_t messageSubtype;
-    uint16_t timeTagType;
-    uint16_t authenticationIndicator;
-    uint16_t embeddedApplicationLengthBytes;
-} SEMP_SPARTN_VALUES;
-
-// SBF parser scratch area
-typedef struct _SEMP_SBF_VALUES
-{
-    uint16_t expectedCRC;
-    uint16_t computedCRC;
-    uint16_t sbfID = 0;
-    uint8_t sbfIDrev = 0;
-    uint16_t length;
-    uint16_t bytesRemaining;
-    // Invalid data callback routine (parser-specific)
-    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
-} SEMP_SBF_VALUES;
-
-// Overlap the scratch areas since only one parser is active at a time
-typedef union
-{
-    SEMP_NMEA_VALUES nmea;       // NMEA specific values
-    SEMP_RTCM_VALUES rtcm;       // RTCM specific values
-    SEMP_UBLOX_VALUES ublox;     // U-blox specific values
-    SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
-    SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
-    SEMP_SPARTN_VALUES spartn;   // SPARTN specific values
-    SEMP_SBF_VALUES sbf;         // SBF specific values
-} SEMP_SCRATCH_PAD;
-
 // Describe the parser
 typedef const struct _SEMP_PARSER_DESCRIPTION
 {
     const char * parserName;        // Name of the parser
     SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
+    size_t scratchPadBytes;          // Required scratch pad size
 } SEMP_PARSER_DESCRIPTION;
 
 // Maintain the operating state of one or more parsers processing a raw
@@ -266,7 +173,6 @@ int sempAsciiToNibble(int data);
 //   parserTableName: Address of a zero terminated parserTable name
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
 //   parserCount:  Number of entries in the parseTable
-//   scratchPadBytes: Number of bytes in the scratch pad area
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
 //   oemCallback: Address of a callback routine to handle the output
@@ -318,7 +224,6 @@ int sempAsciiToNibble(int data);
 SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    SEMP_PARSER_DESCRIPTION **parseTable,
                                    uint16_t parserCount,
-                                   uint16_t scratchPadBytes,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
@@ -373,14 +278,16 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 // and parse buffer lengths.
 //
 // Inputs:
-//   scratchPadBytes: Desired size of the scratch pad in bytes
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   parserCount:  Number of entries in the parseTable
 //   parseBufferBytes: Desired size of the parse buffer in bytes
 //   printDebug: Device to output any debug messages, may be nullptr
 //
 // Outputs:
 //    Returns the number of bytes needed for the buffer that contains
 //    the SEMP parser state, a scratch pad area and the parse buffer
-size_t sempGetBufferLength(size_t scratchPadBytes,
+size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
+                           uint16_t parserCount,
                            size_t parserBufferBytes,
                            Print *printDebug = &Serial);
 
@@ -464,6 +371,9 @@ void sempStopParser(SEMP_PARSE_STATE **parse);
 //----------------------------------------
 // NMEA
 //----------------------------------------
+
+// Length of the sentence name array
+#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
 
 extern SEMP_PARSER_DESCRIPTION sempNmeaParserDescription;
 

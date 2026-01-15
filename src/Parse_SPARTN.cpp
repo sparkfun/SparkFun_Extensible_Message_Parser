@@ -301,8 +301,15 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
 // Get the message number
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->spartn.messageType;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageType;
+}
+
+// Get the message subtype number
+uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageSubtype;
 }
 
 // Describe the parser

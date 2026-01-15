@@ -570,8 +570,31 @@ void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_D
 
 extern SEMP_PARSER_DESCRIPTION sempSpartnParserDescription;
 
-// SPARTN parse routines
+// Get the message number
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the message type number
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+// Get the message subtype number
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the message subtype number
+uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
+
+// Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns a zero terminated string of characters
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 
 // Start the parser by processing the first byte of data

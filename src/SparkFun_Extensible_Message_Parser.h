@@ -543,6 +543,15 @@ int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
 int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
 int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
 int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+
+// Get the ID value
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the ID value
+uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
 const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
 uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);

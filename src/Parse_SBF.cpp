@@ -297,6 +297,14 @@ int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU8(parse, offset);
     return unsignedSignedN.signedN;
 }
+
+// Get the ID value
+uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SBF_VALUES * scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return scratchPad->sbfID;
+}
+
 float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
 {
     union {

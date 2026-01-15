@@ -101,7 +101,8 @@ typedef const struct _SEMP_PARSER_DESCRIPTION
 {
     const char * parserName;        // Name of the parser
     SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
-    size_t scratchPadBytes;          // Required scratch pad size
+    size_t scratchPadBytes;         // Required scratch pad size
+    size_t payloadOffset;           // Offset to the first byte of the payload
 } SEMP_PARSER_DESCRIPTION;
 
 // Maintain the operating state of one or more parsers processing a raw

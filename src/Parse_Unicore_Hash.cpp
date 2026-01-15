@@ -439,6 +439,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
     "Unicore hash parser",              // parserName
     sempUnicoreHashPreamble,            // preamble
     sizeof(SEMP_UNICORE_HASH_VALUES),   // scratchPadBytes
+    0,                                  // payloadOffset
 };
 
 //----------------------------------------

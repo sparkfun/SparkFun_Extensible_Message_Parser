@@ -282,6 +282,7 @@ SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
     "RTCM parser",              // parserName
     sempRtcmPreamble,           // preamble
     sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
+    0,                          // payloadOffset
 };
 
 //----------------------------------------

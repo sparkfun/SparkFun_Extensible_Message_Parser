@@ -287,6 +287,7 @@ SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
     "SBF parser",               // parserName
     sempSbfPreamble,            // preamble
     sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
+    0,                          // payloadOffset
 };
 
 //----------------------------------------

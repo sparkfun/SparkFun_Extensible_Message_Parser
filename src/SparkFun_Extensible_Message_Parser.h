@@ -631,23 +631,23 @@ uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
 // Outputs:
 //    Returns the ID value
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
-
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
-
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
-const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset);
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset);
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
 void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
+
+// Deprecated duplicate routines
+#define sempSbfGetF4        sempGetF4
+#define sempSbfGetF8        sempGetF8
+#define sempSbfGetI1        sempGetI1
+#define sempSbfGetI2        sempGetI2
+#define sempSbfGetI4        sempGetI4
+#define sempSbfGetI8        sempGetI8
+#define sempSbfGetString    sempGetString
+#define sempSbfGetU1        sempGetU1
+#define sempSbfGetU2        sempGetU2
+#define sempSbfGetU4        sempGetU4
+#define sempSbfGetU8        sempGetU8
 
 //------------------------------------------------------------------------------
 // SPARTN
@@ -696,25 +696,18 @@ uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (
 size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 
-// Get the 8-bit integer from the offset
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   offset: Offset from the message header
-//
-// Outputs:
-//   Returns the integer value
-int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
-int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
-int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
-int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
-float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, size_t offset);
-double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, size_t offset);
-const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, size_t offset);
-uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, size_t offset); // offset is the Payload offset
-uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
-uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
-uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
+// Deprecated duplicate routines
+#define sempUbloxGetI1      sempGetI1
+#define sempUbloxGetI2      sempGetI2
+#define sempUbloxGetI4      sempGetI4
+#define sempUbloxGetI8      sempGetI8
+#define sempUbloxGetR4      sempGetF4
+#define sempUbloxGetR8      sempGetF8
+#define sempUbloxGetString  sempGetStringNoOffset
+#define sempUbloxGetU1      sempGetU1
+#define sempUbloxGetU2      sempGetU2
+#define sempUbloxGetU4      sempGetU4
+#define sempUbloxGetU8      sempGetU8
 
 //------------------------------------------------------------------------------
 // Unicore Binary

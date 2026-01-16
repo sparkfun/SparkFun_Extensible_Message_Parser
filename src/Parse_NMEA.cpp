@@ -58,28 +58,41 @@ typedef struct _SEMP_NMEA_VALUES
 //----------------------------------------
 // Validate the checksum
 //----------------------------------------
-void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
+bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
 {
     int checksum;
+    size_t length;
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
 
+    // Ignore the CR and LF at the end of the buffer
+    length = parse->length - bytesToIgnore;
+
     // Convert the checksum characters into binary
-    checksum = sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
-    checksum |= sempAsciiToNibble(parse->buffer[parse->length - 1]);
+    checksum = sempAsciiToNibble(parse->buffer[length - 2]) << 4;
+    checksum |= sempAsciiToNibble(parse->buffer[length - 1]);
 
     // Validate the checksum
-    if ((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
+    if (((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
+        && ((length + 2) <= parse->bufferLength))
     {
         // Always add the carriage return and line feed
-        parse->buffer[parse->length++] = '\r';
-        parse->buffer[parse->length++] = '\n';
+        parse->buffer[length++] = '\r';
+        parse->buffer[length++] = '\n';
 
         // Zero terminate the NMEA sentence, don't count this in the length
-        parse->buffer[parse->length] = 0;
+        parse->buffer[length] = 0;
 
         // Process this NMEA sentence
+        parse->length = length;
         parse->eomCallback(parse, parse->type); // Pass parser array index
+        return true;
     }
+
+    // Display the error
+    if ((length + 2) > parse->bufferLength)
+        sempPrintf(parse->printDebug,
+                   "ERROR SEMP %s: NMEA buffer is too small, increase >= %d",
+                   parse->parserName, length + 2);
     else
         // Display the checksum error
         sempPrintf(parse->printDebug,
@@ -87,10 +100,16 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
                    "received 0x%c%c, computed: 0x%02x",
                    parse->parserName,
                    scratchPad->sentenceName,
-                   parse->length, parse->length,
-                   parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1],
+                   length, length,
+                   parse->buffer[length - 2],
+                   parse->buffer[length - 1],
                    parse->crc);
+
+    // The data character is in the buffer, remove it because the caller
+    // passes it to sempFirstByte.
+    parse->length -= 1;
+    sempInvalidDataCallback(parse);
+    return false;
 }
 
 //----------------------------------------
@@ -98,22 +117,14 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
 //----------------------------------------
 bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
+    // Validate the checksum and pass the sentence to the upper layer
     // Process the LF
-    if (data == '\n')
+    if (sempNmeaValidateChecksum(parse, 2) && (data == '\n'))
     {
-        // Pass the sentence to the upper layer
-        sempNmeaValidateChecksum(parse);
-
         // Start searching for a preamble byte
         parse->state = sempFirstByte;
         return true;
     }
-
-    // Pass the sentence to the upper layer
-    sempNmeaValidateChecksum(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -124,22 +135,14 @@ bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
+    // Validate the checksum and pass the sentence to the upper layer
     // Process the CR
-    if (data == '\r')
+    if (sempNmeaValidateChecksum(parse, 2) && (data == '\r'))
     {
-        // Pass the sentence to the upper layer
-        sempNmeaValidateChecksum(parse);
-
         // Start searching for a preamble byte
         parse->state = sempFirstByte;
         return true;
     }
-
-    // Pass the sentence to the upper layer
-    sempNmeaValidateChecksum(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -150,9 +153,6 @@ bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
     // Process the line termination
     if (data == '\r')
     {
@@ -165,8 +165,8 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
         return true;
     }
 
-    // Pass the sentence to the upper layer
-    sempNmeaValidateChecksum(parse);
+    // Validate the checksum and pass the sentence to the upper layer
+    sempNmeaValidateChecksum(parse, 1);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -189,6 +189,11 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
                "SEMP %s: NMEA invalid second checksum character",
                parse->parserName);
 
+    // The data character is in the buffer, remove it and pass the
+    // remaining data to the invalid data handler
+    parse->length -= 1;
+    sempInvalidDataCallback(parse);
+
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
 }
@@ -209,6 +214,11 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
     sempPrintf(parse->printDebug,
                "SEMP %s: NMEA invalid first checksum character",
                parse->parserName);
+
+    // The data character is in the buffer, remove it and pass the
+    // remaining data to the invalid data handler
+    parse->length -= 1;
+    sempInvalidDataCallback(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -238,6 +248,11 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
                         parse->parserName,
                         scratchPad->sentenceName);
 
+                // The data character is in the buffer, remove it and
+                // pass the remaining data to the invalid data handler
+                parse->length -= 1;
+                sempInvalidDataCallback(parse);
+
                 // Start searching for a preamble byte
                 return sempFirstByte(parse, data);
             }
@@ -251,6 +266,11 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
                        "SEMP %s: NMEA sentence too long, increase the buffer size > %d",
                        parse->parserName,
                        parse->bufferLength);
+
+            // The data character is in the buffer, remove it and pass the
+            // remaining data to the invalid data handler
+            parse->length -= 1;
+            sempInvalidDataCallback(parse);
 
             // Start searching for a preamble byte
             return sempFirstByte(parse, data);
@@ -275,6 +295,11 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printDebug,
                        "SEMP %s: NMEA invalid sentence name character 0x%02x",
                        parse->parserName, data);
+
+            // The data character is in the buffer, remove it and pass the
+            // remaining data to the invalid data handler
+            parse->length -= 1;
+            sempInvalidDataCallback(parse);
             return sempFirstByte(parse, data);
         }
 
@@ -285,6 +310,11 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
                        "SEMP %s: NMEA sentence name > %ld characters",
                        parse->parserName,
                        sizeof(scratchPad->sentenceName) - 1);
+
+            // The data character is in the buffer, remove it and pass the
+            // remaining data to the invalid data handler
+            parse->length -= 1;
+            sempInvalidDataCallback(parse);
             return sempFirstByte(parse, data);
         }
 

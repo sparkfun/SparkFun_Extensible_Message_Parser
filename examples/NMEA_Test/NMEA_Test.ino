@@ -110,6 +110,9 @@ void setup()
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
+    // Add the callback for invalid data
+    sempSetInvalidDataCallback(parse, invalidData);
+
     // Obtain a raw data stream from somewhere
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
@@ -148,7 +151,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 
     // Display the raw message
     Serial.println();
-        Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
                   sempNmeaGetSentenceName(parse), parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
@@ -159,4 +162,14 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         Serial.println();
         sempPrintParserConfiguration(parse, &Serial);
     }
+}
+
+//----------------------------------------
+// Callback from within the parser when invalid data is identified
+//----------------------------------------
+void invalidData(const uint8_t * buffer, size_t length)
+{
+    // Display the invalid data
+    Serial.printf("Invalid data:\r\n");
+    dumpBuffer(buffer, length);
 }

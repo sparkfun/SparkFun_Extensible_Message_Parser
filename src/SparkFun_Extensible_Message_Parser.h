@@ -703,7 +703,7 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 #define sempUbloxGetI8      sempGetI8
 #define sempUbloxGetR4      sempGetF4
 #define sempUbloxGetR8      sempGetF8
-#define sempUbloxGetString  sempGetStringNoOffset
+#define sempUbloxGetString  sempGetString
 #define sempUbloxGetU1      sempGetU1
 #define sempUbloxGetU2      sempGetU2
 #define sempUbloxGetU4      sempGetU4

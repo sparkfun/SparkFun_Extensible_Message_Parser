@@ -120,9 +120,9 @@ typedef struct _SEMP_PARSE_STATE
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
-    uint32_t bufferLength;         // Length of the buffer in bytes
+    size_t bufferLength;           // Length of the buffer in bytes
     uint16_t parserCount;          // Number of parsers
-    uint16_t length;               // Message length including line termination
+    size_t length;                 // Message length including line termination
     uint16_t type;                 // Active parser type, a value of
                                    // parserCount means searching for preamble
     bool nmeaAbortOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
@@ -325,7 +325,9 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
 //   data: Address of a buffr containing the next data bytes in the
 //         stream of data to parse
 //   len: Number of data bytes to parse
-void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len);
+void sempParseNextBytes(SEMP_PARSE_STATE *parse,
+                        const uint8_t *data,
+                        size_t len);
 
 // Print the contents of the parser data structure
 //
@@ -410,9 +412,9 @@ extern SEMP_PARSER_DESCRIPTION sempRtcmParserDescription;
 
 // RTCM parse routines
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
-int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
-uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
 
 //----------------------------------------
 // SBF
@@ -425,12 +427,12 @@ uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
 const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
 uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
+int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
+int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
+int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
+int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
 
 // Get the ID value
 //
@@ -441,11 +443,11 @@ int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
 //    Returns the ID value
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
-const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset);
+uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset);
+uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
+uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
+uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
 void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
@@ -497,22 +499,22 @@ extern SEMP_PARSER_DESCRIPTION sempUbloxParserDescription;
 //
 // Outputs:
 //   Returns the integer value
-int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
+int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
+int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
+int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
 uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
 uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
 uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
-uint16_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
-float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
+float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, size_t offset);
+double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, size_t offset);
 const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
-const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset); // offset is the Payload offset
-uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, size_t offset);
+uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, size_t offset); // offset is the Payload offset
+uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
+uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
+uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
 
 //----------------------------------------
 // Unicore Binary

@@ -190,17 +190,23 @@ typedef union
     SEMP_SBF_VALUES sbf;         // SBF specific values
 } SEMP_SCRATCH_PAD;
 
+// Describe the parser
+typedef const struct _SEMP_PARSER_DESCRIPTION
+{
+    const char * parserName;        // Name of the parser
+    SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
+} SEMP_PARSER_DESCRIPTION;
+
 // Maintain the operating state of one or more parsers processing a raw
 // data stream.
 typedef struct _SEMP_PARSE_STATE
 {
-    const SEMP_PARSE_ROUTINE *parsers; // Table of parsers
-    const char * const *parserNames;   // Table of parser names
+    SEMP_PARSER_DESCRIPTION **parsers; // Table of parsers
     SEMP_PARSE_ROUTINE state;      // Parser state routine
     SEMP_EOM_CALLBACK eomCallback; // End of message callback routine
     SEMP_BAD_CRC_CALLBACK badCrc;  // Bad CRC callback routine
     SEMP_COMPUTE_CRC computeCrc;   // Routine to compute the CRC when set
-    const char *parserName;        // Name of parser
+    const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
     Print *printDebug;             // Class to use for debug output
@@ -257,14 +263,13 @@ int sempAsciiToNibble(int data);
 // Initialize the parser
 //
 // Inputs:
-//   parseTable: Address of an array of SEMP_PARSE_ROUTINE objects
+//   parserTableName: Address of a zero terminated parserTable name
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
 //   parserCount:  Number of entries in the parseTable
-//   parserNameTable: Names of each of the parsers
 //   scratchPadBytes: Number of bytes in the scratch pad area
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
 //   oemCallback: Address of a callback routine to handle the output
-//   name: Address of a zero terminated parser name string
 //   printError: Addess of a routine used to output error messages
 //   printDebug: Addess of a routine used to output debug messages
 //   badCrcCallback: Address of a routine to handle bad CRC messages
@@ -277,12 +282,11 @@ int sempAsciiToNibble(int data);
 // SEMP_PARSE_STATE data structure, returning the pointer when successful
 // or nullptr upon failure.
 //
-// Two array addresses are passed to the sempBeginParser routine along
-// with the number of entries in each of these arrays.  The array
-// parseTable lists the preamble routines associated with each of the
-// parsers that will process the raw data stream.  The array
-// parserNameTable contains a name string for each of the parsers which
-// can be output during debugging.
+// An array addresses are passed to the sempBeginParser routine along
+// with the number of entries in the arrays.  The array parseTable lists
+// the descriptions for each of the parsers that will process the raw data
+// stream.  The parser name in the description contains a name string
+// which can be output during debugging.
 //
 // Some of the parsers require additional storage to successfully parse
 // the data stream.  The value scratchPadBytes must contain the maximum
@@ -311,15 +315,13 @@ int sempAsciiToNibble(int data);
 // errors.  A nullptr value prevents any error from being output.  It is
 // possible to call sempSetPrintError later to enable or disable error
 // output.
-SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable,
+SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
+                                   SEMP_PARSER_DESCRIPTION **parseTable,
                                    uint16_t parserCount,
-                                   const char * const *parserNameTable,
-                                   uint16_t parserNameCount,
                                    uint16_t scratchPadBytes,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
-                                   const char *name,
                                    Print *printError = &Serial,
                                    Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
@@ -463,6 +465,8 @@ void sempStopParser(SEMP_PARSE_STATE **parse);
 // NMEA
 //----------------------------------------
 
+extern SEMP_PARSER_DESCRIPTION sempNmeaParserDescription;
+
 // Abort NMEA on a non-printable char
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
@@ -503,6 +507,8 @@ bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 // RTCM
 //----------------------------------------
 
+extern SEMP_PARSER_DESCRIPTION sempRtcmParserDescription;
+
 // RTCM parse routines
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
@@ -523,6 +529,8 @@ bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 //----------------------------------------
 // SBF
 //----------------------------------------
+
+extern SEMP_PARSER_DESCRIPTION sempSbfParserDescription;
 
 // SBF parse routines
 uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
@@ -560,6 +568,8 @@ void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_D
 // SPARTN
 //----------------------------------------
 
+extern SEMP_PARSER_DESCRIPTION sempSpartnParserDescription;
+
 // SPARTN parse routines
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
@@ -578,6 +588,8 @@ bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 //----------------------------------------
 // u-blox
 //----------------------------------------
+
+extern SEMP_PARSER_DESCRIPTION sempUbloxParserDescription;
 
 // Get the 8-bit integer from the offset
 //
@@ -619,6 +631,8 @@ bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 // Unicore Binary
 //----------------------------------------
 
+extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
+
 // Unicore binary parse routines
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 
@@ -638,6 +652,8 @@ void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 //----------------------------------------
 // Unicore Hash (#)
 //----------------------------------------
+
+extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
 
 // Abort Unicore hash on a non-printable char
 // Inputs:

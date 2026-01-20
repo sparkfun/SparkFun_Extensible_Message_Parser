@@ -307,3 +307,10 @@ const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     return (const char *)scratchPad->nmea.sentenceName;
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
+{
+    "NMEA parser",              // parserName
+    sempNmeaPreamble,           // preamble
+};

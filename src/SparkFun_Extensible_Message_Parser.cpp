@@ -145,10 +145,10 @@ const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
 
     if (parse)
     {
-        if (type == parse->parserCount)
-            name = "No active parser, scanning for preamble";
-        else if (parse->parserNames && (type < parse->parserCount))
-            name = parse->parserNames[type];
+        if (type < parse->parserCount)
+            name = parse->parsers[type]->parserName;
+        else if (type == parse->parserCount)
+            name = "SEMP scanning for preamble";
     }
     return name;
 }
@@ -159,9 +159,8 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
     if (print && parse)
     {
         sempPrintln(print, "SparkFun Extensible Message Parser");
-        sempPrintf(print, "    Name: %p (%s)", parse->parserName, parse->parserName);
+        sempPrintf(print, "    parserName: %p (%s)", parse->parserName, parse->parserName);
         sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
-        sempPrintf(print, "    parserNames: %p", (void *)parse->parserNames);
         sempPrintf(print, "    parserCount: %d", parse->parserCount);
         sempPrintf(print, "    printError: %p", parse->printError);
         sempPrintf(print, "    printDebug: %p", parse->printDebug);
@@ -261,15 +260,13 @@ void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
 
 // Initialize the parser
 SEMP_PARSE_STATE *sempBeginParser(
-    const SEMP_PARSE_ROUTINE *parserTable,
+    const char *parserTableName,
+    SEMP_PARSER_DESCRIPTION **parserTable,
     uint16_t parserCount,
-    const char * const *parserNameTable,
-    uint16_t parserNameCount,
     uint16_t scratchPadBytes,
     uint8_t * buffer,
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
-    const char *parserName,
     Print *printError,
     Print *printDebug,
     SEMP_BAD_CRC_CALLBACK badCrc
@@ -279,10 +276,10 @@ SEMP_PARSE_STATE *sempBeginParser(
 
     do
     {
-        // Validate the parse type names table
-        if (parserCount != parserNameCount)
+        // Verify the name
+        if ((!parserTableName) || (!strlen(parserTableName)))
         {
-            sempPrintln(printError, "SEMP: Please fix parserTable and parserNameTable parserCount != parserNameCount");
+            sempPrintln(printError, "SEMP: Please provide a name for the parserTable");
             break;
         }
 
@@ -290,13 +287,6 @@ SEMP_PARSE_STATE *sempBeginParser(
         if (!parserTable)
         {
             sempPrintln(printError, "SEMP: Please specify a parserTable data structure");
-            break;
-        }
-
-        // Validate the parserNameTable address is not nullptr
-        if (!parserNameTable)
-        {
-            sempPrintln(printError, "SEMP: Please specify a parserNameTable data structure");
             break;
         }
 
@@ -311,13 +301,6 @@ SEMP_PARSE_STATE *sempBeginParser(
         if (!eomCallback)
         {
             sempPrintln(printError, "SEMP: Please specify an eomCallback routine");
-            break;
-        }
-
-        // Verify the parser name
-        if ((!parserName) || (!strlen(parserName)))
-        {
-            sempPrintln(printError, "SEMP: Please provide a name for the parser");
             break;
         }
 
@@ -343,10 +326,9 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
-        parse->parserNames = parserNameTable;
         parse->state = sempFirstByte;
         parse->eomCallback = eomCallback;
-        parse->parserName = parserName;
+        parse->parserName = parserTableName;
         parse->badCrc = badCrc;
 
         // Display the parser configuration
@@ -357,11 +339,11 @@ SEMP_PARSE_STATE *sempBeginParser(
     return parse;
 }
 
-// Wait for the first byte in the GPS message
+// Wait for the first byte in the data stream
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     int index;
-    SEMP_PARSE_ROUTINE parseRoutine;
+    SEMP_PARSER_DESCRIPTION *parseDescripion;
 
     if (parse)
     {
@@ -369,15 +351,19 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc = 0;
         parse->computeCrc = nullptr;
         parse->length = 0;
-        parse->type = parse->parserCount;
         parse->buffer[parse->length++] = data;
+
+        // Indicate no parser selected
+        parse->type = parse->parserCount;
 
         // Walk through the parse table
         for (index = 0; index < parse->parserCount; index++)
         {
-            parseRoutine = parse->parsers[index];
-            if (parseRoutine(parse, data))
+            // Determine if this parser is able to parse this stream
+            parseDescripion = parse->parsers[index];
+            if (parseDescripion->preamble(parse, data))
             {
+                // This parser claims to be able to parse this stream
                 parse->type = index;
                 return true;
             }

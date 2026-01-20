@@ -130,17 +130,17 @@ const uint8_t rawDataStream[] =
 // Account for the largest message
 #define BUFFER_LENGTH   3
 
-SEMP_PARSE_ROUTINE const userParserTable[] =
+SEMP_PARSER_DESCRIPTION userParserDescription =
 {
-    userPreamble
+    "User parser",              // parserName
+    userPreamble,               // preamble
+};
+
+SEMP_PARSER_DESCRIPTION * userParserTable[] =
+{
+    &userParserDescription
 };
 const int userParserCount = sizeof(userParserTable) / sizeof(userParserTable[0]);
-
-const char * const userParserNames[] =
-{
-    "User parser"
-};
-const int userParserNameCount = sizeof(userParserNames) / sizeof(userParserNames[0]);
 
 //----------------------------------------
 // Locals
@@ -168,10 +168,9 @@ void setup()
     // Initialize the parser
     size_t bufferLength = sempGetBufferLength(sizeof(USER_SCRATCH_PAD), BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
-    parse = sempBeginParser(userParserTable, userParserCount,
-                            userParserNames, userParserNameCount,
+    parse = sempBeginParser("User_Parser", userParserTable, userParserCount,
                             sizeof(USER_SCRATCH_PAD),
-                            buffer, bufferLength, userMessage, "User_Parser");
+                            buffer, bufferLength, userMessage);
     if (!parse)
         reportFatalError("Failed to initialize the user parser");
 

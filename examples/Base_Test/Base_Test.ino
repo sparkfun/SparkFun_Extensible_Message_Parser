@@ -17,19 +17,22 @@ const uint8_t rawDataStream[] =
 
 #define RAW_DATA_BYTES      sizeof(rawDataStream)
 
-// Build the table listing all of the parsers
+// Forward routine declarations
 bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-SEMP_PARSE_ROUTINE const parserTable[] =
+
+// Build the description for the No parser
+SEMP_PARSER_DESCRIPTION noParserDescription =
 {
-    noParserPreamble
+    "No parser",            // parserName
+    noParserPreamble,       // preamble
+};
+
+// Build the table listing all of the parsers
+SEMP_PARSER_DESCRIPTION * parserTable[] =
+{
+    &noParserDescription
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-const char * const parserNames[] =
-{
-    "No parser"
-};
-const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
 
 //----------------------------------------
 // Locals
@@ -54,84 +57,63 @@ void setup()
     Serial.println("Base_Test example sketch");
     Serial.println();
 
-    // No parser table specified
-    bufferLength = sempGetBufferLength(0, 3000);
-    buffer = (uint8_t *)malloc(bufferLength);
-    parse = sempBeginParser(nullptr, parserCount,
-                            parserNames, parserNameCount,
-                            0, buffer, bufferLength, processMessage,
-                            "No parser");
-    if (parse)
-        reportFatalError("Failed to detect parserTable set to nullptr (0)");
-
-    // Parser count is zero
-    parse = sempBeginParser(parserTable, 0,
-                            parserNames, parserCount,
-                            0, buffer, bufferLength, processMessage,
-                            "No parser");
-    if (parse)
-        reportFatalError("Failed because parserCount != nameTableCount");
-
-    // No parser name table specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            nullptr, parserNameCount,
-                            0, buffer, bufferLength, processMessage,
-                            "No parser");
-    if (parse)
-        reportFatalError("Failed to detect parserNameTable set to nullptr (0)");
-
-    // Parser name count is zero
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, 0,
-                            0, buffer, bufferLength, processMessage,
-                            "No parser");
-    if (parse)
-        reportFatalError("Failed because parserCount != nameTableCount");
-
-    // No buffer specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, nullptr, bufferLength, processMessage,
-                            "No parser");
-    if (parse)
-        reportFatalError("Failed to detect buffer set to nullptr (0)");
-
-    // No end-of-message callback specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, buffer, bufferLength, nullptr, "No parser");
-    if (parse)
-        reportFatalError("Failed to detect eomCallback set to nullptr (0)");
-
     // No name specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, buffer, bufferLength, processMessage, nullptr);
+    parse = sempBeginParser(nullptr, parserTable, parserCount,
+                            0, buffer, bufferLength, processMessage);
     if (parse)
         reportFatalError("Failed to detect parserName set to nullptr (0)");
 
     // No name specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, buffer, bufferLength, processMessage, "");
+    parse = sempBeginParser("", parserTable, parserCount,
+                            0, buffer, bufferLength, processMessage);
     if (parse)
         reportFatalError("Failed to detect parserName set to empty string");
 
-    // Initialize the parser, specify a large scratch pad area
-    // Display the parser allocation
+    // No parser table specified
+    bufferLength = sempGetBufferLength(0, 3000);
+    buffer = (uint8_t *)malloc(bufferLength);
+    parse = sempBeginParser("No parser", nullptr, parserCount,
+                            0, buffer, bufferLength, processMessage);
+    if (parse)
+        reportFatalError("Failed to detect parserTable set to nullptr (0)");
+
+    // Parser count is zero
+    parse = sempBeginParser("No parser", parserTable, 0,
+                            0, buffer, bufferLength, processMessage);
+    if (parse)
+        reportFatalError("Failed because parserCount != nameTableCount");
+
+    // No buffer specified
+    parse = sempBeginParser("No parser", parserTable, parserCount,
+                            0, nullptr, bufferLength, processMessage);
+    if (parse)
+        reportFatalError("Failed to detect buffer set to nullptr (0)");
+
+    // Too small a buffer specified
+    parse = sempBeginParser("No parser", parserTable, parserCount,
+                            0, buffer, 0, processMessage);
+    if (parse)
+        reportFatalError("Failed to detect buffer set to nullptr (0)");
+
+    // No end-of-message callback specified
+    parse = sempBeginParser("No parser", parserTable, parserCount,
+                            0, buffer, bufferLength, nullptr);
+    if (parse)
+        reportFatalError("Failed to detect eomCallback set to nullptr (0)");
     free(buffer);
+
+    // Initialize the parser, specify a large scratch pad area
     bufferLength = sempGetBufferLength(4091, 3000);
     buffer = (uint8_t *)malloc(bufferLength);
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            4091, buffer, bufferLength, processMessage, "Base Test Example");
+
+    parse = sempBeginParser("Base Test Example", parserTable, parserCount,
+                            4091, buffer, bufferLength, processMessage);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
     Serial.println("Parser successfully initialized");
 
     // Display the parser configuration
     Serial.printf("&parserTable: %p\r\n", parserTable);
-    Serial.printf("&parserNames: %p\r\n", parserNames);
     sempPrintParserConfiguration(parse, &Serial);
 
     // Display the parse state

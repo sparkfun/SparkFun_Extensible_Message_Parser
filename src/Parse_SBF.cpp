@@ -337,3 +337,10 @@ const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse)
 {
     return (const uint8_t *)(sempSbfGetString(parse, 20));
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
+{
+    "SBF parser",               // parserName
+    sempSbfPreamble,            // preamble
+};

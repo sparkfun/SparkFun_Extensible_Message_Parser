@@ -331,3 +331,10 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uin
 
     return result.signed64;
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
+{
+    "RTCM parser",              // parserName
+    sempRtcmPreamble,           // preamble
+};

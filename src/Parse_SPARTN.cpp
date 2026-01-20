@@ -304,3 +304,10 @@ uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
     SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
     return scratchPad->spartn.messageType;
 }
+
+// Describe the parser
+SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
+{
+    "SPARTN parser",            // parserName
+    sempSpartnPreamble,         // preamble
+};

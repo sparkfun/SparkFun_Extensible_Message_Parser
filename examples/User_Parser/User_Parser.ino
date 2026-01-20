@@ -166,10 +166,12 @@ void setup()
     Serial.println();
 
     // Initialize the parser
+    size_t bufferLength = sempGetBufferLength(sizeof(USER_SCRATCH_PAD), BUFFER_LENGTH);
+    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser(userParserTable, userParserCount,
                             userParserNames, userParserNameCount,
                             sizeof(USER_SCRATCH_PAD),
-                            BUFFER_LENGTH, userMessage, "User_Parser");
+                            buffer, bufferLength, userMessage, "User_Parser");
     if (!parse)
         reportFatalError("Failed to initialize the user parser");
 
@@ -202,7 +204,8 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(parse);
+    free(buffer);
+    Serial.printf("All done\r\n");
 }
 
 // Main loop processing after system is initialized

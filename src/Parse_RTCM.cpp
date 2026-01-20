@@ -18,6 +18,18 @@ License: MIT. Please see LICENSE.md for more details
 #include "semp_crc24q.h" // 24-bit CRC-24Q cyclic redundancy checksum for RTCM parsing
 
 //----------------------------------------
+// Types
+//----------------------------------------
+
+// RTCM parser scratch area
+typedef struct _SEMP_RTCM_VALUES
+{
+    uint32_t crc;            // Copy of CRC calculation before CRC bytes
+    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
+    uint16_t message;        // Message number
+} SEMP_RTCM_VALUES;
+
+//----------------------------------------
 // Support routines
 //----------------------------------------
 
@@ -49,13 +61,13 @@ uint32_t sempRtcmComputeCrc24q(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the CRC
 bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
     // Account for this data byte
-    scratchPad->rtcm.bytesRemaining -= 1;
+    scratchPad->bytesRemaining -= 1;
 
     // Wait until all the data is received
-    if (scratchPad->rtcm.bytesRemaining > 0)
+    if (scratchPad->bytesRemaining > 0)
         return true;
 
     // Process the message if CRC is valid
@@ -75,14 +87,14 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
                    "SEMP %s: RTCM %d, 0x%04x (%d) bytes, bad CRC, "
                    "received %02x %02x %02x, computed: %02x %02x %02x",
                    parse->parserName,
-                   scratchPad->rtcm.message,
+                   scratchPad->message,
                    parse->length, parse->length,
                    parse->buffer[parse->length - 3],
                    parse->buffer[parse->length - 2],
                    parse->buffer[parse->length - 1],
-                   (scratchPad->rtcm.crc >> 16) & 0xff,
-                   (scratchPad->rtcm.crc >> 8) & 0xff,
-                   scratchPad->rtcm.crc & 0xff);
+                   (scratchPad->crc >> 16) & 0xff,
+                   (scratchPad->crc >> 8) & 0xff,
+                   scratchPad->crc & 0xff);
 
     // Search for another preamble byte
     parse->state = sempFirstByte;
@@ -92,16 +104,16 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the rest of the message
 bool sempRtcmReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
     // Account for this data byte
-    scratchPad->rtcm.bytesRemaining -= 1;
+    scratchPad->bytesRemaining -= 1;
 
     // Wait until all the data is received
-    if (scratchPad->rtcm.bytesRemaining <= 0)
+    if (scratchPad->bytesRemaining <= 0)
     {
-        scratchPad->rtcm.crc = parse->crc;
-        scratchPad->rtcm.bytesRemaining = 3;
+        scratchPad->crc = parse->crc;
+        scratchPad->bytesRemaining = 3;
         parse->state = sempRtcmReadCrc;
     }
     return true;
@@ -110,10 +122,10 @@ bool sempRtcmReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the lower 4 bits of the message number
 bool sempRtcmReadMessage2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
-    scratchPad->rtcm.message |= data >> 4;
-    scratchPad->rtcm.bytesRemaining -= 1;
+    scratchPad->message |= data >> 4;
+    scratchPad->bytesRemaining -= 1;
     parse->state = sempRtcmReadData;
     return true;
 }
@@ -121,10 +133,10 @@ bool sempRtcmReadMessage2(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the upper 8 bits of the message number
 bool sempRtcmReadMessage1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
-    scratchPad->rtcm.message = data << 4;
-    scratchPad->rtcm.bytesRemaining -= 1;
+    scratchPad->message = data << 4;
+    scratchPad->bytesRemaining -= 1;
     parse->state = sempRtcmReadMessage2;
     return true;
 }
@@ -132,20 +144,20 @@ bool sempRtcmReadMessage1(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the lower 8 bits of the length
 bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
-    scratchPad->rtcm.bytesRemaining |= data;
+    scratchPad->bytesRemaining |= data;
     if (parse->verboseDebug)
         sempPrintf(parse->printDebug,
                 "SEMP %s: Incoming RTCM %d, 0x%04x (%d) bytes",
                 parse->parserName,
-                scratchPad->rtcm.message,
-                scratchPad->rtcm.bytesRemaining, scratchPad->rtcm.bytesRemaining);
-    if (scratchPad->rtcm.bytesRemaining == 0) // Handle zero length messages - 10403 "filler" messages
+                scratchPad->message,
+                scratchPad->bytesRemaining, scratchPad->bytesRemaining);
+    if (scratchPad->bytesRemaining == 0) // Handle zero length messages - 10403 "filler" messages
     {
-        scratchPad->rtcm.message = 0; // Clear the previous message number
-        scratchPad->rtcm.crc = parse->crc;
-        scratchPad->rtcm.bytesRemaining = 3;
+        scratchPad->message = 0; // Clear the previous message number
+        scratchPad->crc = parse->crc;
+        scratchPad->bytesRemaining = 3;
         parse->state = sempRtcmReadCrc; // Jump to the CRC
     }
     else
@@ -158,7 +170,7 @@ bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 // Read the upper two bits of the length
 bool sempRtcmReadLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
     // Verify the length byte - check the 6 MS bits are all zero
     if (data & (~3))
@@ -166,7 +178,7 @@ bool sempRtcmReadLength1(SEMP_PARSE_STATE *parse, uint8_t data)
         return sempFirstByte(parse, data);
 
     // Save the upper 2 bits of the length
-    scratchPad->rtcm.bytesRemaining = data << 8;
+    scratchPad->bytesRemaining = data << 8;
     parse->state = sempRtcmReadLength2;
     return true;
 }
@@ -210,8 +222,8 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
 // Get the message number
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->rtcm.message;
+    SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
+    return scratchPad->message;
 }
 
 // Get unsigned integer with width bits, starting at bit start
@@ -337,4 +349,5 @@ SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
 {
     "RTCM parser",              // parserName
     sempRtcmPreamble,           // preamble
+    sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
 };

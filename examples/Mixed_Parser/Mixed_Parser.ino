@@ -166,10 +166,10 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("Mixed_Parser", parserTable, parserCount,
-                            0, buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

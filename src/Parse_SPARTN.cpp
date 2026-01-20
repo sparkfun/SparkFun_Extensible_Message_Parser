@@ -18,20 +18,42 @@ License: MIT. Please see LICENSE.md for more details
 #include "semp_crc_spartn.h" // 4/8/16/24/32-bit cyclic redundancy checksums for SPARTN parsing
 
 //----------------------------------------
+// Types
+//----------------------------------------
+
+// SPARTN parser scratch area
+typedef struct _SEMP_SPARTN_VALUES
+{
+    uint16_t frameCount;
+    uint16_t crcBytes;
+    uint16_t TF007toTF016;
+
+    uint8_t messageType;
+    uint16_t payloadLength;
+    uint16_t EAF;
+    uint8_t crcType;
+    uint8_t frameCRC;
+    uint8_t messageSubtype;
+    uint16_t timeTagType;
+    uint16_t authenticationIndicator;
+    uint16_t embeddedApplicationLengthBytes;
+} SEMP_SPARTN_VALUES;
+
+//----------------------------------------
 // SPARTN parse routines
 //----------------------------------------
 
 bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    scratchPad->spartn.frameCount++;
-    if (scratchPad->spartn.frameCount == scratchPad->spartn.crcBytes)
+    scratchPad->frameCount++;
+    if (scratchPad->frameCount == scratchPad->crcBytes)
     {
-        uint16_t numBytes = 4 + scratchPad->spartn.TF007toTF016 + scratchPad->spartn.payloadLength + scratchPad->spartn.embeddedApplicationLengthBytes;
+        uint16_t numBytes = 4 + scratchPad->TF007toTF016 + scratchPad->payloadLength + scratchPad->embeddedApplicationLengthBytes;
         uint8_t *ptr = &parse->buffer[numBytes];
         bool valid;
-        switch (scratchPad->spartn.crcType)
+        switch (scratchPad->crcType)
         {
         case 0:
         {
@@ -84,8 +106,8 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printDebug,
                     "SEMP %s: SPARTN %d %d, 0x%04x (%d) bytes, bad CRC",
                     parse->parserName,
-                    scratchPad->spartn.messageType,
-                    scratchPad->spartn.messageSubtype,
+                    scratchPad->messageType,
+                    scratchPad->messageSubtype,
                     parse->length, parse->length);
         parse->state = sempFirstByte;
         return false;
@@ -96,13 +118,13 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
 
 bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    scratchPad->spartn.frameCount++;
-    if (scratchPad->spartn.frameCount == scratchPad->spartn.embeddedApplicationLengthBytes)
+    scratchPad->frameCount++;
+    if (scratchPad->frameCount == scratchPad->embeddedApplicationLengthBytes)
     {
         parse->state = sempSpartnReadTF018;
-        scratchPad->spartn.frameCount = 0;
+        scratchPad->frameCount = 0;
     }
 
     return true;
@@ -110,20 +132,20 @@ bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
 
 bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    scratchPad->spartn.frameCount++;
-    if (scratchPad->spartn.frameCount == scratchPad->spartn.payloadLength)
+    scratchPad->frameCount++;
+    if (scratchPad->frameCount == scratchPad->payloadLength)
     {
-        if (scratchPad->spartn.embeddedApplicationLengthBytes > 0)
+        if (scratchPad->embeddedApplicationLengthBytes > 0)
         {
             parse->state = sempSpartnReadTF017;
-            scratchPad->spartn.frameCount = 0;
+            scratchPad->frameCount = 0;
         }
         else
         {
             parse->state = sempSpartnReadTF018;
-            scratchPad->spartn.frameCount = 0;
+            scratchPad->frameCount = 0;
         }
     }
 
@@ -132,44 +154,44 @@ bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
 
 bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    scratchPad->spartn.frameCount++;
-    if (scratchPad->spartn.frameCount == scratchPad->spartn.TF007toTF016)
+    scratchPad->frameCount++;
+    if (scratchPad->frameCount == scratchPad->TF007toTF016)
     {
-        if (scratchPad->spartn.EAF == 0)
+        if (scratchPad->EAF == 0)
         {
-            scratchPad->spartn.authenticationIndicator = 0;
-            scratchPad->spartn.embeddedApplicationLengthBytes = 0;
+            scratchPad->authenticationIndicator = 0;
+            scratchPad->embeddedApplicationLengthBytes = 0;
         }
         else
         {
-            scratchPad->spartn.authenticationIndicator = (data >> 3) & 0x07;
-            if (scratchPad->spartn.authenticationIndicator <= 1)
-                scratchPad->spartn.embeddedApplicationLengthBytes = 0;
+            scratchPad->authenticationIndicator = (data >> 3) & 0x07;
+            if (scratchPad->authenticationIndicator <= 1)
+                scratchPad->embeddedApplicationLengthBytes = 0;
             else
             {
                 switch (data & 0x07)
                 {
                 case 0:
-                    scratchPad->spartn.embeddedApplicationLengthBytes = 8; // 64 bits
+                    scratchPad->embeddedApplicationLengthBytes = 8; // 64 bits
                     break;
                 case 1:
-                    scratchPad->spartn.embeddedApplicationLengthBytes = 12; // 96 bits
+                    scratchPad->embeddedApplicationLengthBytes = 12; // 96 bits
                     break;
                 case 2:
-                    scratchPad->spartn.embeddedApplicationLengthBytes = 16; // 128 bits
+                    scratchPad->embeddedApplicationLengthBytes = 16; // 128 bits
                     break;
                 case 3:
-                    scratchPad->spartn.embeddedApplicationLengthBytes = 32; // 256 bits
+                    scratchPad->embeddedApplicationLengthBytes = 32; // 256 bits
                     break;
                 default:
-                    scratchPad->spartn.embeddedApplicationLengthBytes = 64; // 512 / TBD bits
+                    scratchPad->embeddedApplicationLengthBytes = 64; // 512 / TBD bits
                     break;
                 }
             }
         }
-        scratchPad->spartn.frameCount = 0;
+        scratchPad->frameCount = 0;
         parse->state = sempSpartnReadTF016;
     }
 
@@ -178,17 +200,17 @@ bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
 
 bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    scratchPad->spartn.messageSubtype = data >> 4;
-    scratchPad->spartn.timeTagType = (data >> 3) & 0x01;
-    if (scratchPad->spartn.timeTagType == 0)
-        scratchPad->spartn.TF007toTF016 = 4;
+    scratchPad->messageSubtype = data >> 4;
+    scratchPad->timeTagType = (data >> 3) & 0x01;
+    if (scratchPad->timeTagType == 0)
+        scratchPad->TF007toTF016 = 4;
     else
-        scratchPad->spartn.TF007toTF016 = 6;
-    if (scratchPad->spartn.EAF > 0)
-        scratchPad->spartn.TF007toTF016 += 2;
-    scratchPad->spartn.frameCount = 1;
+        scratchPad->TF007toTF016 = 6;
+    if (scratchPad->EAF > 0)
+        scratchPad->TF007toTF016 += 2;
+    scratchPad->frameCount = 1;
 
     parse->state = sempSpartnReadTF009;
 
@@ -197,51 +219,51 @@ bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
 
 bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
-    if (scratchPad->spartn.frameCount == 0)
+    if (scratchPad->frameCount == 0)
     {
-        scratchPad->spartn.messageType = data >> 1;
-        scratchPad->spartn.payloadLength = data & 0x01;
+        scratchPad->messageType = data >> 1;
+        scratchPad->payloadLength = data & 0x01;
     }
-    if (scratchPad->spartn.frameCount == 1)
+    if (scratchPad->frameCount == 1)
     {
-        scratchPad->spartn.payloadLength <<= 8;
-        scratchPad->spartn.payloadLength |= data;
+        scratchPad->payloadLength <<= 8;
+        scratchPad->payloadLength |= data;
     }
-    if (scratchPad->spartn.frameCount == 2)
+    if (scratchPad->frameCount == 2)
     {
-        scratchPad->spartn.payloadLength <<= 1;
-        scratchPad->spartn.payloadLength |= data >> 7;
-        scratchPad->spartn.EAF = (data >> 6) & 0x01;
-        scratchPad->spartn.crcType = (data >> 4) & 0x03;
-        switch (scratchPad->spartn.crcType)
+        scratchPad->payloadLength <<= 1;
+        scratchPad->payloadLength |= data >> 7;
+        scratchPad->EAF = (data >> 6) & 0x01;
+        scratchPad->crcType = (data >> 4) & 0x03;
+        switch (scratchPad->crcType)
         {
         case 0:
-            scratchPad->spartn.crcBytes = 1;
+            scratchPad->crcBytes = 1;
             break;
         case 1:
-            scratchPad->spartn.crcBytes = 2;
+            scratchPad->crcBytes = 2;
             break;
         case 2:
-            scratchPad->spartn.crcBytes = 3;
+            scratchPad->crcBytes = 3;
             break;
         default:
-            scratchPad->spartn.crcBytes = 4;
+            scratchPad->crcBytes = 4;
             break;
         }
-        scratchPad->spartn.frameCRC = data & 0x0F;
+        scratchPad->frameCRC = data & 0x0F;
         parse->buffer[3] = parse->buffer[3] & 0xF0; // Zero the 4 LSBs before calculating the CRC
-        if (semp_uSpartnCrc4(&parse->buffer[1], 3) == scratchPad->spartn.frameCRC)
+        if (semp_uSpartnCrc4(&parse->buffer[1], 3) == scratchPad->frameCRC)
         {
             parse->buffer[3] = data; // Restore TF005 and TF006 now we know the data is valid
             if (parse->verboseDebug)
                 sempPrintf(parse->printDebug,
                         "SEMP %s: Incoming SPARTN %d %d, 0x%04x (%d) bytes",
                         parse->parserName,
-                        scratchPad->spartn.messageType,
-                        scratchPad->spartn.messageSubtype,
-                        scratchPad->spartn.payloadLength, scratchPad->spartn.payloadLength);
+                        scratchPad->messageType,
+                        scratchPad->messageSubtype,
+                        scratchPad->payloadLength, scratchPad->payloadLength);
             parse->state = sempSpartnReadTF007;
         }
         else
@@ -253,25 +275,25 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printDebug,
                     "SEMP %s: SPARTN %d, 0x%04x (%d) bytes, bad header CRC",
                     parse->parserName,
-                    scratchPad->spartn.messageType,
+                    scratchPad->messageType,
                     parse->length, parse->length);
 
             return false;
         }
     }
 
-    scratchPad->spartn.frameCount++;
+    scratchPad->frameCount++;
     return true;
 }
 
 // Check for the preamble
 bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
     if (data == 0x73)
     {
-        scratchPad->spartn.frameCount = 0;
+        scratchPad->frameCount = 0;
         parse->state = sempSpartnReadTF002TF006;
         return true;
     }
@@ -301,8 +323,15 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
 // Get the message number
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->spartn.messageType;
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageType;
+}
+
+// Get the message subtype number
+uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageSubtype;
 }
 
 // Describe the parser
@@ -310,4 +339,5 @@ SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
 {
     "SPARTN parser",            // parserName
     sempSpartnPreamble,         // preamble
+    sizeof(SEMP_SPARTN_VALUES), // scratchPadBytes
 };

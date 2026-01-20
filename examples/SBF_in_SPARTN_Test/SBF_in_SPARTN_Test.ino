@@ -107,6 +107,8 @@ SEMP_PARSE_STATE *parse2;
 // Initialize the system
 void setup()
 {
+    size_t bufferLength;
+
     delay(1000);
 
     Serial.begin(115200);
@@ -115,11 +117,10 @@ void setup()
     Serial.println();
 
     // Initialize the parsers
-    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    bufferLength = sempGetBufferLength(parserTable1, parserCount1, BUFFER_LENGTH);
     uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
-    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
     parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1,
-                             0, buffer1, bufferLength, processSbfMessage);
+                             buffer1, bufferLength, processSbfMessage);
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
@@ -129,8 +130,10 @@ void setup()
     // to allow it to be passed to the SPARTN parser
     sempSbfSetInvalidDataCallback(parse1, invalidSbfData);
 
+    bufferLength = sempGetBufferLength(parserTable2, parserCount2, BUFFER_LENGTH);
+    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
     parse2 = sempBeginParser("SPARTN_Test", parserTable2, parserCount2,
-                             0, buffer2, bufferLength, processSpartnMessage);
+                             buffer2, bufferLength, processSpartnMessage);
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 
@@ -178,15 +181,13 @@ void invalidSbfData(SEMP_PARSE_STATE *parse)
 // Process a complete message incoming from parser
 void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
     uint32_t offset;
 
     // Display the raw message
     Serial.println();
     offset = dataOffset1 + 1 - parse->length;
     Serial.printf("Valid SBF message block %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  scratchPad->sbf.sbfID,
+                  sempSbfGetId(parse),
                   parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
@@ -208,15 +209,13 @@ void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 // Process a complete message incoming from parser
 void processSpartnMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
     static bool displayOnce = true;
 
     // Display the raw message
     Serial.println();
     Serial.printf("Valid SPARTN message, type %d, subtype %d : %d bytes\r\n",
-                  scratchPad->spartn.messageType,
-                  scratchPad->spartn.messageSubtype,
+                  sempSpartnGetMessageType(parse),
+                  sempSpartnGetMessageSubType(parse),
                   parse->length);
     dumpBuffer(parse->buffer, parse->length);
 

@@ -84,10 +84,10 @@ void setup()
     Serial.println();
 
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(0, BUFFER_LENGTH);
+    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
     uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("SBF_Test", parserTable, parserCount,
-                            0, buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -116,15 +116,13 @@ void loop()
 // Process a complete message incoming from parser
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-
     uint32_t offset;
 
     // Display the raw message
     Serial.println();
     offset = dataOffset + 1 - parse->length;
     Serial.printf("Valid SBF message block %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  scratchPad->sbf.sbfID,
+                  sempSbfGetId(parse),
                   parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 

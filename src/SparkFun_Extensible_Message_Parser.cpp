@@ -31,7 +31,6 @@ License: MIT. Please see LICENSE.md for more details
 
 // Allocate the parse structure
 SEMP_PARSE_STATE * sempAllocateParseStructure(
-    bool usePSRAM,
     Print *printDebug,
     uint16_t scratchPadBytes,
     size_t bufferLength
@@ -77,18 +76,7 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
 
     // Allocate the parser
     length = parseBytes + scratchPadBytes;
-    if (usePSRAM)
-#if defined(ESP32)
-      parse = (SEMP_PARSE_STATE *)ps_malloc(length + bufferLength);
-#else
-      {
-        parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-        sempPrintln(printDebug, "PSRAM: Platform not supported");
-      }
-#endif
-    else
-      parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
-
+    parse = (SEMP_PARSE_STATE *)malloc(length + bufferLength);
     sempPrintf(printDebug, "parse: %p", (void *)parse);
 
     // Initialize the parse structure
@@ -103,7 +91,6 @@ SEMP_PARSE_STATE * sempAllocateParseStructure(
         sempPrintf(parse->printDebug, "parse->scratchPad: %p", parse->scratchPad);
 
         // Set the buffer address and length
-        parse->usePSRAM = usePSRAM;
         parse->bufferLength = bufferLength;
         parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
         sempPrintf(parse->printDebug, "parse->buffer: %p", parse->buffer);
@@ -164,7 +151,6 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
                    (void *)parse->buffer, parse->bufferLength);
         sempPrintf(print, "    length: %d message bytes", parse->length);
         sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
-        sempPrintf(print, "    usePSRAM: %s", parse->usePSRAM ? "true" : "false");
     }
 }
 
@@ -275,8 +261,6 @@ SEMP_PARSE_STATE *sempBeginParser(
     )
 {
     SEMP_PARSE_STATE *parse = nullptr;
-    int psramSize;
-    bool usePSRAM;
 
     do
     {
@@ -322,21 +306,8 @@ SEMP_PARSE_STATE *sempBeginParser(
             break;
         }
 
-        // Attempt to use PSRAM
-        psramSize = 0;
-
-#if defined(ESP32)
-        if (psramInit())
-            psramSize = ESP.getPsramSize();
-        usePSRAM = (psramSize != 0);
-        if (usePSRAM == false)
-            sempPrintln(printError, "SEMP: PSRAM failed to initialize!");
-        else
-            sempPrintf(printDebug, "SEMP: PSRAM Size (bytes): %d\r\n", psramSize);
-#endif
-
         // Validate the parser address is not nullptr
-        parse = sempAllocateParseStructure(usePSRAM, printDebug, scratchPadBytes, bufferLength);
+        parse = sempAllocateParseStructure(printDebug, scratchPadBytes, bufferLength);
         if (!parse)
         {
             sempPrintln(printError, "SEMP: Failed to allocate the parse structure");
@@ -432,12 +403,6 @@ void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len)
         sempParseNextByte(parse, *ptr);
         ptr++;
     }
-}
-
-// Determine if PSRAM is being used by SEMP
-bool sempPsramInUse(const SEMP_PARSE_STATE *parse)
-{
-    return parse->usePSRAM;
 }
 
 // Shutdown the parser

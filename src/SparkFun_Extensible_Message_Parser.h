@@ -36,20 +36,16 @@ extern const uint32_t semp_u32Crc32Table[];
 // Forward type declaration
 typedef struct _SEMP_PARSE_STATE *P_SEMP_PARSE_STATE;
 
-// Parse routine
-typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
-                                   uint8_t data); // Incoming data byte
-
-// CRC callback routine
-typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
-                                     uint8_t dataByte); // Data byte
-
 // Normally this routine pointer is set to nullptr.  The parser calls
 // the badCrcCallback routine when the default CRC or checksum calculation
 // fails.  This allows an upper layer to adjust the CRC calculation if
 // necessary.  Return true when the CRC calculation fails otherwise
 // return false if the alternate CRC or checksum calculation is successful.
 typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+
+// CRC callback routine
+typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
+                                     uint8_t dataByte); // Data byte
 
 // Call the application back at specified routine address.  Pass in the
 // parse data structure containing the buffer containing the address of
@@ -72,6 +68,10 @@ typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
 // Data is passed to the SBF parser first. Any data which is invalid SBF is passed
 // to a separate SPARTN parser via this callback.
 typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+
+// Parse routine
+typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
+                                   uint8_t data); // Incoming data byte
 
 // Length of the sentence name array
 #define SEMP_NMEA_SENTENCE_NAME_BYTES    16
@@ -189,8 +189,8 @@ typedef struct _SEMP_PARSE_STATE
     uint16_t length;               // Message length including line termination
     uint16_t type;                 // Active parser type, a value of
                                    // parserCount means searching for preamble
-    bool abortNmeaOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
-    bool abortHashOnNonPrintable;  // Abort Unicore hash parsing on the arrival of a non-printable char
+    bool nmeaAbortOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
+    bool unicoreHashAbortOnNonPrintable; // Abort Unicore hash parsing on the arrival of a non-printable char
 } SEMP_PARSE_STATE;
 
 //----------------------------------------
@@ -328,11 +328,9 @@ void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
 void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
 void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
-// Additional settings to help cope with erroneous data
-// Abort NMEA on a non-printable char
-void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
-// Abort Unicore hash on a non-printable char
-void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+//----------------------------------------
+// Parsers
+//----------------------------------------
 
 // The parser routines within a parser module are typically placed in
 // reverse order within the module.  This lets the routine declaration
@@ -341,11 +339,26 @@ void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 // routines to the application layer.  As such only the preamble routine
 // should need to be listed below.
 
+//----------------------------------------
+// NMEA
+//----------------------------------------
+
 // NMEA parse routines
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
+
+// Abort NMEA on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+
+//----------------------------------------
+// RTCM
+//----------------------------------------
 
 // RTCM parse routines
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -353,6 +366,10 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+
+//----------------------------------------
+// u-blox
+//----------------------------------------
 
 // u-blox parse routines
 bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -373,10 +390,18 @@ float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset);
 double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset);
 const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
 
+//----------------------------------------
+// Unicore Binary
+//----------------------------------------
+
 // Unicore binary parse routines
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
+
+//----------------------------------------
+// Unicore Hash (#)
+//----------------------------------------
 
 // Unicore hash (#) parse routines
 bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
@@ -384,10 +409,25 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 
+// Abort Unicore hash on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempAbortUnicoreHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+
+//----------------------------------------
+// SPARTN
+//----------------------------------------
+
 // SPARTN parse routines
 bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+//----------------------------------------
+// SBF
+//----------------------------------------
 
 // SBF parse routines
 bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);

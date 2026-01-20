@@ -199,7 +199,7 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc ^= data;
 
         // Abort on a non-printable char - if enabled
-        if (parse->abortNmeaOnNonPrintable)
+        if (parse->nmeaAbortOnNonPrintable)
         {
             if ((data < ' ') || (data > '~'))
             {

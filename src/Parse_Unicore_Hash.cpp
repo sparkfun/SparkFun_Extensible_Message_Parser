@@ -264,7 +264,7 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc ^= data;
 
         // Abort on a non-printable char - if enabled
-        if (parse->abortHashOnNonPrintable)
+        if (parse->unicoreHashAbortOnNonPrintable)
         {
             if ((data < ' ') || (data > '~'))
             {

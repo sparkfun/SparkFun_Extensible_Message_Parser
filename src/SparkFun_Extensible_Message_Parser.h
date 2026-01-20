@@ -36,20 +36,16 @@ extern const uint32_t semp_u32Crc32Table[];
 // Forward type declaration
 typedef struct _SEMP_PARSE_STATE *P_SEMP_PARSE_STATE;
 
-// Parse routine
-typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
-                                   uint8_t data); // Incoming data byte
-
-// CRC callback routine
-typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
-                                     uint8_t dataByte); // Data byte
-
 // Normally this routine pointer is set to nullptr.  The parser calls
 // the badCrcCallback routine when the default CRC or checksum calculation
 // fails.  This allows an upper layer to adjust the CRC calculation if
 // necessary.  Return true when the CRC calculation fails otherwise
 // return false if the alternate CRC or checksum calculation is successful.
 typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+
+// CRC callback routine
+typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
+                                     uint8_t dataByte); // Data byte
 
 // Call the application back at specified routine address.  Pass in the
 // parse data structure containing the buffer containing the address of
@@ -72,6 +68,10 @@ typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
 // Data is passed to the SBF parser first. Any data which is invalid SBF is passed
 // to a separate SPARTN parser via this callback.
 typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+
+// Parse routine
+typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
+                                   uint8_t data); // Incoming data byte
 
 // Length of the sentence name array
 #define SEMP_NMEA_SENTENCE_NAME_BYTES    16

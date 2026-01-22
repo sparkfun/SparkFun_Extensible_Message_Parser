@@ -494,25 +494,3 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
     if (parse && *parse)
         *parse = nullptr;
 }
-
-//----------------------------------------
-// Parser specific routines
-//----------------------------------------
-
-//----------------------------------------
-// Abort NMEA parsing on a non-printable char
-//----------------------------------------
-void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
-{
-    if (parse)
-        parse->nmeaAbortOnNonPrintable = abort;
-}
-
-//----------------------------------------
-// Abort Unicore hash parsing on a non-printable char
-//----------------------------------------
-void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
-{
-    if (parse)
-        parse->unicoreHashAbortOnNonPrintable = abort;
-}

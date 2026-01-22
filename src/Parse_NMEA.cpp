@@ -369,6 +369,15 @@ SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
 };
 
 //----------------------------------------
+// Abort NMEA parsing on a non-printable char
+//----------------------------------------
+void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->nmeaAbortOnNonPrintable = abort;
+}
+
+//----------------------------------------
 // Return the NMEA sentence name as a string
 //----------------------------------------
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)

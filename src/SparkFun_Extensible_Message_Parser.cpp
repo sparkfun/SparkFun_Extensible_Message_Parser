@@ -279,7 +279,11 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
             }
         }
 
-        // Preamble byte not found, continue searching for a preamble byte
+        // Preamble not found, pass this data to another parser if requested
+        if (parse->invalidData)
+            parse->invalidData(parse->buffer, parse->length);
+
+        // Continue searching for a preamble byte
         parse->state = sempFirstByte;
     }
     return false;
@@ -585,6 +589,16 @@ uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
+// Perform the invalid data callback
+//----------------------------------------
+void sempInvalidDataCallback(SEMP_PARSE_STATE *parse)
+{
+    if (parse->invalidData)
+        parse->invalidData(parse->buffer, parse->length);
+    parse->state = sempFirstByte;
+}
+
+//----------------------------------------
 // Parse the next byte
 //----------------------------------------
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
@@ -598,6 +612,10 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintf(parse->printError, "SEMP %s: Message too long, increase the buffer size > %d\r\n",
                        parse->parserName,
                        parse->bufferLength);
+
+            // Pass this data to another parser if requested
+            if (parse->invalidData)
+                parse->invalidData(parse->buffer, parse->length);
 
             // Start searching for a preamble byte
             sempFirstByte(parse, data);
@@ -623,6 +641,15 @@ void sempParseNextBytes(SEMP_PARSE_STATE *parse, const uint8_t *data, size_t len
 {
     for (size_t i = 0; i < len; i++)
         sempParseNextByte(parse, *data++);
+}
+
+//----------------------------------------
+// Set the invalid data callback
+//----------------------------------------
+void sempSetInvalidDataCallback(SEMP_PARSE_STATE *parse,
+                                SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
+{
+    parse->invalidData = invalidDataCallback;
 }
 
 //----------------------------------------

@@ -64,7 +64,11 @@ const uint8_t rawDataStream[] =
 
 
     // SBF Block 4007 (PVTGeodetic)
-    0x24, 0x40, 0xC4, 0x86, 0xA7, 0x4F, 0x60, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01,
+    0x24, 0x40, // Preamble
+    0xC4, 0x86, // CRC
+    0xA7, 0x4F, // ID
+    0x60, 0x00, // Length
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x01,
     0x00, 0x00, 0x00, 0x20, 0x5F, 0xA0, 0x12, 0xC2, 0x00, 0x00, 0x00, 0x20, 0x5F, 0xA0, 0x12, 0xC2,
     0x00, 0x00, 0x00, 0x20, 0x5F, 0xA0, 0x12, 0xC2, 0xF9, 0x02, 0x95, 0xD0, 0xF9, 0x02, 0x95, 0xD0,
     0xF9, 0x02, 0x95, 0xD0, 0xF9, 0x02, 0x95, 0xD0, 0xF9, 0x02, 0x95, 0xD0, 0x00, 0x00, 0x00, 0x20,
@@ -139,7 +143,7 @@ void setup()
 
     // Add the callback for invalid SBF data,
     // to allow it to be passed to the SPARTN parser
-    sempSbfSetInvalidDataCallback(parse1, invalidSbfData);
+    sempSetInvalidDataCallback(parse1, invalidSbfData);
 
     bufferLength = sempGetBufferLength(parserTable2, parserCount2, BUFFER_LENGTH);
     uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
@@ -182,14 +186,10 @@ void loop()
 // Callback from within the SBF parser when invalid data is identified
 // The data is passed on to the SPARTN parser
 //----------------------------------------
-void invalidSbfData(SEMP_PARSE_STATE *parse)
+void invalidSbfData(const uint8_t * buffer, size_t length)
 {
     // Data is not SBF, so pass it to the SPARTN parser
-    for (uint32_t dataOffset = 0; dataOffset < parse->length; dataOffset++)
-    {
-        // Update the SPARTN parser state based on the non-SBF byte
-        sempParseNextByte(parse2, parse->buffer[dataOffset]);
-    }
+    sempParseNextBytes(parse2, buffer, length);
 }
 
 //----------------------------------------

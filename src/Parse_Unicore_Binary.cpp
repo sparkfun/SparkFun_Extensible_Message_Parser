@@ -46,35 +46,6 @@ uint32_t sempUnicoreBinaryComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     return crc;
 }
 
-//----------------------------------------
-// Print the Unicore message header
-//----------------------------------------
-void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
-{
-    SEMP_UNICORE_HEADER * header;
-
-    Print *print = parse->printError;
-    if (print)
-    {
-        sempPrintln(print, "Unicore Message Header");
-        header = (SEMP_UNICORE_HEADER *)parse->buffer;
-        sempPrintf(print, "      0x%02x: Sync A", header->syncA);
-        sempPrintf(print, "      0x%02x: Sync B", header->syncB);
-        sempPrintf(print, "      0x%02x: Sync C", header->syncC);
-        sempPrintf(print, "      %3d%%: CPU Idle Time", header->cpuIdlePercent);
-        sempPrintf(print, "     %5d: Message ID", header->messageId);
-        sempPrintf(print, "     %5d: Message Length (bytes)", header->messageLength);
-        sempPrintf(print, "       %3d: Reference Time", header->referenceTime);
-        sempPrintf(print, "      0x%02x: Time Status", header->timeStatus);
-        sempPrintf(print, "     %5d: Week Number", header->weekNumber);
-        sempPrintf(print, "%10d: Seconds of Week", header->secondsOfWeek);
-        sempPrintf(print, "0x%08x: RESERVED", header->RESERVED);
-        sempPrintf(print, "       %3d: Release Version", header->releasedVersion);
-        sempPrintf(print, "       %3d: Leap Seconds", header->leapSeconds);
-        sempPrintf(print, "     %5d: Output Delay (mSec)", header->outputDelayMSec);
-    }
-}
-
 //------------------------------------------------------------------------------
 // Unicore parse routines
 //
@@ -287,3 +258,32 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
     sempUnicoreBinaryPreamble,          // preamble
     sizeof(SEMP_UNICORE_BINARY_VALUES), // scratchPadBytes
 };
+
+//----------------------------------------
+// Print the Unicore message header
+//----------------------------------------
+void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
+{
+    SEMP_UNICORE_HEADER * header;
+
+    Print *print = parse->printError;
+    if (print)
+    {
+        sempPrintln(print, "Unicore Message Header");
+        header = (SEMP_UNICORE_HEADER *)parse->buffer;
+        sempPrintf(print, "      0x%02x: Sync A", header->syncA);
+        sempPrintf(print, "      0x%02x: Sync B", header->syncB);
+        sempPrintf(print, "      0x%02x: Sync C", header->syncC);
+        sempPrintf(print, "      %3d%%: CPU Idle Time", header->cpuIdlePercent);
+        sempPrintf(print, "     %5d: Message ID", header->messageId);
+        sempPrintf(print, "     %5d: Message Length (bytes)", header->messageLength);
+        sempPrintf(print, "       %3d: Reference Time", header->referenceTime);
+        sempPrintf(print, "      0x%02x: Time Status", header->timeStatus);
+        sempPrintf(print, "     %5d: Week Number", header->weekNumber);
+        sempPrintf(print, "%10d: Seconds of Week", header->secondsOfWeek);
+        sempPrintf(print, "0x%08x: RESERVED", header->RESERVED);
+        sempPrintf(print, "       %3d: Release Version", header->releasedVersion);
+        sempPrintf(print, "       %3d: Leap Seconds", header->leapSeconds);
+        sempPrintf(print, "     %5d: Output Delay (mSec)", header->outputDelayMSec);
+    }
+}

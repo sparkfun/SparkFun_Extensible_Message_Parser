@@ -267,6 +267,23 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
+
+//----------------------------------------
+// Describe the parser
+//----------------------------------------
+SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
+{
+    "RTCM parser",              // parserName
+    sempRtcmPreamble,           // preamble
+    sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
+};
+
 //----------------------------------------
 // Get the message number
 //----------------------------------------
@@ -274,58 +291,6 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
     return scratchPad->message;
-}
-
-//----------------------------------------
-// Get unsigned integer with width bits, starting at bit start
-//----------------------------------------
-uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
-{
-    uint8_t *ptr = parse->buffer;
-    ptr += 3; // Skip the preamble and length bytes
-
-    uint64_t result = 0;
-    size_t count = 0;
-    uint8_t bitMask = 0x80;
-
-    // Skip whole bytes (8 bits)
-    ptr += start / 8;
-    count += (start / 8) * 8;
-
-    // Loop until we reach the start bit
-    while (count < start)
-    {
-        bitMask >>= 1; // Shift the bit mask
-        count++;       // Increment the count
-
-        if (bitMask == 0) // Have we counted 8 bits?
-        {
-            ptr++;          // Point to the next byte
-            bitMask = 0x80; // Reset the bit mask
-        }
-    }
-
-    // We have reached the start bit and ptr is pointing at the correct byte
-    // Now extract width bits, incrementing ptr and shifting bitMask as we go
-    while (count < (start + width))
-    {
-        if (*ptr & bitMask) // Is the bit set?
-            result |= 1;      // Set the corresponding bit in result
-
-        bitMask >>= 1; // Shift the bit mask
-        count++;       // Increment the count
-
-        if (bitMask == 0) // Have we counted 8 bits?
-        {
-            ptr++;          // Point to the next byte
-            bitMask = 0x80; // Reset the bit mask
-        }
-
-        if (count < (start + width)) // Do we need to shift result?
-            result <<= 1;              // Shift the result
-    }
-
-    return result;
 }
 
 //----------------------------------------
@@ -398,19 +363,54 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_
     return result.signed64;
 }
 
-//------------------------------------------------------------------------------
-// Public data and routines
-//
-// The following data structures and routines are listed in the .h file and are
-// exposed to the SEMP routine and application layer.
-//------------------------------------------------------------------------------
-
 //----------------------------------------
-// Describe the parser
+// Get unsigned integer with width bits, starting at bit start
 //----------------------------------------
-SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
 {
-    "RTCM parser",              // parserName
-    sempRtcmPreamble,           // preamble
-    sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
-};
+    uint8_t *ptr = parse->buffer;
+    ptr += 3; // Skip the preamble and length bytes
+
+    uint64_t result = 0;
+    size_t count = 0;
+    uint8_t bitMask = 0x80;
+
+    // Skip whole bytes (8 bits)
+    ptr += start / 8;
+    count += (start / 8) * 8;
+
+    // Loop until we reach the start bit
+    while (count < start)
+    {
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+    }
+
+    // We have reached the start bit and ptr is pointing at the correct byte
+    // Now extract width bits, incrementing ptr and shifting bitMask as we go
+    while (count < (start + width))
+    {
+        if (*ptr & bitMask) // Is the bit set?
+            result |= 1;      // Set the corresponding bit in result
+
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+
+        if (count < (start + width)) // Do we need to shift result?
+            result <<= 1;              // Shift the result
+    }
+
+    return result;
+}

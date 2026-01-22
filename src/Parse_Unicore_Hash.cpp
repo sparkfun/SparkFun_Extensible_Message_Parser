@@ -424,15 +424,6 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-//----------------------------------------
-// Return the Unicore hash (#) sentence name as a string
-//----------------------------------------
-const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse)
-{
-    SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
-    return (const char *)scratchPad->sentenceName;
-}
-
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -449,3 +440,12 @@ SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
     sempUnicoreHashPreamble,            // preamble
     sizeof(SEMP_UNICORE_HASH_VALUES),   // scratchPadBytes
 };
+
+//----------------------------------------
+// Return the Unicore hash (#) sentence name as a string
+//----------------------------------------
+const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
+    return (const char *)scratchPad->sentenceName;
+}

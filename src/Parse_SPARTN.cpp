@@ -355,24 +355,6 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-//----------------------------------------
-// Get the message number
-//----------------------------------------
-uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
-{
-    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
-    return scratchPad->messageType;
-}
-
-//----------------------------------------
-// Get the message subtype number
-//----------------------------------------
-uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse)
-{
-    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
-    return scratchPad->messageSubtype;
-}
-
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -389,3 +371,21 @@ SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
     sempSpartnPreamble,         // preamble
     sizeof(SEMP_SPARTN_VALUES), // scratchPadBytes
 };
+
+//----------------------------------------
+// Get the message subtype number
+//----------------------------------------
+uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageSubtype;
+}
+
+//----------------------------------------
+// Get the message number
+//----------------------------------------
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+    return scratchPad->messageType;
+}

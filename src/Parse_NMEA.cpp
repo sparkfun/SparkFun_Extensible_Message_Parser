@@ -351,15 +351,6 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-//----------------------------------------
-// Return the NMEA sentence name as a string
-//----------------------------------------
-const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
-{
-    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
-    return (const char *)scratchPad->sentenceName;
-}
-
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -376,3 +367,12 @@ SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
     sempNmeaPreamble,           // preamble
     sizeof(SEMP_NMEA_VALUES),   // scratchPadBytes
 };
+
+//----------------------------------------
+// Return the NMEA sentence name as a string
+//----------------------------------------
+const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
+    return (const char *)scratchPad->sentenceName;
+}

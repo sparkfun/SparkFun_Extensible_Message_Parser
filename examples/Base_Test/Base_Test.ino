@@ -4,7 +4,7 @@
   License: MIT. Please see LICENSE.md for more details
 */
 
-#include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
+#include "No_Parser.h"
 
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
@@ -19,17 +19,6 @@ const uint8_t rawDataStream[] =
 };
 
 #define RAW_DATA_BYTES      sizeof(rawDataStream)
-
-// Forward routine declarations
-bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
-// Build the description for the No parser
-SEMP_PARSER_DESCRIPTION noParserDescription =
-{
-    "No parser",            // parserName
-    noParserPreamble,       // preamble
-    0,                      // scratchPadBytes
-};
 
 // Build the table listing all of the parsers
 SEMP_PARSER_DESCRIPTION * parserTable[] =
@@ -143,13 +132,6 @@ void setup()
 
 void loop()
 {
-}
-
-// Check for the preamble
-bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
-{
-    // Preamble not found
-    return false;
 }
 
 // Call back from within parser, for end of message

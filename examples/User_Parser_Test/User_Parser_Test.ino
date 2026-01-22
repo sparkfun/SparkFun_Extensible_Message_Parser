@@ -7,99 +7,10 @@
   License: MIT. Please see LICENSE.md for more details
 */
 
-#include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
+#include "User_Parser.h"
 
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
-
-//----------------------------------------
-// Types
-//----------------------------------------
-
-typedef struct _USER_SCRATCH_PAD
-{
-    uint32_t messageNumber; // Count the valid messages
-} USER_SCRATCH_PAD;
-
-//----------------------------------------
-// User Parser
-//
-// The routines below are specified in the reverse order of execution
-// to eliminate the need for forward references and possibly exposing
-// them via a header file to the application.
-//----------------------------------------
-
-// Check for a number
-bool userFindNumber(SEMP_PARSE_STATE *parse, uint8_t data)
-{
-    USER_SCRATCH_PAD *scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
-    if ((data < '0') || (data > '9'))
-        return sempFirstByte(parse, data);
-
-    // Account for the valid message
-    scratchPad->messageNumber += 1;
-
-    // Pass the valid message to the end-of-message handler
-    parse->eomCallback(parse, parse->type);
-
-    // Start searching for a preamble byte
-    parse->state = sempFirstByte;
-    return true;
-}
-
-// Check for the second preamble byte
-bool userSecondPreambleByte(SEMP_PARSE_STATE *parse, uint8_t data)
-{
-    USER_SCRATCH_PAD *scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
-
-    // Validate the second preamble byte
-    if (data != 'B')
-    {
-        // Print the error
-        sempPrintf(parse->printDebug,
-                   "USER_Parser: Bad second preamble byte after message %d",
-                   scratchPad->messageNumber);
-
-        // Start searching for a preamble byte
-        return sempFirstByte(parse, data);
-    }
-
-    // Valid preamble, search for a number
-    parse->state = userFindNumber;
-    return true;
-}
-
-// Check for the first preamble byte
-bool userPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
-{
-    // Validate the first preamble byte
-    if (data != 'A')
-        // Start searching for a preamble byte
-        return false;
-
-    // Valid preamble byte, search for the next preamble byte
-    parse->state = userSecondPreambleByte;
-    return true;
-}
-
-// Translates state value into an string, returns nullptr if not found
-const char * userParserStateName(const SEMP_PARSE_STATE *parse)
-{
-    if (parse->state == userPreamble)
-        return "userPreamble";
-    if (parse->state == userSecondPreambleByte)
-        return "userSecondPreambleByte";
-    if (parse->state == userFindNumber)
-        return "userFindNumber";
-    return nullptr;
-}
-
-// Return the message number value
-uint32_t userParserGetMessageNumber(const SEMP_PARSE_STATE *parse)
-{
-    USER_SCRATCH_PAD *scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
-    return scratchPad->messageNumber;
-}
 
 //----------------------------------------
 // Constants
@@ -132,13 +43,6 @@ const uint8_t rawDataStream[] =
 
 // Account for the largest message
 #define BUFFER_LENGTH   3
-
-SEMP_PARSER_DESCRIPTION userParserDescription =
-{
-    "User parser",              // parserName
-    userPreamble,               // preamble
-    sizeof(USER_SCRATCH_PAD),
-};
 
 SEMP_PARSER_DESCRIPTION * userParserTable[] =
 {
@@ -192,14 +96,14 @@ void setup()
 
         // Get the parse state before entering the parser to enable
         // printing of the parser transition
-        startState = getParseStateName(parse);
+        startState = userParserGetStateName(parse);
 
         // Update the parser state based on the incoming byte
         data = rawDataStream[dataOffset];
         sempParseNextByte(parse, data);
 
         // Print the parser transition
-        endState = getParseStateName(parse);
+        endState = userParserGetStateName(parse);
         Serial.printf("0x%02x (%c), state: (%p) %s --> %s (%p)\r\n",
                       rawDataStream[dataOffset],
                       ((data >= ' ') && (data < 0x7f)) ? data : '.',
@@ -238,19 +142,4 @@ void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         Serial.println();
         sempPrintParserConfiguration(parse, &Serial);
     }
-}
-
-// Translate the state value into an ASCII state name
-const char *getParseStateName(SEMP_PARSE_STATE *parse)
-{
-    const char *name;
-
-    do
-    {
-        name = userParserStateName(parse);
-        if (name)
-            break;
-        name = sempGetStateName(parse);
-    } while (0);
-    return name;
 }

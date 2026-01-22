@@ -9,6 +9,9 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/dumpBuffer.ino"
+#include "../Common/reportFatalError.ino"
+
 //----------------------------------------
 // Constants
 //----------------------------------------
@@ -271,65 +274,5 @@ void ubloxMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         displayOnce = false;
         Serial.println();
         sempPrintParserConfiguration(parse, &Serial);
-    }
-}
-
-// Display the contents of a buffer
-void dumpBuffer(const uint8_t *buffer, uint16_t length)
-{
-    int bytes;
-    const uint8_t *end;
-    int index;
-    uint16_t offset;
-
-    end = &buffer[length];
-    offset = 0;
-    while (buffer < end)
-    {
-        // Determine the number of bytes to display on the line
-        bytes = end - buffer;
-        if (bytes > (16 - (offset & 0xf)))
-            bytes = 16 - (offset & 0xf);
-
-        // Display the offset
-        Serial.printf("0x%08lx: ", offset);
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf("   ");
-
-        // Display the data bytes
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%02x ", buffer[index]);
-
-        // Separate the data bytes from the ASCII
-        for (; index < (16 - (offset & 0xf)); index++)
-            Serial.printf("   ");
-        Serial.printf(" ");
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf(" ");
-
-        // Display the ASCII values
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
-        Serial.printf("\r\n");
-
-        // Set the next line of data
-        buffer += bytes;
-        offset += bytes;
-    }
-}
-
-// Print the error message every 15 seconds
-void reportFatalError(const char *errorMsg)
-{
-    while (1)
-    {
-        Serial.print("HALTED: ");
-        Serial.print(errorMsg);
-        Serial.println();
-        sleep(15);
     }
 }

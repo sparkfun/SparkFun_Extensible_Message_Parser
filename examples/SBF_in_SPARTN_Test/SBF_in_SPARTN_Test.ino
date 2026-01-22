@@ -3,8 +3,14 @@
 
   The Septentrio mosaic-X5 can output raw L-Band (LBandBeam1) data, interspersed with SBF messages
 
-  This example demonstrates how to use two parsers to separate the SBF from the L-Band stream
-  and extract SPARTN from the remaining raw L-Band
+  A dual parser is required when two protocols are mixed in the raw data
+  stream.  At least one of the protocols must have contigious elements
+  within the raw data stream.  The elements may be messages, packets or
+  tag-length-value tuples so that the invalid data is easily identified.
+
+  This example uses two parsers to separate SBF from SPARTN in the raw
+  L-Band data stream.  The invalid data callback is specified for the
+  outer layer SBF parser and calls the SPARTN parser with the invalid data.
 
   License: MIT. Please see LICENSE.md for more details
 */
@@ -103,11 +109,13 @@ uint32_t dataOffset1;
 SEMP_PARSE_STATE *parse1;
 SEMP_PARSE_STATE *parse2;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
-// Initialize the system
+//----------------------------------------
+// Application entry point used to initialize the system
+//----------------------------------------
 void setup()
 {
     size_t bufferLength;
@@ -162,14 +170,18 @@ void setup()
     Serial.printf("All done\r\n");
 }
 
-// Main loop processing after system is initialized
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
     // Nothing to do here...
 }
 
+//----------------------------------------
 // Callback from within the SBF parser when invalid data is identified
 // The data is passed on to the SPARTN parser
+//----------------------------------------
 void invalidSbfData(SEMP_PARSE_STATE *parse)
 {
     // Data is not SBF, so pass it to the SPARTN parser
@@ -180,8 +192,10 @@ void invalidSbfData(SEMP_PARSE_STATE *parse)
     }
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     uint32_t offset;
@@ -208,8 +222,10 @@ void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     }
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processSpartnMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     static bool displayOnce = true;

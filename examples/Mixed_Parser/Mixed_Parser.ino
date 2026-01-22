@@ -4,6 +4,12 @@
   This example demonstrates how to create a mixed parser -
   here we parse u-blox UBX and NMEA using a single mixed parser
 
+  A mixed parser lists multiple parsers in the parserTable.  This
+  configuration works when the data stream contains a mix of complete
+  messages.  For cases where protocol2 messages are embedded in the
+  payload of protocol1, use the design of the SBF_in_SPARTN example and
+  invoke the protocol2 parser in the processMessage routine.
+
   License: MIT. Please see LICENSE.md for more details
 */
 
@@ -152,11 +158,13 @@ int dataIndex;
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
-// Initialize the system
+//----------------------------------------
+// Application entry point used to initialize the system
+//----------------------------------------
 void setup()
 {
     int rawDataBytes;
@@ -200,13 +208,17 @@ void setup()
     Serial.printf("All done\r\n");
 }
 
-// Main loop processing after system is initialized
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     static bool displayOnce = true;

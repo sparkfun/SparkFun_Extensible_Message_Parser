@@ -34,10 +34,13 @@ const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
+//----------------------------------------
+// Application entry point used to initialize the system
+//----------------------------------------
 void setup()
 {
     uint8_t * buffer;
@@ -130,12 +133,17 @@ void setup()
     Serial.printf("All done\r\n");
 }
 
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     static bool displayOnce = true;

@@ -59,10 +59,20 @@ static const uint16_t semp_ccitt_crc_table[256] = {
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
+//----------------------------------------
+// Compute the CRC one byte at a time
+//
+// Inputs:
+//   crc: Current CRC value
+//   data: Byte to encode into the CRC value
+//
+// Outputs:
+//   Returns the updated CRC value
+//----------------------------------------
 uint16_t semp_ccitt_crc_update(uint16_t crc, const uint8_t data)
 {
     uint8_t tbl_idx = ((crc >> 8) ^ data) & 0xff;
-    
+
     crc = (semp_ccitt_crc_table[tbl_idx]) ^ (crc << 8);
 
     return crc;

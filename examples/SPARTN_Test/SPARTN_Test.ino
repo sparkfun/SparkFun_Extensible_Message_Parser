@@ -130,11 +130,13 @@ const uint8_t rawDataStream[] =
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
-// Initialize the system
+//----------------------------------------
+// Application entry point used to initialize the system
+//----------------------------------------
 void setup()
 {
     delay(1000);
@@ -167,14 +169,18 @@ void setup()
     Serial.printf("All done\r\n");
 }
 
-// Main loop processing after system is initialized
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
     // Nothing to do here...
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     static bool displayOnce = true;

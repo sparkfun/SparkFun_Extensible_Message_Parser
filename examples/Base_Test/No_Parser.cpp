@@ -20,6 +20,14 @@
 
 //----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the No_Parser recgonizes the input and false
+//   if another parser should be used
 //----------------------------------------
 bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -35,6 +43,12 @@ bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 
 //----------------------------------------
 // Translate the state into a zero terminated state name string
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
 //----------------------------------------
 const char * noParserGetStateName(const SEMP_PARSE_STATE *parse)
 {

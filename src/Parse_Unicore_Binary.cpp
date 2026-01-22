@@ -27,11 +27,16 @@ typedef struct _SEMP_UNICORE_BINARY_VALUES
     uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
 } SEMP_UNICORE_BINARY_VALUES;
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Support routines
-//----------------------------------------
+//
+// The parser support routines are placed before the parser routines to eliminate
+// forward declarations.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
 // Compute the CRC for the Unicore data
+//----------------------------------------
 uint32_t sempUnicoreBinaryComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     uint32_t crc;
@@ -41,7 +46,9 @@ uint32_t sempUnicoreBinaryComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     return crc;
 }
 
+//----------------------------------------
 // Print the Unicore message header
+//----------------------------------------
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
 {
     SEMP_UNICORE_HEADER * header;
@@ -68,9 +75,14 @@ void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
     }
 }
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
 //
 //    Unicore Binary Response
@@ -86,7 +98,9 @@ void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
 //    |<------------------------ CRC --------------->|
 //
 
+//----------------------------------------
 // Read the CRC
+//----------------------------------------
 bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
@@ -118,7 +132,9 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Read the message data
+//----------------------------------------
 bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
@@ -134,6 +150,7 @@ bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 //  Header
 //
 //    Bytes     Field Description
@@ -152,6 +169,7 @@ bool sempUnicoreBinaryReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 //      2       Output delay time, ms
 //
 // Read the header
+//----------------------------------------
 bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
@@ -172,7 +190,9 @@ bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the third sync byte
+//----------------------------------------
 bool sempUnicoreBinaryBinarySync3(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Verify sync byte 3
@@ -185,7 +205,9 @@ bool sempUnicoreBinaryBinarySync3(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the second sync byte
+//----------------------------------------
 bool sempUnicoreBinaryBinarySync2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Verify sync byte 2
@@ -198,7 +220,17 @@ bool sempUnicoreBinaryBinarySync2(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the Unicore Binary parser recgonizes the input and
+//   false if another parser should be used
+//----------------------------------------
 bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Determine if this is the beginning of a Unicore message
@@ -213,7 +245,15 @@ bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempUnicoreBinaryPreamble)
@@ -231,7 +271,16 @@ const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
+
+//----------------------------------------
 // Describe the parser
+//----------------------------------------
 SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
 {
     "Unicore binary parser",            // parserName

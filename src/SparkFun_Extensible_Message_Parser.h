@@ -516,9 +516,9 @@ uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
 uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
 uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore Binary
-//----------------------------------------
+//------------------------------------------------------------------------------
 
 extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
 
@@ -526,9 +526,9 @@ extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore Hash (#)
-//----------------------------------------
+//------------------------------------------------------------------------------
 
 extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
 
@@ -540,6 +540,11 @@ extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
 void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 // Unicore hash (#) parse routines
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated sentence name string
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);

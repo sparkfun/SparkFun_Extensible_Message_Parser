@@ -72,6 +72,14 @@ bool userSecondPreambleByte(SEMP_PARSE_STATE *parse, uint8_t data)
 
 //----------------------------------------
 // Check for the first preamble byte
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the User_Parser recgonizes the input and false
+//   if another parser should be used
 //----------------------------------------
 bool userPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -87,6 +95,12 @@ bool userPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 
 //----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
 //----------------------------------------
 const char * userParserGetStateName(const SEMP_PARSE_STATE *parse)
 {

@@ -39,10 +39,17 @@ typedef struct _SEMP_SPARTN_VALUES
     uint16_t embeddedApplicationLengthBytes;
 } SEMP_SPARTN_VALUES;
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // SPARTN parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -116,6 +123,8 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -130,6 +139,8 @@ bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -152,6 +163,8 @@ bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -198,6 +211,8 @@ bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -217,6 +232,8 @@ bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
+//----------------------------------------
 bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -286,7 +303,17 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the SPARTN parser recgonizes the input and false
+//   if another parser should be used
+//----------------------------------------
 bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -300,7 +327,15 @@ bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempSpartnPreamble)
@@ -320,21 +355,34 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
 // Get the message number
+//----------------------------------------
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
     return scratchPad->messageType;
 }
 
+//----------------------------------------
 // Get the message subtype number
+//----------------------------------------
 uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
     return scratchPad->messageSubtype;
 }
 
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
+
+//----------------------------------------
 // Describe the parser
+//----------------------------------------
 SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
 {
     "SPARTN parser",            // parserName

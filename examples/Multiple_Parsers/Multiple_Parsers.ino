@@ -153,11 +153,13 @@ uint32_t dataOffset;
 SEMP_PARSE_STATE *nmeaParser;
 SEMP_PARSE_STATE *ubloxParser;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
-// Initialize the system
+//----------------------------------------
+// Application entry point used to initialize the system
+//----------------------------------------
 void setup()
 {
     size_t bufferLength;
@@ -217,13 +219,17 @@ void setup()
     Serial.printf("All done\r\n");
 }
 
-// Main loop processing after system is initialized
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
 }
 
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void nmeaSentence(SEMP_PARSE_STATE *parse, uint16_t type)
 {
     uint32_t byteIndex;

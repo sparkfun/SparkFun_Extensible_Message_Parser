@@ -39,9 +39,14 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
     uint8_t sentenceNameLength; // Length of the sentence name
 } SEMP_UNICORE_HASH_VALUES;
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore hash (#) parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
 //
 //    Unicore Hash (#) Sentence
@@ -55,10 +60,12 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
 //               |<-------- Checksum -------->|
 //
 
+//----------------------------------------
 // Compute the CRC for a sentence containing an 8 byte CRC value
 // One such example is the full version message
 // #VERSION,97,GPS,FINE,2282,248561000,0,0,18,676;UM980,R4.10Build7923,HRPT00-S10C-P,2310415000001-MD22B1224962616,ff3bac96f31f9bdd,2022/09/28*7432d4ed
 // CRC is calculated without the # or * characters
+//----------------------------------------
 void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
@@ -121,7 +128,9 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     parse->eomCallback(parse, parse->type); // Pass parser array index
 }
 
+//----------------------------------------
 // Validate the checksum
+//----------------------------------------
 void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
 {
     uint32_t checksum;
@@ -165,7 +174,9 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
                    parse->crc);
 }
 
+//----------------------------------------
 // Read the linefeed
+//----------------------------------------
 bool sempUnicoreHashLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -189,7 +200,9 @@ bool sempUnicoreHashLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the remaining carriage return
+//----------------------------------------
 bool sempUnicoreHashCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -213,7 +226,9 @@ bool sempUnicoreHashCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the line termination
+//----------------------------------------
 bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -238,7 +253,9 @@ bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the checksum bytes
+//----------------------------------------
 bool sempUnicoreHashChecksumByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
@@ -265,7 +282,9 @@ bool sempUnicoreHashChecksumByte(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the sentence data
+//----------------------------------------
 bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
@@ -310,7 +329,9 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the sentence name
+//----------------------------------------
 bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
@@ -354,7 +375,17 @@ bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the Unicore Hash parser recgonizes the input and
+//   false if another parser should be used
+//----------------------------------------
 bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
@@ -365,7 +396,15 @@ bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempUnicoreHashPreamble)
@@ -385,14 +424,25 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
 // Return the Unicore hash (#) sentence name as a string
+//----------------------------------------
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse)
 {
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
     return (const char *)scratchPad->sentenceName;
 }
 
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
+
+//----------------------------------------
 // Describe the parser
+//----------------------------------------
 SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
 {
     "Unicore hash parser",              // parserName

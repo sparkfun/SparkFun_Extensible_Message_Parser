@@ -65,7 +65,7 @@ const uint8_t rawDataStream[] =
 };
 
 // Number of bytes in the rawDataStream
-#define RAW_DATA_BYTES      sizeof(rawDataStream)
+#define RAW_DATA_BYTES      (sizeof(rawDataStream) - 1)
 
 // Account for the largest NMEA sentence + CR + LF + zero termination
 #define BUFFER_LENGTH   68 + 1 + 1 + 1

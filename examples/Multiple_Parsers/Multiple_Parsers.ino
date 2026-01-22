@@ -113,17 +113,17 @@ typedef struct _DataStream
     const uint8_t *data;
 } DataStream;
 
-#define DATA_STREAM_INIT(x)     {sizeof(x), &x[0]}
+#define DATA_STREAM_INIT(x, extraBytes)     {sizeof(x) - extraBytes, &x[0]}
 const DataStream dataStream[] =
 {
-    DATA_STREAM_INIT(nmea_1),
-    DATA_STREAM_INIT(ublox_1),
-    DATA_STREAM_INIT(nmea_2),
-    DATA_STREAM_INIT(ublox_2),
-    DATA_STREAM_INIT(nmea_3),
-    DATA_STREAM_INIT(ublox_3),
-    DATA_STREAM_INIT(nmea_4),
-    DATA_STREAM_INIT(ublox_4)
+    DATA_STREAM_INIT(nmea_1, 1),
+    DATA_STREAM_INIT(ublox_1, 0),
+    DATA_STREAM_INIT(nmea_2, 1),
+    DATA_STREAM_INIT(ublox_2, 0),
+    DATA_STREAM_INIT(nmea_3, 1),
+    DATA_STREAM_INIT(ublox_3, 0),
+    DATA_STREAM_INIT(nmea_4, 1),
+    DATA_STREAM_INIT(ublox_4, 0)
 };
 
 #define DATA_STREAM_ENTRIES     (sizeof(dataStream) / sizeof(dataStream[0]))

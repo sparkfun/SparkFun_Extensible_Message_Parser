@@ -66,7 +66,7 @@ const uint8_t rawDataStream[] =
 };
 
 // Number of bytes in the rawDataStream
-#define RAW_DATA_BYTES      sizeof(rawDataStream)
+#define RAW_DATA_BYTES      (sizeof(rawDataStream) - 1)
 
 // Account for the largest Unicore hash (#) sentence + zero termination
 #define BUFFER_LENGTH   144 + 1

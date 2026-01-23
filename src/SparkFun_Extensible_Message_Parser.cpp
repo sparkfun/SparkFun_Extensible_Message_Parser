@@ -220,6 +220,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->eomCallback = eomCallback;
         parse->parserName = parserTableName;
         parse->badCrc = badCrc;
+        parse->type = parserCount;  // No active parser
 
         // Display the parser configuration
         sempPrintParserConfiguration(parse, parse->printDebug);

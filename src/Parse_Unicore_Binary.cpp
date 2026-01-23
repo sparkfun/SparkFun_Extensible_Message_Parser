@@ -74,6 +74,7 @@ uint32_t sempUnicoreBinaryComputeCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_BINARY_VALUES *scratchPad = (SEMP_UNICORE_BINARY_VALUES *)parse->scratchPad;
 
     // Determine if the entire message was read
@@ -84,20 +85,26 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     // Call the end-of-message routine with this message
     if ((!parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
         parse->eomCallback(parse, parse->type); // Pass parser array index
-    else
+    else if (output)
     {
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: Unicore, bad CRC, "
-                   "received %02x %02x %02x %02x, computed: %02x %02x %02x %02x",
-                   parse->parserName,
-                   parse->buffer[parse->length - 4],
-                   parse->buffer[parse->length - 3],
-                   parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1],
-                   scratchPad->crc & 0xff,
-                   (scratchPad->crc >> 8) & 0xff,
-                   (scratchPad->crc >> 16) & 0xff,
-                   (scratchPad->crc >> 24) & 0xff);
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": Unicore, bad CRC, received ");
+        sempPrintHex02x(output, parse->buffer[parse->length - 4]);
+        output(' ');
+        sempPrintHex02x(output, parse->buffer[parse->length - 3]);
+        output(' ');
+        sempPrintHex02x(output, parse->buffer[parse->length - 2]);
+        output(' ');
+        sempPrintHex02x(output, parse->buffer[parse->length - 1]);
+        sempPrintString(output, ", computed: ");
+        sempPrintHex02x(output, scratchPad->crc & 0xff);
+        output(' ');
+        sempPrintHex02x(output, (scratchPad->crc >> 8) & 0xff);
+        output(' ');
+        sempPrintHex02x(output, (scratchPad->crc >> 16) & 0xff);
+        output(' ');
+        sempPrintHex02xLn(output, (scratchPad->crc >> 24) & 0xff);
     }
     parse->state = sempFirstByte;
     return false;
@@ -150,12 +157,17 @@ bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
         // The header is complete, read the message data next
         SEMP_UNICORE_HEADER *header = (SEMP_UNICORE_HEADER *)parse->buffer;
         scratchPad->bytesRemaining = header->messageLength;
-        if (parse->verboseDebug)
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: Incoming Unicore 0x%04x (%d) bytes",
-                       parse->parserName,
-                       header->messageLength,
-                       header->messageLength);
+        SEMP_OUTPUT output = parse->debugOutput;
+        if (parse->verboseDebug && output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Incoming Unicore ");
+            sempPrintHex0x04x(output, header->messageLength);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, header->messageLength);
+            sempPrintStringLn(output, ") bytes");
+        }
         parse->state = sempUnicoreBinaryReadData;
     }
     return true;

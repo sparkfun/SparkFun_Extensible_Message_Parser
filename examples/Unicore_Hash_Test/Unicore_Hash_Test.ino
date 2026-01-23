@@ -108,7 +108,7 @@ void setup()
     // Initialize the parser
     parse = sempBeginParser("Unicore_Hash_Test", parserTable, parserCount,
                             buffer, bufferLength, processMessage, output,
-                            &Serial, nullptr, badUnicoreHashChecksum);
+                            &Serial, badUnicoreHashChecksum);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -118,7 +118,7 @@ void setup()
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempEnableDebugOutput(parse);
+    sempDebugOutputEnable(parse);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
         // Update the parser state based on the incoming byte
         sempParseNextByte(parse, rawDataStream[dataOffset]);

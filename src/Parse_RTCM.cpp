@@ -81,6 +81,7 @@ uint32_t sempRtcmComputeCrc24q(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
     // Account for this data byte
@@ -91,30 +92,44 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         return true;
 
     // Process the message if CRC is valid
+    output = parse->debugOutput;
     if ((parse->crc == 0) || (parse->badCrc && (!parse->badCrc(parse))))
     {
-        if (parse->length == 6)
-            sempPrintf(parse->printDebug,
-                    "SEMP %s: RTCM 0x%04x (%d) bytes, \"filler\" message",
-                    parse->parserName,
-                    parse->length, parse->length);
+        if ((parse->length == 6) && output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": RTCM ");
+            sempPrintHex0x04x(output, parse->length);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, parse->length);
+            sempPrintStringLn(output, ") bytes, \"filler\" message");
+        }
         parse->eomCallback(parse, parse->type); // Pass parser array index
     }
 
     // Display the RTCM messages with bad CRC
-    else
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: RTCM %d, 0x%04x (%d) bytes, bad CRC, "
-                   "received %02x %02x %02x, computed: %02x %02x %02x",
-                   parse->parserName,
-                   scratchPad->message,
-                   parse->length, parse->length,
-                   parse->buffer[parse->length - 3],
-                   parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1],
-                   (scratchPad->crc >> 16) & 0xff,
-                   (scratchPad->crc >> 8) & 0xff,
-                   scratchPad->crc & 0xff);
+    else if (output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": RTCM ");
+        sempPrintDecimalI32(output, scratchPad->message);
+        sempPrintString(output, ", ");
+        sempPrintHex0x04x(output, parse->length);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintString(output, ") bytes, bad CRC, received ");
+        sempPrintHex02x(output, parse->buffer[parse->length - 3]);
+        output(' ');
+        sempPrintHex02x(output, parse->buffer[parse->length - 2]);
+        output(' ');
+        sempPrintHex02x(output, parse->buffer[parse->length - 1]);
+        sempPrintString(output, ", computed: ");
+        sempPrintHex02x(output, (scratchPad->crc >> 16) & 0xff);
+        sempPrintHex02x(output, (scratchPad->crc >> 8) & 0xff);
+        sempPrintHex02xLn(output, scratchPad->crc & 0xff);
+    }
 
     // Search for another preamble byte
     parse->state = sempFirstByte;
@@ -172,15 +187,24 @@ bool sempRtcmReadMessage1(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
 
     scratchPad->bytesRemaining |= data;
-    if (parse->verboseDebug)
-        sempPrintf(parse->printDebug,
-                "SEMP %s: Incoming RTCM %d, 0x%04x (%d) bytes",
-                parse->parserName,
-                scratchPad->message,
-                scratchPad->bytesRemaining, scratchPad->bytesRemaining);
+    output = parse->debugOutput;
+    if (parse->verboseDebug && output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": Incoming RTCM ");
+        sempPrintDecimalI32(output, scratchPad->message);
+        sempPrintString(output, ", ");
+        sempPrintHex0x04x(output, scratchPad->bytesRemaining);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, scratchPad->bytesRemaining);
+        sempPrintStringLn(output, ") bytes");
+    }
+
     if (scratchPad->bytesRemaining == 0) // Handle zero length messages - 10403 "filler" messages
     {
         scratchPad->message = 0; // Clear the previous message number

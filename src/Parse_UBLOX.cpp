@@ -84,11 +84,20 @@ bool sempUbloxCkB(SEMP_PARSE_STATE *parse, uint8_t data)
     if ((badChecksum == false) || (parse->badCrc && (!parse->badCrc(parse))))
         parse->eomCallback(parse, parse->type); // Pass parser array index
     else
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: UBLOX bad checksum received 0x%02x%02x computed 0x%02x%02x",
-                   parse->parserName,
-                   parse->buffer[parse->length - 2], parse->buffer[parse->length - 1],
-                   scratchPad->ck_a, scratchPad->ck_b);
+    {
+        SEMP_OUTPUT output = parse->debugOutput;
+        if (output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": UBLOX bad checksum received ");
+            sempPrintHex0x02x(output, parse->buffer[parse->length - 2]);
+            sempPrintHex02x(output, parse->buffer[parse->length - 1]);
+            sempPrintString(output, " computed ");
+            sempPrintHex0x02x(output, scratchPad->ck_a);
+            sempPrintHex02xLn(output, scratchPad->ck_b);
+        }
+    }
 
     // Search for the next preamble byte
     parse->length = 0;
@@ -141,12 +150,21 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempUbloxCkA; // Jump to CRC
     else
     {
-        if (parse->verboseDebug)
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: Incoming UBLOX 0x%02X:0x%02X, 0x%04x (%d) bytes",
-                       parse->parserName,
-                       scratchPad->messageClass, scratchPad->messageId,
-                       scratchPad->payloadLength, scratchPad->payloadLength);
+        SEMP_OUTPUT output = parse->debugOutput;
+        if (parse->verboseDebug && output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Incoming UBLOX ");
+            sempPrintHex0x02x(output, scratchPad->messageClass);
+            output(':');
+            sempPrintHex02x(output, scratchPad->messageId);
+            sempPrintString(output, ", ");
+            sempPrintHex0x04x(output, scratchPad->payloadLength);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, scratchPad->payloadLength);
+            sempPrintStringLn(output, ") bytes");
+        }
         parse->state = sempUbloxPayload;
     }
     return true;
@@ -210,9 +228,13 @@ bool sempUbloxSync2(SEMP_PARSE_STATE *parse, uint8_t data)
     if (data != 0x62)
     {
         // Display the invalid data
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: UBLOX invalid second sync byte",
-                   parse->parserName);
+        SEMP_OUTPUT output = parse->debugOutput;
+        if (output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintStringLn(output,": UBLOX invalid second sync byte");
+        }
 
         // Invalid sync 2 byte, start searching for a preamble byte
         return sempFirstByte(parse, data);

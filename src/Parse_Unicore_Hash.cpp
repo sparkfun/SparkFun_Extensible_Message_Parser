@@ -68,6 +68,7 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
 //----------------------------------------
 void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
     uint32_t crc;
     uint32_t crcRx;
@@ -94,12 +95,21 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     if (crc != crcRx)
     {
         // Display the checksum error
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: Unicore hash (#) %s, 0x%04x (%d) bytes, bad CRC, "
-                   "received 0x%08x, computed: 0x%08x",
-                   parse->parserName,
-                   scratchPad->sentenceName,
-                   parse->length, parse->length, crcRx, crc);
+        if (output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore hash (#) ");
+            sempPrintString(output, (const char *)scratchPad->sentenceName);
+            sempPrintString(output, ", ");
+            sempPrintHex0x04x(output, parse->length);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, parse->length);
+            sempPrintString(output, ") bytes, bad CRC received ");
+            sempPrintHex0x08x(output, crcRx);
+            sempPrintString(output, ", computed: ");
+            sempPrintHex0x02xLn(output, crc);
+        }
         return;
     }
 
@@ -107,10 +117,14 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
     {
         // Sentence too long
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: Unicore hash (#) sentence too long, increase the buffer size >= %d",
-                   parse->parserName,
-                   parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
+        if (output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore hash (#) ");
+            sempPrintString(output, "sentence too long, increase the buffer size >= ");
+            sempPrintDecimalI32Ln(output, parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
+        }
 
         // Start searching for a preamble byte
         parse->state = sempFirstByte;
@@ -134,6 +148,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
 void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
 {
     uint32_t checksum;
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
 
     // Determine if a CRC was used for this message
@@ -161,17 +176,23 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
         // Process this Unicore hash (#) sentence
         parse->eomCallback(parse, parse->type); // Pass parser array index
     }
-    else
+    else if (output)
+    {
         // Display the checksum error
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: Unicore hash (#) %s, 0x%04x (%d) bytes, bad checksum, "
-                   "received 0x%c%c, computed: 0x%02x",
-                   parse->parserName,
-                   scratchPad->sentenceName,
-                   parse->length, parse->length,
-                   parse->buffer[parse->length - 2],
-                   parse->buffer[parse->length - 1],
-                   parse->crc);
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": Unicore hash (#) ");
+        sempPrintString(output, (const char *)scratchPad->sentenceName);
+        sempPrintString(output, ", ");
+        sempPrintHex0x04x(output, parse->length);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintString(output, ") bytes, bad checksum, received 0x");
+        output(parse->buffer[parse->length - 2]);
+        output( parse->buffer[parse->length - 1]);
+        sempPrintString(output, ", computed: ");
+        sempPrintHex0x02xLn(output, parse->crc);
+    }
 }
 
 //----------------------------------------
@@ -258,6 +279,7 @@ bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreHashChecksumByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
 
     // Account for this checksum character
@@ -267,10 +289,13 @@ bool sempUnicoreHashChecksumByte(SEMP_PARSE_STATE *parse, uint8_t data)
     if (sempAsciiToNibble(parse->buffer[parse->length - 1]) < 0)
     {
         // Invalid checksum character
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: Unicore hash (#) invalid checksum character %d",
-                   parse->parserName,
-                   scratchPad->checksumBytes - scratchPad->bytesRemaining);
+        if (output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore hash (#) invalid checksum character ");
+            sempPrintDecimalI32Ln(output, scratchPad->checksumBytes - scratchPad->bytesRemaining);
+        }
 
         // Start searching for a preamble byte
         return sempFirstByte(parse, data);
@@ -287,6 +312,7 @@ bool sempUnicoreHashChecksumByte(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
     if (data == '*')
     {
@@ -303,10 +329,14 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         {
             if ((data < ' ') || (data > '~'))
             {
-                sempPrintf(parse->printDebug,
-                        "SEMP %s: Unicore hash %s abort on non-printable char",
-                        parse->parserName,
-                        scratchPad->sentenceName);
+                if (output)
+                {
+                    sempPrintString(output, "SEMP ");
+                    sempPrintString(output, parse->parserName);
+                    sempPrintString(output, ": Unicore hash (#) ");
+                    sempPrintString(output, (const char *)scratchPad->sentenceName);
+                    sempPrintStringLn(output, " abort on non-printable char");
+                }
 
                 // Start searching for a preamble byte
                 return sempFirstByte(parse, data);
@@ -317,10 +347,13 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
         {
             // sentence too long
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: Unicore hash (#) sentence too long, increase the buffer size > %d",
-                       parse->parserName,
-                       parse->bufferLength);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": Unicore hash (#) sentence too long, increase the buffer size > ");
+                sempPrintDecimalI32Ln(output, parse->bufferLength);
+            }
 
             // Start searching for a preamble byte
             return sempFirstByte(parse, data);
@@ -334,6 +367,7 @@ bool sempUnicoreHashFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
     parse->crc ^= data;
     if ((data != ',') || (scratchPad->sentenceNameLength == 0))
@@ -342,19 +376,27 @@ bool sempUnicoreHashFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         uint8_t upper = data & ~0x20;
         if (((upper < 'A') || (upper > 'Z')) && ((data < '0') || (data > '9')))
         {
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: Unicore hash (#) invalid sentence name character 0x%02x",
-                       parse->parserName, data);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": Unicore hash (#) invalid sentence name character ");
+                sempPrintHex0x02xLn(output, data);
+            }
             return sempFirstByte(parse, data);
         }
 
         // Name too long, start searching for a preamble byte
         if (scratchPad->sentenceNameLength == (sizeof(scratchPad->sentenceName) - 1))
         {
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: Unicore hash (#) sentence name > %ld characters",
-                       parse->parserName,
-                       sizeof(scratchPad->sentenceName) - 1);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": Unicore hash (#) sentence name > ");
+                sempPrintDecimalI32(output, sizeof(scratchPad->sentenceName) - 1);
+                sempPrintStringLn(output, " characters");
+            }
             return sempFirstByte(parse, data);
         }
 

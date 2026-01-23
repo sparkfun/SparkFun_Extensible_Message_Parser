@@ -212,8 +212,8 @@ void setup()
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempEnableDebugOutput(nmeaParser);
-    sempEnableDebugOutput(ubloxParser);
+    sempDebugOutputEnable(nmeaParser);
+    sempDebugOutputEnable(ubloxParser);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
         for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)

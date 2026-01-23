@@ -110,12 +110,23 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
         if (valid)
             parse->eomCallback(parse, parse->type); // Pass parser array index
         else
-            sempPrintf(parse->printDebug,
-                    "SEMP %s: SPARTN %d %d, 0x%04x (%d) bytes, bad CRC",
-                    parse->parserName,
-                    scratchPad->messageType,
-                    scratchPad->messageSubtype,
-                    parse->length, parse->length);
+        {
+            SEMP_OUTPUT output = parse->debugOutput;
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": SPARTN ");
+                sempPrintDecimalI32(output, scratchPad->messageType);
+                output(' ');
+                sempPrintDecimalI32(output, scratchPad->messageSubtype);
+                sempPrintString(output, ", ");
+                sempPrintHex0x04x(output, parse->length);
+                sempPrintString(output, " (");
+                sempPrintDecimalI32(output, parse->length);
+                sempPrintStringLn(output, ") bytes, bad CRC");
+            }
+        }
         parse->state = sempFirstByte;
         return false;
     }
@@ -236,6 +247,7 @@ bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
 
     if (scratchPad->frameCount == 0)
@@ -274,13 +286,20 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
         if (semp_uSpartnCrc4(&parse->buffer[1], 3) == scratchPad->frameCRC)
         {
             parse->buffer[3] = data; // Restore TF005 and TF006 now we know the data is valid
-            if (parse->verboseDebug)
-                sempPrintf(parse->printDebug,
-                        "SEMP %s: Incoming SPARTN %d %d, 0x%04x (%d) bytes",
-                        parse->parserName,
-                        scratchPad->messageType,
-                        scratchPad->messageSubtype,
-                        scratchPad->payloadLength, scratchPad->payloadLength);
+            if (parse->verboseDebug && output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": Incoming SPARTN ");
+                sempPrintDecimalI32(output, scratchPad->messageType);
+                output(' ');
+                sempPrintDecimalI32(output, scratchPad->messageSubtype);
+                sempPrintString(output, ", ");
+                sempPrintHex0x04x(output, scratchPad->payloadLength);
+                sempPrintString(output, " (");
+                sempPrintDecimalI32(output, scratchPad->payloadLength);
+                sempPrintStringLn(output, ") bytes");
+            }
             parse->state = sempSpartnReadTF007;
         }
         else
@@ -288,13 +307,18 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
             // Invalid header CRC
             parse->buffer[3] = data; // Restore the byte now we know the data is invalid
             parse->state = sempFirstByte;
-
-            sempPrintf(parse->printDebug,
-                    "SEMP %s: SPARTN %d, 0x%04x (%d) bytes, bad header CRC",
-                    parse->parserName,
-                    scratchPad->messageType,
-                    parse->length, parse->length);
-
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": SPARTN ");
+                sempPrintDecimalI32(output, scratchPad->messageType);
+                sempPrintString(output, ", ");
+                sempPrintHex0x04x(output, parse->length);
+                sempPrintString(output, " (");
+                sempPrintDecimalI32(output, parse->length);
+                sempPrintStringLn(output, ") bytes, bad header CRC");
+            }
             return false;
         }
     }

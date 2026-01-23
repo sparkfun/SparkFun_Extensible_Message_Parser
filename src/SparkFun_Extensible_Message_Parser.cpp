@@ -83,7 +83,6 @@ SEMP_PARSE_STATE *sempBeginParser(
     SEMP_EOM_CALLBACK eomCallback,
     SEMP_OUTPUT debugOutput,
     Print *printError,
-    Print *printDebug,
     SEMP_BAD_CRC_CALLBACK badCrc
     )
 {
@@ -244,19 +243,30 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
 //----------------------------------------
 // Disable debug output
 //----------------------------------------
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
+void sempDebugOutputDisable(SEMP_PARSE_STATE *parse)
+{
+    if (parse)
+        parse->debugOutput = nullptr;
+}
+
+//----------------------------------------
+// Enable debug output
+//----------------------------------------
+void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
+                           SEMP_OUTPUT output,
+                           bool verbose)
 {
     if (parse)
     {
-        parse->debugOutput = nullptr;
-        parse->printDebug = nullptr;
+        parse->debugOutput = output;
+        parse->verboseDebug = verbose;
     }
 }
 
 //----------------------------------------
 // Disable error output
 //----------------------------------------
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
+void sempErrorOutputDisable(SEMP_PARSE_STATE *parse)
 {
     if (parse)
         parse->printError = nullptr;
@@ -305,7 +315,7 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
                            size_t desiredParseAreaSize,
-                           Print *printDebug)
+                           SEMP_OUTPUT output)
 {
     size_t bufferLength;
     size_t bufferOverhead;
@@ -326,8 +336,14 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < parseArea)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, due to minimize size requirement",
-                   parseAreaBytes, parseArea);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintString(output, " to ");
+            sempPrintDecimalI32(output, parseArea);
+            sempPrintStringLn(output, " bytes, due to minimize size requirement");
+        }
         parseAreaBytes = parseArea;
     }
 
@@ -335,8 +351,14 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < payloadOffset)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, due to payload offset requirement",
-                   parseAreaBytes, payloadOffset);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintString(output, " to ");
+            sempPrintDecimalI32(output, payloadOffset);
+            sempPrintStringLn(output, " bytes, due to payload offset requirement");
+        }
         parseAreaBytes = payloadOffset;
     }
 
@@ -344,8 +366,12 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < 1)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, requires at least one byte",
-                   parseAreaBytes, 1);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintStringLn(output, " to 1 byte, requires at least one byte");
+        }
         parseAreaBytes = 1;
     }
 
@@ -353,7 +379,12 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     bufferLength = bufferOverhead + parseAreaBytes;
 
     // Display the buffer length
-    sempPrintf(printDebug, "SEMP: Buffer length %d bytes", bufferLength);
+    if (output)
+    {
+        sempPrintString(output, "SEMP: Buffer length ");
+        sempPrintDecimalI32(output, bufferLength);
+        sempPrintStringLn(output, " bytes");
+    }
     return bufferLength;
 }
 
@@ -1264,18 +1295,6 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
 //------------------------------------------------------------------------------
 // V1 routines to eliminate
 //------------------------------------------------------------------------------
-
-//----------------------------------------
-// Enable debug output
-//----------------------------------------
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print, bool verbose)
-{
-    if (parse)
-    {
-        parse->printDebug = print;
-        parse->verboseDebug = verbose;
-    }
-}
 
 //----------------------------------------
 // Enable error output

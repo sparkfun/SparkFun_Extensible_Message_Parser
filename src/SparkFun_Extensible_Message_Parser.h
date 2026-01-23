@@ -130,7 +130,6 @@ typedef struct _SEMP_PARSE_STATE
     const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
-    Print *printDebug;             // Class to use for debug output
     SEMP_OUTPUT debugOutput;       // Output a debug character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
@@ -187,7 +186,6 @@ typedef struct _SEMP_UNICORE_HEADER
 //   oemCallback: Address of a callback routine to handle the parsed messages
 //   debugOutput: Addess of a routine to output a debug character, myabe nullptr
 //   printError: Addess of a routine used to output error messages
-//   printDebug: Addess of a routine used to output debug messages
 //   badCrcCallback: Address of a routine to handle bad CRC messages
 //
 // Outputs:
@@ -239,20 +237,29 @@ SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    SEMP_EOM_CALLBACK eomCallback,
                                    SEMP_OUTPUT debugOutput = nullptr,
                                    Print *printError = &Serial,
-                                   Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
 
 // Disable debug output
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
+void sempDebugOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+//   verbose: Enable or disable verbose debug output
+void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
+                           SEMP_OUTPUT output = nullptr,
+                           bool verbose = false);
 
 // Disable error output
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
+void sempErrorOutputDisable(SEMP_PARSE_STATE *parse);
 
 // Compute the necessary buffer length in bytes to support the scratch pad
 // and parse buffer lengths.
@@ -261,7 +268,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
 //   parserCount:  Number of entries in the parseTable
 //   desiredParseAreaSize: Desired size of the parse area in bytes
-//   printDebug: Device to output any debug messages, may be nullptr
+//   output: Device to output any debug messages, may be nullptr
 //
 // Outputs:
 //    Returns the number of bytes needed for the buffer that contains
@@ -269,7 +276,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
                            size_t desiredParseAreaSize = 0,
-                           Print *printDebug = &Serial);
+                           SEMP_OUTPUT output = nullptr);
 
 // Translates state value into an ASCII state name
 //
@@ -1002,15 +1009,6 @@ const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 //------------------------------------------------------------------------------
 // V1 routines to be eliminated
 //------------------------------------------------------------------------------
-
-// Enable debug output
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse,
-                           Print *print = &Serial,
-                           bool verbose = false);
 
 // Enable error output
 //

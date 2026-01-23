@@ -62,6 +62,7 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
 {
     int checksum;
     size_t length;
+    SEMP_OUTPUT output;
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
 
     // Ignore the CR and LF at the end of the buffer
@@ -89,21 +90,35 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
     }
 
     // Display the error
-    if ((length + 2) > parse->bufferLength)
-        sempPrintf(parse->printDebug,
-                   "ERROR SEMP %s: NMEA buffer is too small, increase >= %d",
-                   parse->parserName, length + 2);
-    else
-        // Display the checksum error
-        sempPrintf(parse->printDebug,
-                   "SEMP %s: NMEA %s, 0x%04x (%d) bytes, bad checksum, "
-                   "received 0x%c%c, computed: 0x%02x",
-                   parse->parserName,
-                   scratchPad->sentenceName,
-                   length, length,
-                   parse->buffer[length - 2],
-                   parse->buffer[length - 1],
-                   parse->crc);
+    output = parse->debugOutput;
+    if (output)
+    {
+        if ((length + 2) > parse->bufferLength)
+        {
+            sempPrintString(output, "ERROR SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": NMEA buffer is too small, increase >= ");
+            sempPrintDecimalI32Ln(output, length + 2);
+        }
+        else
+        {
+            // Display the checksum error
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": NMEA ");
+            sempPrintString(output, (const char *)scratchPad->sentenceName);
+            sempPrintString(output, ", ");
+            sempPrintHex0x04x(output, length);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, length);
+            sempPrintString(output, ") bytes, bad checksum, received ");
+            sempPrintString(output, "0x");
+            output(parse->buffer[length - 2]);
+            output(parse->buffer[length - 1]);
+            sempPrintString(output, ", computed: ");
+            sempPrintHex0x02xLn(output, parse->crc);
+        }
+    }
 
     // The data character is in the buffer, remove it because the caller
     // passes it to sempFirstByte.
@@ -177,6 +192,8 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
+
     // Validate the checksum character
     if (sempAsciiToNibble(parse->buffer[parse->length - 1]) >= 0)
     {
@@ -185,9 +202,13 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 
     // Invalid checksum character
-    sempPrintf(parse->printDebug,
-               "SEMP %s: NMEA invalid second checksum character",
-               parse->parserName);
+    output = parse->debugOutput;
+    if (output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintStringLn(output, ": NMEA invalid second checksum character");
+    }
 
     // The data character is in the buffer, remove it and pass the
     // remaining data to the invalid data handler
@@ -203,6 +224,8 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
+
     // Validate the checksum character
     if (sempAsciiToNibble(parse->buffer[parse->length - 1]) >= 0)
     {
@@ -211,9 +234,13 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 
     // Invalid checksum character
-    sempPrintf(parse->printDebug,
-               "SEMP %s: NMEA invalid first checksum character",
-               parse->parserName);
+    output = parse->debugOutput;
+    if (output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintStringLn(output, ": NMEA invalid first checksum character");
+    }
 
     // The data character is in the buffer, remove it and pass the
     // remaining data to the invalid data handler
@@ -229,6 +256,7 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
 
     if (data == '*')
@@ -239,14 +267,19 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->crc ^= data;
 
         // Abort on a non-printable char - if enabled
+        output = parse->debugOutput;
         if (parse->nmeaAbortOnNonPrintable)
         {
             if ((data < ' ') || (data > '~'))
             {
-                sempPrintf(parse->printDebug,
-                        "SEMP %s: NMEA %s abort on non-printable char",
-                        parse->parserName,
-                        scratchPad->sentenceName);
+                if (output)
+                {
+                    sempPrintString(output, "SEMP ");
+                    sempPrintString(output, parse->parserName);
+                    sempPrintString(output, ": NMEA ");
+                    sempPrintString(output, (const char *)scratchPad->sentenceName);
+                    sempPrintStringLn(output, " abort on non-printable char");
+                }
 
                 // The data character is in the buffer, remove it and
                 // pass the remaining data to the invalid data handler
@@ -262,10 +295,13 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
         if ((uint32_t)(parse->length + NMEA_BUFFER_OVERHEAD) > parse->bufferLength)
         {
             // sentence too long
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: NMEA sentence too long, increase the buffer size > %d",
-                       parse->parserName,
-                       parse->bufferLength);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": NMEA sentence too long, increase the buffer size > ");
+                sempPrintDecimalI32Ln(output, parse->bufferLength);
+            }
 
             // The data character is in the buffer, remove it and pass the
             // remaining data to the invalid data handler
@@ -284,6 +320,7 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
     parse->crc ^= data;
     if ((data != ',') || (scratchPad->sentenceNameLength == 0))
@@ -292,9 +329,13 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         uint8_t upper = data & ~0x20;
         if (((upper < 'A') || (upper > 'Z')) && ((data < '0') || (data > '9')))
         {
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: NMEA invalid sentence name character 0x%02x",
-                       parse->parserName, data);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": NMEA invalid sentence name character ");
+                sempPrintHex0x02xLn(output, data);
+            }
 
             // The data character is in the buffer, remove it and pass the
             // remaining data to the invalid data handler
@@ -306,11 +347,15 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
         // Name too long, start searching for a preamble byte
         if (scratchPad->sentenceNameLength == (sizeof(scratchPad->sentenceName) - 1))
         {
-            sempPrintf(parse->printDebug,
-                       "SEMP %s: NMEA sentence name > %ld characters",
-                       parse->parserName,
-                       sizeof(scratchPad->sentenceName) - 1);
-
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": NMEA sentence name > ");
+                sempPrintDecimalI32(output, sizeof(scratchPad->sentenceName) - 1);
+                sempPrintStringLn(output, " characters");
+            }
+\
             // The data character is in the buffer, remove it and pass the
             // remaining data to the invalid data handler
             parse->length -= 1;

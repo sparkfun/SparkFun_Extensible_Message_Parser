@@ -149,7 +149,7 @@ void setup()
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
-    sempEnableDebugOutput(parse1); // Debug - comment if desired
+    sempDebugOutputEnable(parse1); // Debug - comment if desired
 
     // Add the callback for invalid SBF data,
     // to allow it to be passed to the SPARTN parser
@@ -170,7 +170,7 @@ void setup()
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 
-    sempEnableDebugOutput(parse2); // Debug - comment if desired
+    sempDebugOutputEnable(parse2); // Debug - comment if desired
 
     // Obtain a raw data stream from somewhere
     sempPrintString(output, "Raw data stream: ");

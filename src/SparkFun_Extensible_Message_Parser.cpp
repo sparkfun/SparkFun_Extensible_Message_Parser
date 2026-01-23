@@ -181,7 +181,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->type = parserCount;  // No active parser
 
         // Display the parser configuration
-        sempPrintParserConfiguration(parse, parse->printDebug);
+        sempPrintParserConfiguration(parse, parse->debugOutput);
     } while (0);
 
     // Return the parse structure address
@@ -1148,32 +1148,80 @@ void sempPrintLn(SEMP_OUTPUT output)
 //----------------------------------------
 // Print the parser's configuration
 //----------------------------------------
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 {
-    if (print && parse)
+    if (output && parse)
     {
-        sempPrintln(print, "SparkFun Extensible Message Parser");
-        sempPrintf(print, "    parserName: %p (%s)", parse->parserName, parse->parserName);
-        sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
-        sempPrintf(print, "    parserCount: %d", parse->parserCount);
-        sempPrintf(print, "    printError: %p", parse->printError);
-        sempPrintf(print, "    printDebug: %p", parse->printDebug);
-        sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
-        sempPrintf(print, "    nmeaAbortOnNonPrintable: %d", parse->nmeaAbortOnNonPrintable);
-        sempPrintf(print, "    unicoreHashAbortOnNonPrintable: %d", parse->unicoreHashAbortOnNonPrintable);
-        sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
-                   (void *)parse->scratchPad,
-                   parse->scratchPad ? (parse->buffer - (uint8_t *)parse->scratchPad)
-                                     : 0);
-        sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
-        sempPrintf(print, "    crc: 0x%08x", parse->crc);
-        sempPrintf(print, "    State: %p%s", (void *)parse->state,
-                   (parse->state == sempFirstByte) ? " (sempFirstByte)" : "");
-        sempPrintf(print, "    EomCallback: %p", (void *)parse->eomCallback);
-        sempPrintf(print, "    Buffer: %p (%d bytes)",
-                   (void *)parse->buffer, parse->bufferLength);
-        sempPrintf(print, "    length: %d message bytes", parse->length);
-        sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
+        sempPrintString(output, "SparkFun Extensible Message Parser\r\n");
+
+        sempPrintString(output, "    parserName: ");
+        sempPrintAddr(output, (void *)parse->parserName);
+        sempPrintString(output, " (");
+        sempPrintString(output, parse->parserName);
+        sempPrintCharLn(output, ')');
+
+        sempPrintString(output, "    parsers: ");
+        sempPrintAddrLn(output, (void *)parse->parsers);
+
+        sempPrintString(output, "    parserCount: ");
+        sempPrintDecimalI32Ln(output, parse->parserCount);
+
+        sempPrintString(output, "    debugOutput: ");
+        sempPrintAddrLn(output, (void *)parse->debugOutput);
+
+        sempPrintString(output, "    printError: ");
+        sempPrintAddrLn(output, (void *)parse->printError);
+
+        sempPrintString(output, "    verboseDebug: ");
+        sempPrintDecimalI32Ln(output, parse->verboseDebug);
+
+        sempPrintString(output, "    nmeaAbortOnNonPrintable: ");
+        sempPrintDecimalI32Ln(output, parse->nmeaAbortOnNonPrintable);
+
+        sempPrintString(output, "    unicoreHashAbortOnNonPrintable: ");
+        sempPrintDecimalI32Ln(output, parse->unicoreHashAbortOnNonPrintable);
+
+        sempPrintString(output, "    scratchPad: ");
+        sempPrintAddr(output, (void *)parse->scratchPad);
+        sempPrintString(output, " (");
+        if (parse->scratchPad)
+            sempPrintDecimalI32(output, parse->buffer - (uint8_t *)parse->scratchPad);
+        else
+            output('0');
+        sempPrintStringLn(output, " bytes)");
+
+        sempPrintString(output, "    computeCrc: ");
+        sempPrintAddrLn(output, (void *)parse->computeCrc);
+
+        sempPrintString(output, "    crc: 0x");
+        sempPrintHex08xLn(output, parse->crc);
+
+        sempPrintString(output, "    state: ");
+        sempPrintAddr(output, (void *)parse->state);
+        sempPrintStringLn(output, (parse->state == sempFirstByte) ? " (sempFirstByte)"
+                                                                  : "");
+
+        sempPrintString(output, "    eomCallback: ");
+        sempPrintAddrLn(output, (void *)parse->eomCallback);
+
+        sempPrintString(output, "    invalidData: ");
+        sempPrintAddrLn(output, (void *)parse->invalidData);
+
+        sempPrintString(output, "    buffer: ");
+        sempPrintAddr(output, (void *)parse->buffer);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->bufferLength);
+        sempPrintStringLn(output, " bytes)");
+
+        sempPrintString(output, "    length: ");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintStringLn(output, " message bytes");
+
+        sempPrintString(output, "    type: ");
+        sempPrintDecimalI32(output, parse->type);
+        sempPrintString(output, " (");
+        sempPrintString(output, sempGetTypeName(parse, parse->type));
+        sempPrintCharLn(output, ')');
     }
 }
 

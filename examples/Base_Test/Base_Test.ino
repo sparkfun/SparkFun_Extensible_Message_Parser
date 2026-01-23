@@ -145,7 +145,7 @@ void setup()
     // Display the parser configuration
     sempPrintString(output, "&parserTable: ");
     sempPrintAddrLn(output, parserTable);
-    sempPrintParserConfiguration(parse, &Serial);
+    sempPrintParserConfiguration(parse, output);
 
     // Display the parse state
     sempPrintString(output, "Parse State: ");
@@ -204,6 +204,6 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         displayOnce = false;
         sempPrintLn(output);
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintParserConfiguration(parse, output);
     }
 }

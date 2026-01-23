@@ -792,8 +792,9 @@ void sempPrintLn(SEMP_OUTPUT output);
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+//   output: Addess of a routine to output a debug character
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse,
+                                  SEMP_OUTPUT output = nullptr);
 
 // Display a string
 //

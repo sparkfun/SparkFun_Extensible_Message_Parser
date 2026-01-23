@@ -177,7 +177,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         displayOnce = false;
         sempPrintLn(output);
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintParserConfiguration(parse, output);
     }
 }
 

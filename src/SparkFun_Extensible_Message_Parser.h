@@ -131,6 +131,7 @@ typedef struct _SEMP_PARSE_STATE
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
     Print *printDebug;             // Class to use for debug output
+    SEMP_OUTPUT debugOutput;       // Output a debug character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
@@ -183,7 +184,8 @@ typedef struct _SEMP_UNICORE_HEADER
 //   parserCount:  Number of entries in the parseTable
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
-//   oemCallback: Address of a callback routine to handle the output
+//   oemCallback: Address of a callback routine to handle the parsed messages
+//   debugOutput: Addess of a routine to output a debug character, myabe nullptr
 //   printError: Addess of a routine used to output error messages
 //   printDebug: Addess of a routine used to output debug messages
 //   badCrcCallback: Address of a routine to handle bad CRC messages
@@ -235,6 +237,7 @@ SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
+                                   SEMP_OUTPUT debugOutput = nullptr,
                                    Print *printError = &Serial,
                                    Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);

@@ -81,6 +81,7 @@ SEMP_PARSE_STATE *sempBeginParser(
     uint8_t * buffer,
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
+    SEMP_OUTPUT debugOutput,
     Print *printError,
     Print *printDebug,
     SEMP_BAD_CRC_CALLBACK badCrc
@@ -169,6 +170,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->bufferLength = bufferLength - bufferOverhead;
 
         // Initialize the parse state
+        parse->debugOutput = debugOutput;
         parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
@@ -245,7 +247,10 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
 void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
 {
     if (parse)
+    {
+        parse->debugOutput = nullptr;
         parse->printDebug = nullptr;
+    }
 }
 
 //----------------------------------------

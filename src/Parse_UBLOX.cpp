@@ -288,6 +288,7 @@ SEMP_PARSER_DESCRIPTION sempUbloxParserDescription =
     "U-Blox parser",            // parserName
     sempUbloxPreamble,          // preamble
     sempUbloxGetStateName,      // State to state name translation routine
+    3000,   /* ??? */           // minimumParseAreaBytes
     sizeof(SEMP_UBLOX_VALUES),  // scratchPadBytes
     SEMP_UBLOX_PAYLOAD_OFFSET,  // payloadOffset
 };

@@ -18,4 +18,6 @@
 // No parser externals
 extern SEMP_PARSER_DESCRIPTION noParserDescription;
 
+#define NO_PARSER_MINIMUM_BUFFER_SIZE       10  // Exposed for testing only
+
 #endif  // __NO_PARSER_H__

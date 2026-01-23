@@ -37,6 +37,7 @@ bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempFirstByte;
         return true;
     }
+
     // Preamble not found
     return false;
 }
@@ -70,6 +71,7 @@ SEMP_PARSER_DESCRIPTION noParserDescription =
     "No parser",            // parserName
     noParserPreamble,       // preamble
     noParserGetStateName,   // State to state name translation routine
+    NO_PARSER_MINIMUM_BUFFER_SIZE, // minimumParseAreaBytes
     0,                      // scratchPadBytes
     0,                      // payloadOffset
 };

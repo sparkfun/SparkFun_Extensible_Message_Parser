@@ -370,6 +370,7 @@ SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
     "SPARTN parser",            // parserName
     sempSpartnPreamble,         // preamble
     sempSpartnGetStateName,     // State to state name translation routine
+    3000,   /* ??? */           // minimumParseAreaBytes
     sizeof(SEMP_SPARTN_VALUES), // scratchPadBytes
     0,                          // payloadOffset
 };

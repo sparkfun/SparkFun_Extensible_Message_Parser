@@ -12,12 +12,6 @@ License: MIT. Please see LICENSE.md for more details
 #include <Arduino.h>
 
 //----------------------------------------
-// Constants
-//----------------------------------------
-
-#define SEMP_MINIMUM_BUFFER_LENGTH      32
-
-//----------------------------------------
 // Externals
 //----------------------------------------
 
@@ -112,6 +106,7 @@ typedef const struct _SEMP_PARSER_DESCRIPTION
     const char * parserName;        // Name of the parser
     SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
     SEMP_GET_STATE_NAME getStateName; // Routine to translate state into state name
+    size_t minimumParseAreaBytes;   // Minimum parse area size for best operation
     size_t scratchPadBytes;         // Required scratch pad size
     size_t payloadOffset;           // Offset to the first byte of the payload
 } SEMP_PARSER_DESCRIPTION;
@@ -256,7 +251,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 // Inputs:
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
 //   parserCount:  Number of entries in the parseTable
-//   parseBufferBytes: Desired size of the parse buffer in bytes
+//   desiredParseAreaSize: Desired size of the parse area in bytes
 //   printDebug: Device to output any debug messages, may be nullptr
 //
 // Outputs:
@@ -264,7 +259,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 //    the SEMP parser state, a scratch pad area and the parse buffer
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
-                           size_t parserBufferBytes,
+                           size_t desiredParseAreaSize,
                            Print *printDebug = &Serial);
 
 // Translates state value into an ASCII state name
@@ -578,6 +573,30 @@ int sempAsciiToNibble(int data);
 //   parse: Address of a SEMP_PARSE_STATE structure
 //   print: Address of a Print object to use for output
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+
+//------------------------------------------------------------------------------
+// Testing support routines - Must only be called by testing routines
+//------------------------------------------------------------------------------
+
+//----------------------------------------
+// Compute the buffer size required without a parse area (overhead)
+//
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   parserCount:  Number of entries in the parseTable
+//   parseAread: Address to receive the minimum parse area size
+//   payloadOffset: Address to receive the maximum payload offset
+//
+// Outputs:
+//   Returns the buffer overhead bytes required for the parser state and
+//   scratch pad area
+//----------------------------------------
+size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
+                                 uint16_t parserCount,
+                                 size_t *parseAreaBytes,
+                                 size_t *payloadOffset,
+                                 size_t *parseStateBytes,
+                                 size_t *scratchPadBytes);
 
 //------------------------------------------------------------------------------
 // Parser notes

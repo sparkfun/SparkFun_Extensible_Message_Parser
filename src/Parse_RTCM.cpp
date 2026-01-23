@@ -282,6 +282,7 @@ SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
     "RTCM parser",              // parserName
     sempRtcmPreamble,           // preamble
     sempRtcmGetStateName,       // State to state name translation routine
+    1029,                       // minimumParseAreaBytes
     sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
     0,                          // payloadOffset
 };

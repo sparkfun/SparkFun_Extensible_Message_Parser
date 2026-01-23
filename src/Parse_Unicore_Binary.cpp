@@ -256,6 +256,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
 {
     "Unicore binary parser",            // parserName
     sempUnicoreBinaryPreamble,          // preamble
+    sempUnicoreBinaryGetStateName,      // State to state name translation routine
     sizeof(SEMP_UNICORE_BINARY_VALUES), // scratchPadBytes
     0,                                  // payloadOffset
 };

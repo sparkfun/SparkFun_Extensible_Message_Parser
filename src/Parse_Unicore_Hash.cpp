@@ -438,6 +438,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
 {
     "Unicore hash parser",              // parserName
     sempUnicoreHashPreamble,            // preamble
+    sempUnicoreHashGetStateName,        // State to state name translation routine
     sizeof(SEMP_UNICORE_HASH_VALUES),   // scratchPadBytes
     0,                                  // payloadOffset
 };

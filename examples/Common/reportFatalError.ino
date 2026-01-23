@@ -16,9 +16,8 @@ void reportFatalError(const char *errorMsg)
 {
     while (1)
     {
-        Serial.print("HALTED: ");
-        Serial.print(errorMsg);
-        Serial.println();
-        sleep(15);
+        sempPrintString(output, "HALTED: ");
+        sempPrintStringLn(output, errorMsg);
+        delay(15 * 1000);   // sleep(15);
     }
 }

@@ -8,6 +8,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -91,27 +92,30 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("Unicore hash (#)_Test_example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "Unicore hash (#)_Test_example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable, parserCount);
     if (sizeof(buffer) < bufferLength)
     {
-        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer size!");
     }
 
     // Initialize the parser
     parse = sempBeginParser("Unicore_Hash_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage,
-                            nullptr, &Serial, nullptr, badUnicoreHashChecksum);
+                            buffer, bufferLength, processMessage, output,
+                            &Serial, nullptr, badUnicoreHashChecksum);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempEnableDebugOutput(parse);
@@ -121,7 +125,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -156,7 +160,9 @@ bool badUnicoreHashChecksum(SEMP_PARSE_STATE *parse)
     // Display bad checksums
     if (!badChecksum)
     {
-        Serial.printf("UM980: Message improperly includes %c in checksum\r\n", parse->buffer[0]);
+        sempPrintString(output, "UM980: Message improperly includes ");
+        output(parse->buffer[0]);
+        sempPrintStringLn(output, " in checksum");
         dumpBuffer(parse->buffer, parse->length);
     }
     return badChecksum;
@@ -176,8 +182,15 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         offset -= 1;
 
     // Display the raw message
-    Serial.println();
-    Serial.printf("Valid Unicore Hash (#) Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
-              sempUnicoreHashGetSentenceName(parse), parse->length, offset, offset);
+    sempPrintLn(output);
+    sempPrintString(output, "Valid Unicore Hash (#) Sentence: ");
+    sempPrintString(output, sempUnicoreHashGetSentenceName(parse));
+    sempPrintString(output, ", ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 }

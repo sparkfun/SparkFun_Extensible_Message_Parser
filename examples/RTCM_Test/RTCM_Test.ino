@@ -8,6 +8,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -86,26 +87,29 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("RTCM_Test example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "RTCM_Test example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable, parserCount);
     if (sizeof(buffer) < bufferLength)
     {
-        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer size!");
     }
 
     // Initialize the parser
     parse = sempBeginParser("RTCM_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempEnableDebugOutput(parse);
@@ -115,7 +119,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -135,26 +139,36 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid RTCM %d message: %d bytes at 0x%08x (%d)\r\n",
-                  sempRtcmGetMessageNumber(parse), (int)parse->length, (unsigned int)offset, (int)offset);
+    sempPrintString(output, "Valid RTCM ");
+    sempPrintDecimalI32(output, sempRtcmGetMessageNumber(parse));
+    sempPrintString(output, " message: ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
-    Serial.printf("Using sempRtcmGetUnsignedBits: message number is: %lld\r\n",
-                  sempRtcmGetUnsignedBits(parse, 0, 12));
+
+    sempPrintString(output, "Using sempRtcmGetUnsignedBits: message number is: ");
+    sempPrintDecimalI32Ln(output, sempRtcmGetUnsignedBits(parse, 0, 12));
     if (sempRtcmGetMessageNumber(parse) == 1005)
     {
-        Serial.printf("RTCM 1005 ARP is: X %lld Y %lld Z %lld\r\n",
-                      sempRtcmGetSignedBits(parse, 34, 38),
-                      sempRtcmGetSignedBits(parse, 74, 38),
-                      sempRtcmGetSignedBits(parse, 114, 38));
+        sempPrintString(output, "RTCM 1005 ARP is: X ");
+        sempPrintDecimalU64(output, sempRtcmGetSignedBits(parse, 34, 38));
+        sempPrintString(output, " Y ");
+        sempPrintDecimalU64(output, sempRtcmGetSignedBits(parse, 74, 38));
+        sempPrintString(output, " Z ");
+        sempPrintDecimalU64Ln(output, sempRtcmGetSignedBits(parse, 114, 38));
     }
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }

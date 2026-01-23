@@ -6,6 +6,7 @@
 
 #include "No_Parser.h"
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -54,9 +55,9 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("Base_Test example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "Base_Test example sketch");
+    sempPrintLn(output);
 
     // Determine the buffer overhead (no parse area)
     bufferOverhead = sempComputeBufferOverhead(parserTable,
@@ -70,7 +71,8 @@ void setup()
     bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
     if (sizeof(buffer) != bufferLength)
     {
-        Serial.printf("Set BUFFER_OVERHEAD to %d\r\n", bufferLength - BUFFER_LENGTH);
+        sempPrintString(output, "Set BUFFER_OVERHEAD to ");
+        sempPrintDecimalI32(output, bufferLength - BUFFER_LENGTH);
         reportFatalError("Update BUFFER_OVERHEAD value!");
     }
 
@@ -135,24 +137,29 @@ void setup()
 
     // Start using the entire buffer
     parse = sempBeginParser("Base Test Example", parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
-    Serial.println("Parser successfully initialized");
+    sempPrintStringLn(output, "Parser successfully initialized");
 
     // Display the parser configuration
-    Serial.printf("&parserTable: %p\r\n", parserTable);
+    sempPrintString(output, "&parserTable: ");
+    sempPrintAddrLn(output, parserTable);
     sempPrintParserConfiguration(parse, &Serial);
 
     // Display the parse state
-    Serial.printf("Parse State: %s\r\n", sempGetStateName(parse));
+    sempPrintString(output, "Parse State: ");
+    sempPrintStringLn(output, sempGetStateName(parse));
 
     // Display the parser type
-    Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
+    sempPrintString(output, "Parser Name: ");
+    sempPrintStringLn(output, sempGetTypeName(parse, parse->type));
 
     // Obtain a raw data stream from somewhere
     sempEnableDebugOutput(parse);
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
@@ -161,7 +168,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -181,17 +188,22 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid Message: %d bytes at 0x%08x (%d)\r\n",
-                  parse->length, offset, offset);
+    sempPrintString(output, "Valid Message: ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }

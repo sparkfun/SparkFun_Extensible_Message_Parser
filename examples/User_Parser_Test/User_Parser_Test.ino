@@ -9,6 +9,7 @@
 
 #include "User_Parser.h"
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -72,26 +73,29 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("User_Parser example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "User_Parser example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(userParserTable, userParserCount);
     if (sizeof(buffer) < bufferLength)
     {
-        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer size!");
     }
 
     // Initialize the parser
     parse = sempBeginParser("User_Parser", userParserTable, userParserCount,
-                            buffer, bufferLength, userMessage);
+                            buffer, bufferLength, userMessage, output);
     if (!parse)
         reportFatalError("Failed to initialize the user parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempEnableDebugOutput(parse);
@@ -111,15 +115,23 @@ void setup()
 
         // Print the parser transition
         endState = sempGetStateName(parse);
-        Serial.printf("0x%02x (%c), state: (%p) %s --> %s (%p)\r\n",
-                      rawDataStream[dataOffset],
-                      ((data >= ' ') && (data < 0x7f)) ? data : '.',
-                      startState, startState, endState, endState);
+        sempPrintHex0x02x(output, rawDataStream[dataOffset]);
+        sempPrintString(output, " (");
+        sempPrintChar(output, ((data >= ' ') && (data < 0x7f)) ? data : '.');
+        sempPrintString(output, "), state: (");
+        sempPrintAddr(output, startState);
+        sempPrintString(output, ") ");
+        sempPrintString(output, startState);
+        sempPrintString(output, " --> ");
+        sempPrintString(output, endState);
+        sempPrintString(output, " (");
+        sempPrintAddr(output, endState);
+        sempPrintCharLn(output, ')');
     }
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -139,17 +151,24 @@ void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid Message %d, %d bytes at 0x%08x (%d)\r\n",
-                  userParserGetMessageNumber(parse), parse->length, offset, offset);
+    sempPrintString(output, "Valid Message ");
+    sempPrintDecimalI32(output, userParserGetMessageNumber(parse));
+    sempPrintString(output, ", ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }

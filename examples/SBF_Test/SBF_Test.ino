@@ -8,6 +8,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -85,26 +86,29 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("SBF_Test example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "SBF_Test example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable, parserCount);
     if (sizeof(buffer) < bufferLength)
     {
-        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer size!");
     }
 
     // Initialize the parser
     parse = sempBeginParser("SBF_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempEnableDebugOutput(parse);
@@ -114,7 +118,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -134,23 +138,32 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid SBF message block %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  sempSbfGetId(parse),
-                  parse->length, offset, offset);
+    sempPrintString(output, "Valid SBF message block ");
+    sempPrintDecimalI32(output, sempSbfGetId(parse));
+    sempPrintString(output, " : ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display Block Number
-    Serial.print("SBF Block Number: ");
-    Serial.println(sempSbfGetBlockNumber(parse));
+    sempPrintString(output, "SBF Block Number: ");
+    sempPrintDecimalI32Ln(output, sempSbfGetBlockNumber(parse));
 
     // If this is PVTGeodetic, extract some data
     if (sempSbfGetBlockNumber(parse) == 4007)
     {
-        Serial.printf("TOW: %ld\r\n", sempSbfGetU4(parse, 8));
-        Serial.printf("Mode: %d\r\n", sempSbfGetU1(parse, 14));
-        Serial.printf("Error: %d\r\n", sempSbfGetU1(parse, 15));
+        sempPrintString(output, "TOW: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU4(parse, 8));
+        sempPrintString(output, "Mode: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 14));
+        sempPrintString(output, "Error: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 15));
         Serial.printf("Latitude: %.7g\r\n", sempSbfGetF8(parse, 16) * 180.0 / PI);
         Serial.printf("Longitude: %.7g\r\n", sempSbfGetF8(parse, 24) * 180.0 / PI);
     }
@@ -160,7 +173,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }

@@ -9,6 +9,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -168,21 +169,22 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("Muliple_Parser example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "Muliple_Parser example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(nmeaParserTable, nmeaParserCount);
     if (sizeof(buffer1) < bufferLength)
     {
-        Serial.printf("Set buffer1 size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer1 size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer1 size!");
     }
 
     // Initialize the NMEA parser
     nmeaParser = sempBeginParser("NMEA_Parser", nmeaParserTable, nmeaParserCount,
-                                 buffer1, bufferLength, nmeaSentence);
+                                 buffer1, bufferLength, nmeaSentence, output);
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
 
@@ -190,13 +192,14 @@ void setup()
     bufferLength = sempGetBufferLength(ubloxParserTable, ubloxParserCount);
     if (sizeof(buffer2) < bufferLength)
     {
-        Serial.printf("Set buffer2 size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer2 size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer2 size!");
     }
 
     // Initialize the U-Blox parser
     ubloxParser = sempBeginParser("U-Blox_Parser", ubloxParserTable, ubloxParserCount,
-                                  buffer2, bufferLength, ubloxMessage);
+                                  buffer2, bufferLength, ubloxMessage, output);
     if (!ubloxParser)
         reportFatalError("Failed to initialize the U-Blox parser");
 
@@ -204,7 +207,9 @@ void setup()
     rawDataBytes = 0;
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
         rawDataBytes += dataStream[dataIndex].length;
-    Serial.printf("Raw data stream: %d bytes\r\n", rawDataBytes);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, rawDataBytes);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempEnableDebugOutput(nmeaParser);
@@ -223,7 +228,7 @@ void setup()
     // Done parsing the data
     sempStopParser(&nmeaParser);
     sempStopParser(&ubloxParser);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -253,16 +258,23 @@ void nmeaSentence(SEMP_PARSE_STATE *parse, uint16_t type)
     }
 
     // Display the raw sentence
-    Serial.println();
-    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
-                  sempNmeaGetSentenceName(parse), parse->length, offset, offset);
+    sempPrintLn(output);
+    sempPrintString(output, "Valid NMEA Sentence: ");
+    sempPrintString(output, sempNmeaGetSentenceName(parse));
+    sempPrintString(output, ", ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintStringLn(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintStringLn(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }
@@ -275,17 +287,23 @@ void ubloxMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid u-blox message: %d bytes at 0x%08x (%d)\r\n",
-                  parse->length, offset, offset);
+    sempPrintLn(output);
+    sempPrintString(output, "Valid u-blox message: ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintStringLn(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintStringLn(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, &Serial);
     }
 }

@@ -547,6 +547,5 @@ void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = tr
 //   Returns the address of a zero terminated sentence name string
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
-void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

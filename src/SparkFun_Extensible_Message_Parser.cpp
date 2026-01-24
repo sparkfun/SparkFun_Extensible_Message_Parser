@@ -1221,6 +1221,9 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
             output('0');
         sempPrintStringLn(output, " bytes)");
 
+        sempPrintString(output, "    badCrc: ");
+        sempPrintAddrLn(output, (void *)parse->badCrc);
+
         sempPrintString(output, "    computeCrc: ");
         sempPrintAddrLn(output, (void *)parse->computeCrc);
 

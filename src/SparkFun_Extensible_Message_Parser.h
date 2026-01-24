@@ -227,7 +227,7 @@ void sempDebugOutputDisable(SEMP_PARSE_STATE *parse);
 //   output: Address of a SEMP_OUTPUT routine to use for output
 //   verbose: Enable or disable verbose debug output
 void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
-                           SEMP_OUTPUT output = nullptr,
+                           SEMP_OUTPUT output,
                            bool verbose = false);
 
 // Disable error output

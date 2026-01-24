@@ -170,7 +170,7 @@ void setup()
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempDebugOutputEnable(parse);
+    sempDebugOutputEnable(parse, output);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
         // Update the parser state based on the incoming byte
         sempParseNextByte(parse, rawDataStream[dataOffset]);

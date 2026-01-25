@@ -41,9 +41,6 @@ const uint8_t rawDataStream[] =
 // Number of bytes in the rawDataStream
 #define RAW_DATA_BYTES      (sizeof(rawDataStream) - 1)
 
-// Account for the largest message
-#define BUFFER_LENGTH   3
-
 SEMP_PARSER_DESCRIPTION * userParserTable[] =
 {
     &userParserDescription
@@ -54,6 +51,8 @@ const int userParserCount = sizeof(userParserTable) / sizeof(userParserTable[0])
 // Locals
 //----------------------------------------
 
+// Account for the largest message
+uint8_t buffer[83];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -66,6 +65,8 @@ SEMP_PARSE_STATE *parse;
 //----------------------------------------
 void setup()
 {
+    size_t bufferLength;
+
     int dataIndex;
 
     delay(1000);
@@ -75,11 +76,15 @@ void setup()
     Serial.println("User_Parser example sketch");
     Serial.println();
 
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(userParserTable, userParserCount);
+    if (sizeof(buffer) < bufferLength)
+    {
+        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer size!");
+    }
+
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(userParserTable,
-                                              userParserCount,
-                                              BUFFER_LENGTH);
-    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("User_Parser", userParserTable, userParserCount,
                             buffer, bufferLength, userMessage);
     if (!parse)
@@ -114,7 +119,6 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(buffer);
     Serial.printf("All done\r\n");
 }
 

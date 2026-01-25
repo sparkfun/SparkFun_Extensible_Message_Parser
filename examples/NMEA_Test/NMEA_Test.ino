@@ -76,13 +76,12 @@ const uint8_t rawDataStream[] =
 // Number of bytes in the rawDataStream
 #define RAW_DATA_BYTES      (sizeof(rawDataStream) - 1)
 
-// Account for the largest NMEA sentence + CR + LF + zero termination
-#define BUFFER_LENGTH   68 + 1 + 1 + 1
-
 //----------------------------------------
 // Locals
 //----------------------------------------
 
+// Account for the largest NMEA sentence + CR + LF + zero termination
+uint8_t buffer[178];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -95,6 +94,8 @@ SEMP_PARSE_STATE *parse;
 //----------------------------------------
 void setup()
 {
+    size_t bufferLength;
+
     delay(1000);
 
     Serial.begin(115200);
@@ -102,9 +103,15 @@ void setup()
     Serial.println("NMEA_Test_example sketch");
     Serial.println();
 
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable, parserCount);
+    if (sizeof(buffer) < bufferLength)
+    {
+        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer size!");
+    }
+
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
-    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("NMEA_Test", parserTable, parserCount,
                             buffer, bufferLength, processMessage);
     if (!parse)
@@ -124,7 +131,6 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(buffer);
     Serial.printf("All done\r\n");
 }
 

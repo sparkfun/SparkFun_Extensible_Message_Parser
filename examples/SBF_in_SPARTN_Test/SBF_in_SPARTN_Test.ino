@@ -102,13 +102,15 @@ const uint8_t rawDataStream[] =
 // Number of bytes in the rawDataStream
 #define RAW_DATA_BYTES      (sizeof(rawDataStream) / sizeof(rawDataStream[0]))
 
-// Account for the largest SBF messages
-#define BUFFER_LENGTH   2048
-
 //----------------------------------------
 // Locals
 //----------------------------------------
 
+// Account for the largest SBF messages
+uint8_t buffer1[3088];
+
+// Account for the largest SPARTN messages
+uint8_t buffer2[3096];
 uint32_t dataOffset1;
 SEMP_PARSE_STATE *parse1;
 SEMP_PARSE_STATE *parse2;
@@ -131,9 +133,15 @@ void setup()
     Serial.println("SBF_in_SPARTN_Test example sketch");
     Serial.println();
 
-    // Initialize the parsers
-    bufferLength = sempGetBufferLength(parserTable1, parserCount1, BUFFER_LENGTH);
-    uint8_t * buffer1 = (uint8_t *)malloc(bufferLength);
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable1, parserCount1);
+    if (sizeof(buffer1) < bufferLength)
+    {
+        Serial.printf("Set buffer1 size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer1 size!");
+    }
+
+    // Initialize the SBF parser
     parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1,
                              buffer1, bufferLength, processSbfMessage);
     if (!parse1)
@@ -145,8 +153,15 @@ void setup()
     // to allow it to be passed to the SPARTN parser
     sempSetInvalidDataCallback(parse1, invalidSbfData);
 
-    bufferLength = sempGetBufferLength(parserTable2, parserCount2, BUFFER_LENGTH);
-    uint8_t * buffer2 = (uint8_t *)malloc(bufferLength);
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable2, parserCount2);
+    if (sizeof(buffer2) < bufferLength)
+    {
+        Serial.printf("Set buffer2 size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer2 size!");
+    }
+
+    // Initialize the SPARTN parser
     parse2 = sempBeginParser("SPARTN_Test", parserTable2, parserCount2,
                              buffer2, bufferLength, processSpartnMessage);
     if (!parse2)
@@ -168,9 +183,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse1);
-    free(buffer1);
     sempStopParser(&parse2);
-    free(buffer2);
     Serial.printf("All done\r\n");
 }
 

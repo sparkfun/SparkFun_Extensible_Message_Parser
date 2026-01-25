@@ -146,13 +146,11 @@ const DataStream dataStream[] =
 
 #define DATA_STREAM_ENTRIES     (sizeof(dataStream) / sizeof(dataStream[0]))
 
-// Account for the largest u-blox messages
-#define BUFFER_LENGTH   3000
-
 //----------------------------------------
 // Locals
 //----------------------------------------
 
+uint8_t buffer[3096];
 int byteOffset;
 int dataIndex;
 uint32_t dataOffset;
@@ -167,6 +165,7 @@ SEMP_PARSE_STATE *parse;
 //----------------------------------------
 void setup()
 {
+    size_t bufferLength;
     int rawDataBytes;
 
     delay(1000);
@@ -176,9 +175,15 @@ void setup()
     Serial.println("Mixed_Parser example sketch");
     Serial.println();
 
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable, parserCount);
+    if (sizeof(buffer) < bufferLength)
+    {
+        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer size!");
+    }
+
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
-    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("Mixed_Parser", parserTable, parserCount,
                             buffer, bufferLength, processMessage);
     if (!parse)
@@ -204,7 +209,6 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(buffer);
     Serial.printf("All done\r\n");
 }
 

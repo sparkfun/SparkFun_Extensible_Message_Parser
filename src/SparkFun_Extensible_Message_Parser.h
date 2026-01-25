@@ -259,7 +259,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 //    the SEMP parser state, a scratch pad area and the parse buffer
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
-                           size_t desiredParseAreaSize,
+                           size_t desiredParseAreaSize = 0,
                            Print *printDebug = &Serial);
 
 // Translates state value into an ASCII state name

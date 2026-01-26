@@ -123,7 +123,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
             sempPrintString(output, parse->parserName);
             sempPrintString(output, ": Unicore hash (#) ");
             sempPrintString(output, "sentence too long, increase the buffer size >= ");
-            sempPrintDecimalU32Ln(output, parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
+            sempPrintDecimalU32Ln(output, parse->buffer - (uint8_t *)parse + parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
         }
 
         // Start searching for a preamble byte

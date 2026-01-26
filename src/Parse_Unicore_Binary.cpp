@@ -186,7 +186,7 @@ bool sempUnicoreBinaryReadHeader(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintString(output, ": Incoming Unicore ");
             sempPrintHex0x04x(output, header->messageLength);
             sempPrintString(output, " (");
-            sempPrintDecimalI32(output, header->messageLength);
+            sempPrintDecimalU32(output, header->messageLength);
             sempPrintStringLn(output, ") bytes");
         }
         parse->state = sempUnicoreBinaryReadData;

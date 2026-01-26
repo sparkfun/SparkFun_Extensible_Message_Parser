@@ -102,7 +102,7 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintString(output, ": RTCM ");
             sempPrintHex0x04x(output, parse->length);
             sempPrintString(output, " (");
-            sempPrintDecimalI32(output, parse->length);
+            sempPrintDecimalU32(output, parse->length);
             sempPrintStringLn(output, ") bytes, \"filler\" message");
         }
         parse->eomCallback(parse, parse->type); // Pass parser array index
@@ -118,7 +118,7 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintString(output, ", ");
         sempPrintHex0x04x(output, parse->length);
         sempPrintString(output, " (");
-        sempPrintDecimalI32(output, parse->length);
+        sempPrintDecimalU32(output, parse->length);
         sempPrintString(output, ") bytes, bad CRC, received ");
         sempPrintHex02x(output, parse->buffer[parse->length - 3]);
         output(' ');

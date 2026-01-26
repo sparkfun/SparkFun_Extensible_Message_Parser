@@ -98,7 +98,7 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
             sempPrintString(output, "ERROR SEMP ");
             sempPrintString(output, parse->parserName);
             sempPrintString(output, ": NMEA buffer is too small, increase >= ");
-            sempPrintDecimalI32Ln(output, length + 2);
+            sempPrintDecimalU32Ln(output, length + 2);
         }
         else
         {
@@ -110,7 +110,7 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
             sempPrintString(output, ", ");
             sempPrintHex0x04x(output, length);
             sempPrintString(output, " (");
-            sempPrintDecimalI32(output, length);
+            sempPrintDecimalU32(output, length);
             sempPrintString(output, ") bytes, bad checksum, received ");
             sempPrintString(output, "0x");
             output(parse->buffer[length - 2]);
@@ -300,7 +300,7 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, "SEMP ");
                 sempPrintString(output, parse->parserName);
                 sempPrintString(output, ": NMEA sentence too long, increase the buffer size > ");
-                sempPrintDecimalI32Ln(output, parse->bufferLength);
+                sempPrintDecimalU32Ln(output, parse->bufferLength);
             }
 
             // The data character is in the buffer, remove it and pass the

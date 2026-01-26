@@ -72,7 +72,7 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, parse->length);
                 sempPrintString(output, " (");
-                sempPrintDecimalI32(output, parse->length);
+                sempPrintDecimalU32(output, parse->length);
                 sempPrintStringLn(output, ") bytes, bad CRC");
             }
             sempInvalidDataCallback(parse);
@@ -109,7 +109,7 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintString(output, ", ");
             sempPrintHex0x04x(output, scratchPad->bytesRemaining);
             sempPrintString(output, " (");
-            sempPrintDecimalI32(output, scratchPad->bytesRemaining);
+            sempPrintDecimalU32(output, scratchPad->bytesRemaining);
             sempPrintStringLn(output, ") bytes");
         }
         return true;
@@ -123,7 +123,7 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintString(output, ": SBF, ");
         sempPrintHex0x04x(output, parse->length);
         sempPrintString(output, " (");
-        sempPrintDecimalI32(output, parse->length);
+        sempPrintDecimalU32(output, parse->length);
         sempPrintStringLn(output, ") bytes, length not modulo 4");
     }
     sempInvalidDataCallback(parse);
@@ -225,7 +225,7 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintString(output, ": SBF, ");
         sempPrintHex0x04x(output, parse->length);
         sempPrintString(output, " (");
-        sempPrintDecimalI32(output, parse->length);
+        sempPrintDecimalU32(output, parse->length);
         sempPrintStringLn(output, ") bytes, invalid preamble2");
     }
 

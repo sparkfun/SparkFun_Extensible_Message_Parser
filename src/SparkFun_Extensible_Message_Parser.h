@@ -131,6 +131,7 @@ typedef struct _SEMP_PARSE_STATE
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
     SEMP_OUTPUT debugOutput;       // Output a debug character
+    SEMP_OUTPUT errorOutput;       // Output an error character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
@@ -159,7 +160,8 @@ typedef struct _SEMP_PARSE_STATE
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
 //   oemCallback: Address of a callback routine to handle the parsed messages
-//   debugOutput: Addess of a routine to output a debug character, myabe nullptr
+//   errorOutput: Address of a routine to output an error character, maybe nullptr
+//   debugOutput: Address of a routine to output a debug character, myabe nullptr
 //   printError: Addess of a routine used to output error messages
 //   badCrcCallback: Address of a routine to handle bad CRC messages
 //
@@ -210,6 +212,7 @@ SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
+                                   SEMP_OUTPUT errorOutput = nullptr,
                                    SEMP_OUTPUT debugOutput = nullptr,
                                    Print *printError = &Serial,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
@@ -235,6 +238,13 @@ void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
 void sempErrorOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+void sempErrorOutputEnable(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output);
 
 // Compute the necessary buffer length in bytes to support the scratch pad
 // and parse buffer lengths.

@@ -81,6 +81,7 @@ SEMP_PARSE_STATE *sempBeginParser(
     uint8_t * buffer,
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
+    SEMP_OUTPUT errorOutput,
     SEMP_OUTPUT debugOutput,
     Print *printError,
     SEMP_BAD_CRC_CALLBACK badCrc
@@ -270,6 +271,15 @@ void sempErrorOutputDisable(SEMP_PARSE_STATE *parse)
 {
     if (parse)
         parse->printError = nullptr;
+}
+
+//----------------------------------------
+// Enable error output
+//----------------------------------------
+void sempErrorOutputEnable(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    if (parse)
+        parse->errorOutput = output;
 }
 
 //----------------------------------------

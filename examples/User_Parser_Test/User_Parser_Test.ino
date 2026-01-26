@@ -88,7 +88,7 @@ void setup()
 
     // Initialize the parser
     parse = sempBeginParser("User_Parser", userParserTable, userParserCount,
-                            buffer, bufferLength, userMessage, output);
+                            buffer, bufferLength, userMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the user parser");
 

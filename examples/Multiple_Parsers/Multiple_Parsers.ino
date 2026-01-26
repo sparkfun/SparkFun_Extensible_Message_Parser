@@ -184,7 +184,8 @@ void setup()
 
     // Initialize the NMEA parser
     nmeaParser = sempBeginParser("NMEA_Parser", nmeaParserTable, nmeaParserCount,
-                                 buffer1, bufferLength, nmeaSentence, output);
+                                 buffer1, bufferLength, nmeaSentence, output,
+                                 output);
     if (!nmeaParser)
         reportFatalError("Failed to initialize the NMEA parser");
 
@@ -199,7 +200,7 @@ void setup()
 
     // Initialize the U-Blox parser
     ubloxParser = sempBeginParser("U-Blox_Parser", ubloxParserTable, ubloxParserCount,
-                                  buffer2, bufferLength, ubloxMessage, output);
+                                  buffer2, bufferLength, ubloxMessage, output, output);
     if (!ubloxParser)
         reportFatalError("Failed to initialize the U-Blox parser");
 

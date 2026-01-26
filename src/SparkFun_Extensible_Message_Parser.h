@@ -395,6 +395,16 @@ int16_t sempGetI2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 //    Returns the integer value
 int32_t sempGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
 
+// Get the number of digits in a 32-bit signed number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value plus one if the value is
+//   negative
+int sempGetI4Digits(int32_t value);
+
 // Get an 32-bit integer value
 // Inputs:
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
@@ -412,6 +422,16 @@ int32_t sempGetI4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 // Outputs:
 //    Returns the integer value
 int64_t sempGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 64-bit signed number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value plus one if the value is
+//   negative
+int sempGetI8Digits(int64_t value);
 
 // Get an 64-bit integer value
 // Inputs:
@@ -485,6 +505,15 @@ uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 //    Returns the unsigned integer value
 uint32_t sempGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
 
+// Get the number of digits in a 32-bit unsigned number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value
+int sempGetU4Digits(uint32_t value);
+
 // Get an 32-bit unsigned integer value
 // Inputs:
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
@@ -502,6 +531,15 @@ uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 // Outputs:
 //    Returns the unsigned integer value
 uint64_t sempGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 64-bit unsigned number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value
+int sempGetU8Digits(uint64_t value);
 
 // Get an 64-bit unsigned integer value
 // Inputs:
@@ -600,169 +638,241 @@ void sempPrintCharLn(SEMP_OUTPUT output, char character);
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value, int fieldWidth = 0);
 
 // Display a signed 32-bit decimal value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value, int fieldWidth = 0);
 
 // Display a signed 64-bit decimal value
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value, int fieldWidth = 0);
 
 // Display a signed 64-bit decimal value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value, int fieldWidth = 0);
 
 // Display an unsigned 32-bit decimal value
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display an unsigned 32-bit decimal value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display an unsigned 64-bit decimal value
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display an unsigned 64-bit decimal value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
-//   value: A binary value to display as ASCII hex characters
-void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value);
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display an 8-bit hex value
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
 
 // Display an 8-bit hex value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
 
 // Display a 16-bit hex value
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
 
 // Display a 16-bit hex value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
 
 // Display a 32-bit hex value
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display a 32-bit hex value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display a 64-bit hex value
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display a 64-bit hex value followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display an 8-bit hex value with a 0x prefix
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
 
 // Display an 8-bit hex value with a 0x prefix followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
 
 // Display a 16-bit hex value with a 0x prefix
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
 
 // Display a 16-bit hex value with a 0x prefix followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
 
 // Display a 32-bit hex value with a 0x prefix
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display a 32-bit hex value with a 0x prefix followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
 
 // Display a 64-bit hex value with a 0x prefix
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display a 64-bit hex value with a 0x prefix followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   value: A binary value to display as ASCII hex characters
-void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
 
 // Display a carriage return and line feed
 //
@@ -783,14 +893,20 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse,
 // Inputs:
 //   output: Device on which to output the string
 //   string: A zero terminated string of characters
-void sempPrintString(SEMP_OUTPUT output, const char * string);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintString(SEMP_OUTPUT output, const char * string, int fieldWidth = 0);
 
 // Display a string followed by a CR and LF
 //
 // Inputs:
 //   output: Device on which to output the string
 //   string: A zero terminated string of characters
-void sempPrintStringLn(SEMP_OUTPUT output, const char * string);
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintStringLn(SEMP_OUTPUT output, const char * string, int fieldWidth = 0);
 
 //------------------------------------------------------------------------------
 // Testing support routines - Must only be called by testing routines

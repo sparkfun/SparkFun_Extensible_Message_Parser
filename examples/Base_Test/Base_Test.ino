@@ -59,6 +59,9 @@ void setup()
     sempPrintStringLn(output, "Base_Test example sketch");
     sempPrintLn(output);
 
+    // Test the display routines
+    outputTest();
+
     // Determine the buffer overhead (no parse area)
     bufferOverhead = sempComputeBufferOverhead(parserTable,
                                                parserCount,
@@ -206,4 +209,196 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         sempPrintLn(output);
         sempPrintParserConfiguration(parse, output);
     }
+}
+
+// Output a dashed line for the bounding box
+void outputLine(int fieldWidth, char corner)
+{
+    output(corner);
+    while (fieldWidth--)
+        output('-');
+    sempPrintCharLn(output, corner);
+}
+
+// Test the justification routines
+void outputTest()
+{
+    const int fieldWidth32Bit = 11;
+    const int fieldWidth64Bit = 20;
+
+    // 32-bit right justification
+    outputLine(fieldWidth32Bit, '.');
+
+    output('|');
+    sempPrintDecimalI32(output, 0, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, 1, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, -1, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, 0x7fffffff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, (int32_t)0x80000000, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex02x(output, 0xff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex04x(output, 0xffff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex08x(output, 0xffffffff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x02x(output, 0xff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x04x(output, 0xffff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x08x(output, 0xffffffff, fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintString(output, "Test", fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    // 32-bit left justification
+    output('|');
+    sempPrintDecimalI32(output, 0, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, 1, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, -1, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, 0x7fffffff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI32(output, (int32_t)0x80000000, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex02x(output, 0xff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex04x(output, 0xffff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex08x(output, 0xffffffff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x02x(output, 0xff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x04x(output, 0xffff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x08x(output, 0xffffffff, -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintString(output, "Test", -fieldWidth32Bit);
+    sempPrintCharLn(output, '|');
+
+    outputLine(fieldWidth32Bit, '\'');
+
+    // 64-bit right justification
+    outputLine(fieldWidth64Bit, '.');
+
+    output('|');
+    sempPrintDecimalI64(output, 0, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, 1, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, -1, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, 0x7fffffffffffffff, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, (int64_t)0x8000000000000000ull, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex016x(output, 0xffffffffffffffffull, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x016x(output, 0xffffffffffffffffull, fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintString(output, "This is a test", fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    // 64-bit left justification
+    output('|');
+    sempPrintDecimalI64(output, 0, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, 1, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, -1, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, 0x7fffffffffffffffull, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalI64(output, (int64_t)0x8000000000000000ull, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintDecimalU64(output, 0xffffffffffffffffull, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex016x(output, 0xffffffffffffffffull, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintHex0x016x(output, 0xffffffffffffffffull, -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    output('|');
+    sempPrintString(output, "This is a test", -fieldWidth64Bit);
+    sempPrintCharLn(output, '|');
+
+    outputLine(fieldWidth64Bit, '\'');
 }

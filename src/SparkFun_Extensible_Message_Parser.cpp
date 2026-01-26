@@ -83,11 +83,11 @@ SEMP_PARSE_STATE *sempBeginParser(
     SEMP_EOM_CALLBACK eomCallback,
     SEMP_OUTPUT errorOutput,
     SEMP_OUTPUT debugOutput,
-    Print *printError,
     SEMP_BAD_CRC_CALLBACK badCrc
     )
 {
     int bufferOverhead;
+    SEMP_OUTPUT output;
     SEMP_PARSE_STATE *parse = nullptr;
     size_t parseAreaBytes;
     size_t parseStateBytes;
@@ -97,37 +97,38 @@ SEMP_PARSE_STATE *sempBeginParser(
     do
     {
         // Verify the name
+        output = errorOutput ? errorOutput : debugOutput;
         if ((!parserTableName) || (!strlen(parserTableName)))
         {
-            sempPrintln(printError, "SEMP: Please provide a name for the parserTable");
+            sempPrintStringLn(output, "SEMP: Please provide a name for the parserTable");
             break;
         }
 
         // Validate the parserTable address is not nullptr
         if (!parserTable)
         {
-            sempPrintln(printError, "SEMP: Please specify a parserTable data structure");
+            sempPrintStringLn(output, "SEMP: Please specify a parserTable data structure");
             break;
         }
 
         // Validate the buffer is specified
         if (!buffer)
         {
-            sempPrintln(printError, "SEMP: Please specify a buffer");
+            sempPrintStringLn(output, "SEMP: Please specify a buffer");
             break;
         }
 
         // Validate the end-of-message callback routine address is not nullptr
         if (!eomCallback)
         {
-            sempPrintln(printError, "SEMP: Please specify an eomCallback routine");
+            sempPrintStringLn(output, "SEMP: Please specify an eomCallback routine");
             break;
         }
 
         // Verify that there is at least one parser in the table
         if (!parserCount)
         {
-            sempPrintln(printError, "SEMP: Please provide at least one parser in parserTable");
+            sempPrintStringLn(output, "SEMP: Please provide at least one parser in parserTable");
             break;
         }
 
@@ -143,21 +144,27 @@ SEMP_PARSE_STATE *sempBeginParser(
         if (bufferLength <= bufferOverhead)
         {
             // Buffer too small, display the error message
-            if (printError)
-                sempPrintf(printError, "SEMP ERROR: Buffer too small, increase size to >= %d bytes (1 byte of parse area",
-                           bufferOverhead + 1);
+            if (output)
+            {
+                sempPrintString(output, "SEMP ERROR: Buffer too small, increase size to >= ");
+                sempPrintDecimalU32(output, bufferOverhead + 1);
+                sempPrintStringLn(output, " bytes (1 byte of parse area");
+            }
             break;
         }
 
         // Determine if the buffer meets the minimum size requirements
         if (parseAreaBytes < payloadOffset)
             parseAreaBytes = payloadOffset;
-        if ((bufferLength < (bufferOverhead + parseAreaBytes)) && printError)
+        if ((bufferLength < (bufferOverhead + parseAreaBytes)) && output)
         {
             // Buffer too small, display the error message
-            sempPrintf(printError, "SEMP ERROR: Buffer too small, increase size to >= %d bytes (%d bytes of parse area)",
-                       bufferOverhead + parseAreaBytes, parseAreaBytes);
-            sempPrintf(printError, "SEMP WARNING: Continuing on to support testing!");
+            sempPrintString(output, "SEMP ERROR: Buffer too small, increase size to >= ");
+            sempPrintDecimalU32(output, bufferOverhead + parseAreaBytes);
+            sempPrintString(output, " bytes (");
+            sempPrintDecimalU32(output, parseAreaBytes);
+            sempPrintStringLn(output, " bytes of parse area)");
+            sempPrintStringLn(output, "SEMP WARNING: Continuing on to support testing!");
         }
 
         // Initialize the buffer
@@ -171,7 +178,6 @@ SEMP_PARSE_STATE *sempBeginParser(
 
         // Initialize the parse state
         parse->debugOutput = debugOutput;
-        parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
         parse->state = sempFirstByte;
@@ -270,7 +276,7 @@ void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
 void sempErrorOutputDisable(SEMP_PARSE_STATE *parse)
 {
     if (parse)
-        parse->printError = nullptr;
+        parse->errorOutput = nullptr;
 }
 
 //----------------------------------------
@@ -770,15 +776,19 @@ char sempNibbleToAscii(int nibble)
 //----------------------------------------
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output;
+
     if (parse)
     {
         // Verify that enough space exists in the buffer
         if (parse->length >= parse->bufferLength)
         {
             // Message too long
-            sempPrintf(parse->printError, "SEMP %s: Message too long, increase the buffer size > %d\r\n",
-                       parse->parserName,
-                       parse->bufferLength);
+            output = sempGetErrorOutput(parse);
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Message too long, increase the buffer size > ");
+            sempPrintDecimalU32Ln(output, parse->bufferLength);
 
             // Pass this data to another parser if requested
             if (parse->invalidData)
@@ -1411,9 +1421,6 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         sempPrintString(output, "    debugOutput: ");
         sempPrintAddrLn(output, (void *)parse->debugOutput);
 
-        sempPrintString(output, "    printError: ");
-        sempPrintAddrLn(output, (void *)parse->printError);
-
         sempPrintString(output, "    verboseDebug: ");
         sempPrintDecimalI32Ln(output, parse->verboseDebug);
 
@@ -1520,55 +1527,4 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
     // Prevent further references to the structure
     if (parse && *parse)
         *parse = nullptr;
-}
-
-//------------------------------------------------------------------------------
-// V1 routines to eliminate
-//------------------------------------------------------------------------------
-
-//----------------------------------------
-// Enable error output
-//----------------------------------------
-void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
-{
-    if (parse)
-        parse->printError = print;
-}
-
-//----------------------------------------
-// Format and print a line of text
-//----------------------------------------
-void sempPrintf(Print *print, const char *format, ...)
-{
-    if (print)
-    {
-        // https://stackoverflow.com/questions/42131753/wrapper-for-printf
-        va_list args;
-        va_start(args, format);
-        va_list args2;
-
-        va_copy(args2, args);
-        char buf[vsnprintf(nullptr, 0, format, args) + sizeof("\r\n")];
-
-        vsnprintf(buf, sizeof buf, format, args2);
-
-        // Add CR+LF
-        buf[sizeof(buf) - 3] = '\r';
-        buf[sizeof(buf) - 2] = '\n';
-        buf[sizeof(buf) - 1] = '\0';
-
-        print->write(buf, strlen(buf));
-
-        va_end(args);
-        va_end(args2);
-    }
-}
-
-//----------------------------------------
-// Print a line of error text
-//----------------------------------------
-void sempPrintln(Print *print, const char *string)
-{
-    if (print)
-        print->println(string);
 }

@@ -399,6 +399,14 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
 }
 
 //----------------------------------------
+// Get a path for an error character
+//----------------------------------------
+SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse)
+{
+    return parse->errorOutput ? parse->errorOutput : parse->debugOutput;
+}
+
+//----------------------------------------
 // Get a 32-bit floating point value
 //----------------------------------------
 float sempGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)

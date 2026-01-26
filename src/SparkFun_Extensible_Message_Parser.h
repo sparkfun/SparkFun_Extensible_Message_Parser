@@ -567,6 +567,15 @@ uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 // the incoming data stream
 //------------------------------------------------------------------------------
 
+// Get a path for an error character
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a routine to output an error character
+SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse);
+
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state
 // value to sempFirstByte after successfully parsing a message.  The

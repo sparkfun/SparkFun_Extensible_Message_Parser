@@ -204,6 +204,8 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     {
         displayOnce = false;
         sempPrintLn(output);
+        sempUnicoreBinaryPrintHeader(parse);
+        sempPrintLn(output);
         sempPrintParserConfiguration(parse, output);
     }
 }

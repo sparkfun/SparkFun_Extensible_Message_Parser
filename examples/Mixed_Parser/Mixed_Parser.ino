@@ -15,6 +15,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -171,21 +172,22 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("Mixed_Parser example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "Mixed_Parser example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable, parserCount);
     if (sizeof(buffer) < bufferLength)
     {
-        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer size!");
     }
 
     // Initialize the parser
     parse = sempBeginParser("Mixed_Parser", parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+                            buffer, bufferLength, processMessage, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -193,10 +195,12 @@ void setup()
     rawDataBytes = 0;
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
         rawDataBytes += dataStream[dataIndex].length;
-    Serial.printf("Raw data stream: %d bytes\r\n", rawDataBytes);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output,rawDataBytes);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempEnableDebugOutput(parse);
+    sempDebugOutputEnable(parse);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
         for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)
@@ -209,7 +213,7 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -230,7 +234,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     switch (type) // Index into parserTable array
     {
         case NMEA_PARSER_INDEX:
@@ -242,14 +246,24 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
                 offset -= 1;
                 byteIndex -= 1;
             }
-            Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
-                          sempNmeaGetSentenceName(parse), parse->length, offset, offset);
+            sempPrintString(output, "Valid NMEA Sentence: ");
+            sempPrintString(output,sempNmeaGetSentenceName(parse));
+            sempPrintString(output, ", ");
+            sempPrintDecimalI32(output, parse->length);
+            sempPrintString(output, " bytes at ");
+            sempPrintHex0x08x(output, offset);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32Ln(output, offset);
             break;
 
         case UBLOX_PARSER_INDEX:
             offset = dataOffset + 1 - parse->length;
-            Serial.printf("Valid u-blox message: %d bytes at 0x%08x (%d)\r\n",
-                          parse->length, offset, offset);
+            sempPrintString(output, "Valid u-blox message: ");
+            sempPrintDecimalI32(output, parse->length);
+            sempPrintString(output, " bytes at ");
+            sempPrintHex0x08x(output, offset);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32Ln(output, offset);
             break;
     }
     dumpBuffer(parse->buffer, parse->length);
@@ -258,7 +272,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintLn(output);
+        sempPrintParserConfiguration(parse, output);
     }
 }

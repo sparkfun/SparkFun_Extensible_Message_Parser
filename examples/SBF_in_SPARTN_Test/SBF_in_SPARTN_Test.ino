@@ -17,6 +17,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 
+#include "../Common/output.ino"
 #include "../Common/dumpBuffer.ino"
 #include "../Common/reportFatalError.ino"
 
@@ -129,25 +130,26 @@ void setup()
     delay(1000);
 
     Serial.begin(115200);
-    Serial.println();
-    Serial.println("SBF_in_SPARTN_Test example sketch");
-    Serial.println();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "SBF_in_SPARTN_Test example sketch");
+    sempPrintLn(output);
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable1, parserCount1);
     if (sizeof(buffer1) < bufferLength)
     {
-        Serial.printf("Set buffer1 size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer1 size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer1 size!");
     }
 
     // Initialize the SBF parser
     parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1,
-                             buffer1, bufferLength, processSbfMessage);
+                             buffer1, bufferLength, processSbfMessage, output);
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
-    sempEnableDebugOutput(parse1); // Debug - comment if desired
+    sempDebugOutputEnable(parse1); // Debug - comment if desired
 
     // Add the callback for invalid SBF data,
     // to allow it to be passed to the SPARTN parser
@@ -157,20 +159,23 @@ void setup()
     bufferLength = sempGetBufferLength(parserTable2, parserCount2);
     if (sizeof(buffer2) < bufferLength)
     {
-        Serial.printf("Set buffer2 size to >= %d\r\n", bufferLength);
+        sempPrintString(output, "Set buffer2 size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
         reportFatalError("Fix the buffer2 size!");
     }
 
     // Initialize the SPARTN parser
     parse2 = sempBeginParser("SPARTN_Test", parserTable2, parserCount2,
-                             buffer2, bufferLength, processSpartnMessage);
+                             buffer2, bufferLength, processSpartnMessage, output);
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 
-    sempEnableDebugOutput(parse2); // Debug - comment if desired
+    sempDebugOutputEnable(parse2); // Debug - comment if desired
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the SBF parser one byte at a time
     // Any data which is not SBF is passed to the SPARTN parser via the callback
@@ -184,7 +189,7 @@ void setup()
     // Done parsing the data
     sempStopParser(&parse1);
     sempStopParser(&parse2);
-    Serial.printf("All done\r\n");
+    sempPrintStringLn(output, "All done");
 }
 
 //----------------------------------------
@@ -214,24 +219,30 @@ void processSbfMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset1 + 1 - parse->length;
-    Serial.printf("Valid SBF message block %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  sempSbfGetId(parse),
-                  parse->length, offset, offset);
+    sempPrintString(output, "Valid SBF message block ");
+    sempPrintDecimalI32(output, sempSbfGetId(parse));
+    sempPrintString(output, " : ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
 
     // Display Block Number
-    Serial.print("SBF Block Number: ");
-    Serial.println(sempSbfGetBlockNumber(parse));
+    sempPrintString(output, "SBF Block Number: ");
+    sempPrintDecimalI32Ln(output, sempSbfGetBlockNumber(parse));
 
     // Display the parser state
     static bool displayOnce = true;
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintLn(output);
+        sempPrintParserConfiguration(parse, output);
     }
 }
 
@@ -244,18 +255,21 @@ void processSpartnMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     static bool displayOnce = true;
 
     // Display the raw message
-    Serial.println();
-    Serial.printf("Valid SPARTN message, type %d, subtype %d : %d bytes\r\n",
-                  sempSpartnGetMessageType(parse),
-                  sempSpartnGetMessageSubType(parse),
-                  parse->length);
+    sempPrintLn(output);
+    sempPrintString(output, "Valid SPARTN message, type ");
+    sempPrintDecimalI32(output, sempSpartnGetMessageType(parse));
+    sempPrintString(output, ", subtype ");
+    sempPrintDecimalI32(output, sempSpartnGetMessageSubType(parse));
+    sempPrintString(output, " : ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintStringLn(output, " bytes");
     dumpBuffer(parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintLn(output);
+        sempPrintParserConfiguration(parse, output);
     }
 }

@@ -62,12 +62,19 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
         }
         else
         {
-            sempPrintf(parse->printDebug,
-                    "SEMP %s: SBF %d, 0x%04x (%d) bytes, bad CRC",
-                    parse->parserName,
-                    scratchPad->sbfID,
-                    parse->length, parse->length);
-
+            SEMP_OUTPUT output = parse->debugOutput;
+            if (output)
+            {
+                sempPrintString(output, "SEMP ");
+                sempPrintString(output, parse->parserName);
+                sempPrintString(output, ": SBF ");
+                sempPrintDecimalI32(output, scratchPad->sbfID);
+                sempPrintString(output, ", ");
+                sempPrintHex0x04x(output, parse->length);
+                sempPrintString(output, " (");
+                sempPrintDecimalI32(output, parse->length);
+                sempPrintStringLn(output, ") bytes, bad CRC");
+            }
             sempInvalidDataCallback(parse);
         }
 
@@ -82,6 +89,7 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
+    SEMP_OUTPUT output = parse->debugOutput;
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
 
     scratchPad->computedCRC = semp_ccitt_crc_update(scratchPad->computedCRC, data);
@@ -92,20 +100,32 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
     {
         scratchPad->bytesRemaining = scratchPad->length - 8; // Subtract 8 header bytes
         parse->state = sempSbfReadBytes;
-        if (parse->verboseDebug)
-            sempPrintf(parse->printDebug,
-                      "SEMP %s: Incoming SBF %d, 0x%04x (%d) bytes",
-                      parse->parserName,
-                      scratchPad->sbfID,
-                      scratchPad->bytesRemaining, scratchPad->bytesRemaining);
+        if (parse->verboseDebug && output)
+        {
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Incoming SBF ");
+            sempPrintDecimalI32(output, scratchPad->sbfID);
+            sempPrintString(output, ", ");
+            sempPrintHex0x04x(output, scratchPad->bytesRemaining);
+            sempPrintString(output, " (");
+            sempPrintDecimalI32(output, scratchPad->bytesRemaining);
+            sempPrintStringLn(output, ") bytes");
+        }
         return true;
     }
-    // else
-    sempPrintf(parse->printDebug,
-            "SEMP %s: SBF, 0x%04x (%d) bytes, length not modulo 4",
-            parse->parserName,
-            parse->length, parse->length);
 
+    // else
+    if (output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": SBF, ");
+        sempPrintHex0x04x(output, parse->length);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintStringLn(output, ") bytes, length not modulo 4");
+    }
     sempInvalidDataCallback(parse);
     parse->state = sempFirstByte;
     return false;
@@ -197,10 +217,17 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 
     // else
-    sempPrintf(parse->printDebug,
-            "SEMP %s: SBF, 0x%04x (%d) bytes, invalid preamble2",
-            parse->parserName,
-            parse->length, parse->length);
+    SEMP_OUTPUT output = parse->debugOutput;
+    if (output)
+    {
+        sempPrintString(output, "SEMP ");
+        sempPrintString(output, parse->parserName);
+        sempPrintString(output, ": SBF, ");
+        sempPrintHex0x04x(output, parse->length);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintStringLn(output, ") bytes, invalid preamble2");
+    }
 
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     sempInvalidDataCallback(parse);

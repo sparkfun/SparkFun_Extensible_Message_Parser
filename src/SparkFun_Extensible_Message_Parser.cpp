@@ -18,6 +18,32 @@ License: MIT. Please see LICENSE.md for more details
 
 #define SEMP_ALIGNMENT_MASK        7
 
+const uint64_t sempPower10U64[] =
+{
+    10ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,  // 0
+    1ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,   // 1
+    100ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,           // 2
+    10ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,            // 3
+    1ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,             // 4
+    100ull * 1000ull * 1000ull * 1000ull * 1000ull,                     // 5
+    10ull * 1000ull * 1000ull * 1000ull * 1000ull,                      // 6
+    1ull * 1000ull * 1000ull * 1000ull * 1000ull,                       // 7
+    100ull * 1000ull * 1000ull * 1000ull,                               // 8
+    10ull * 1000ull * 1000ull * 1000ull,                                // 9
+
+    1ull * 1000ull * 1000ull * 1000ull,                                 // 10
+    100ull * 1000ull * 1000ull,                                         // 11
+    10ull * 1000ull * 1000ull,                                          // 12
+    1ull * 1000ull * 1000ull,                                           // 13
+    100ull * 1000ull,                                                   // 14
+    10ull * 1000ull,                                                    // 15
+    1ull * 1000ull,                                                     // 16
+    100ull,                                                             // 17
+    10ull,                                                              // 18
+    1ull,                                                               // 19
+};
+const int sempPower10U64Entries = sizeof(sempPower10U64) / sizeof(sempPower10U64[0]);
+
 //----------------------------------------
 // Macros
 //----------------------------------------
@@ -55,8 +81,8 @@ SEMP_PARSE_STATE *sempBeginParser(
     uint8_t * buffer,
     size_t bufferLength,
     SEMP_EOM_CALLBACK eomCallback,
+    SEMP_OUTPUT debugOutput,
     Print *printError,
-    Print *printDebug,
     SEMP_BAD_CRC_CALLBACK badCrc
     )
 {
@@ -143,6 +169,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->bufferLength = bufferLength - bufferOverhead;
 
         // Initialize the parse state
+        parse->debugOutput = debugOutput;
         parse->printError = printError;
         parse->parsers = parserTable;
         parse->parserCount = parserCount;
@@ -153,7 +180,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->type = parserCount;  // No active parser
 
         // Display the parser configuration
-        sempPrintParserConfiguration(parse, parse->printDebug);
+        sempPrintParserConfiguration(parse, parse->debugOutput);
     } while (0);
 
     // Return the parse structure address
@@ -216,16 +243,30 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
 //----------------------------------------
 // Disable debug output
 //----------------------------------------
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
+void sempDebugOutputDisable(SEMP_PARSE_STATE *parse)
 {
     if (parse)
-        parse->printDebug = nullptr;
+        parse->debugOutput = nullptr;
+}
+
+//----------------------------------------
+// Enable debug output
+//----------------------------------------
+void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
+                           SEMP_OUTPUT output,
+                           bool verbose)
+{
+    if (parse)
+    {
+        parse->debugOutput = output;
+        parse->verboseDebug = verbose;
+    }
 }
 
 //----------------------------------------
 // Disable error output
 //----------------------------------------
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
+void sempErrorOutputDisable(SEMP_PARSE_STATE *parse)
 {
     if (parse)
         parse->printError = nullptr;
@@ -274,7 +315,7 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
                            size_t desiredParseAreaSize,
-                           Print *printDebug)
+                           SEMP_OUTPUT output)
 {
     size_t bufferLength;
     size_t bufferOverhead;
@@ -295,8 +336,14 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < parseArea)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, due to minimize size requirement",
-                   parseAreaBytes, parseArea);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintString(output, " to ");
+            sempPrintDecimalI32(output, parseArea);
+            sempPrintStringLn(output, " bytes, due to minimize size requirement");
+        }
         parseAreaBytes = parseArea;
     }
 
@@ -304,8 +351,14 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < payloadOffset)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, due to payload offset requirement",
-                   parseAreaBytes, payloadOffset);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintString(output, " to ");
+            sempPrintDecimalI32(output, payloadOffset);
+            sempPrintStringLn(output, " bytes, due to payload offset requirement");
+        }
         parseAreaBytes = payloadOffset;
     }
 
@@ -313,8 +366,12 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (parseAreaBytes < 1)
     {
         // Display the minimum buffer length
-        sempPrintf(printDebug, "SEMP: Increasing parse area from %d to %d bytes, requires at least one byte",
-                   parseAreaBytes, 1);
+        if (output)
+        {
+            sempPrintString(output, "SEMP: Increasing parse area from ");
+            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintStringLn(output, " to 1 byte, requires at least one byte");
+        }
         parseAreaBytes = 1;
     }
 
@@ -322,7 +379,12 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     bufferLength = bufferOverhead + parseAreaBytes;
 
     // Display the buffer length
-    sempPrintf(printDebug, "SEMP: Buffer length %d bytes", bufferLength);
+    if (output)
+    {
+        sempPrintString(output, "SEMP: Buffer length ");
+        sempPrintDecimalI32(output, bufferLength);
+        sempPrintStringLn(output, " bytes");
+    }
     return bufferLength;
 }
 
@@ -610,6 +672,15 @@ void sempInvalidDataCallback(SEMP_PARSE_STATE *parse)
 }
 
 //----------------------------------------
+// Convert nibble to ASCII
+//----------------------------------------
+char sempNibbleToAscii(int nibble)
+{
+    nibble = nibble & 0xf;
+    return (nibble < 10) ? nibble + '0' : nibble + 'a' - 10;
+}
+
+//----------------------------------------
 // Parse the next byte
 //----------------------------------------
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
@@ -664,34 +735,550 @@ void sempSetInvalidDataCallback(SEMP_PARSE_STATE *parse,
 }
 
 //----------------------------------------
+// Display an address value
+//----------------------------------------
+void sempPrintAddr(SEMP_OUTPUT output, const void *addr)
+{
+    // Determine if output is necessary
+    if (output)
+        // Output the hex value
+        sempPrintHex0x08x(output, (uintptr_t)addr);
+}
+
+//----------------------------------------
+// Display an address value followed by a CR and LF
+//----------------------------------------
+void sempPrintAddrLn(SEMP_OUTPUT output, const void *addr)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex0x08x(output, (uintptr_t)addr);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a character
+//----------------------------------------
+void sempPrintChar(SEMP_OUTPUT output, char character)
+{
+    // Determine if output is necessary
+    if (output)
+        // Output the character
+        output(character);
+}
+
+//----------------------------------------
+// Display a character followed by a CR and LF
+//----------------------------------------
+void sempPrintCharLn(SEMP_OUTPUT output, char character)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the character
+        output(character);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a signed 32-bit decimal value
+//----------------------------------------
+void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Display the minus sign if necessary
+        if (value < 0)
+            output('-');
+        sempPrintDecimalU32(output, (uint32_t)((value >= 0) ? value : -value));
+    }
+}
+
+//----------------------------------------
+// Display a signed 32-bit decimal value followed by a CR and LF
+//----------------------------------------
+void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        sempPrintDecimalI32(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a signed 64-bit decimal value
+//----------------------------------------
+void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Display the minus sign if necessary
+        if (value < 0)
+            output('-');
+        sempPrintDecimalU64(output, (uint64_t)((value >= 0) ? value : -value));
+    }
+}
+
+//----------------------------------------
+// Display a signed 64-bit decimal value followed by a CR and LF
+//----------------------------------------
+void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        sempPrintDecimalI64(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display an unsigned 32-bit decimal value
+//----------------------------------------
+void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value)
+{
+    int digit;
+    int index;
+    const uint32_t power10[] =
+    {
+        1 * 1000 * 1000 * 1000,
+        100 * 1000 * 1000,
+        10 * 1000 * 1000,
+        1 * 1000 * 1000,
+        100 * 1000,
+        10 * 1000,
+        1 * 1000,
+        100,
+        10,
+        1,
+    };
+    const int entries = sizeof(power10) / sizeof(power10[0]);
+    bool suppressZeros;
+    uint32_t u32;
+
+    // Determine if output is necessary
+    if (output)
+    {
+        u32 = value;
+
+        // Output the decimal value
+        suppressZeros = true;
+        for (index = 0; index < entries; index++)
+        {
+            digit = u32 / power10[index];
+            u32 -= digit * power10[index];
+            if ((digit == 0) && suppressZeros && (index != (entries - 1)))
+                continue;
+            suppressZeros = false;
+            output(sempNibbleToAscii(digit));
+        }
+    }
+}
+
+//----------------------------------------
+// Display an unsigned 32-bit decimal value followed by a CR and LF
+//----------------------------------------
+void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        sempPrintDecimalU32(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display an unsigned 64-bit decimal value
+//----------------------------------------
+void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value)
+{
+    int digit;
+    int index;
+    bool suppressZeros;
+    uint64_t u64;
+
+    // Determine if output is necessary
+    if (output)
+    {
+        u64 = value;
+
+        // Output the decimal value
+        suppressZeros = true;
+        for (index = 0; index < sempPower10U64Entries; index++)
+        {
+            digit = u64 / sempPower10U64[index];
+            u64 -= digit * sempPower10U64[index];
+            if ((digit == 0) && suppressZeros && (index != (sempPower10U64Entries - 1)))
+                continue;
+            suppressZeros = false;
+            output(sempNibbleToAscii(digit));
+        }
+    }
+}
+
+//----------------------------------------
+// Display an unsigned 64-bit decimal value followed by a CR and LF
+//----------------------------------------
+void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        sempPrintDecimalU64(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex08x(output, value >> 32);
+        sempPrintHex08x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex016x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        output(sempNibbleToAscii(value >> 4));
+        output(sempNibbleToAscii(value));
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex02x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex02x(output, value >> 8);
+        sempPrintHex02x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex04x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex04x(output, value >> 16);
+        sempPrintHex04x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex08x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintString(output, "0x");
+        sempPrintHex016x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex0x016x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintString(output, "0x");
+        sempPrintHex02x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex0x02x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintString(output, "0x");
+        sempPrintHex04x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex0x04x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a hex value
+//----------------------------------------
+void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintString(output, "0x");
+        sempPrintHex08x(output, value);
+    }
+}
+
+//----------------------------------------
+// Display a hex value followed by a CR and LF
+//----------------------------------------
+void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the hex value
+        sempPrintHex0x08x(output, value);
+        sempPrintLn(output);
+    }
+}
+
+//----------------------------------------
+// Display a carriage return and line feed
+//----------------------------------------
+void sempPrintLn(SEMP_OUTPUT output)
+{
+    // Determine if output is necessary
+    if (output)
+    {
+        // Output the carriage return and linefeed
+        output('\r');
+        output('\n');
+    }
+}
+
+//----------------------------------------
 // Print the parser's configuration
 //----------------------------------------
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 {
-    if (print && parse)
+    if (output && parse)
     {
-        sempPrintln(print, "SparkFun Extensible Message Parser");
-        sempPrintf(print, "    parserName: %p (%s)", parse->parserName, parse->parserName);
-        sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
-        sempPrintf(print, "    parserCount: %d", parse->parserCount);
-        sempPrintf(print, "    printError: %p", parse->printError);
-        sempPrintf(print, "    printDebug: %p", parse->printDebug);
-        sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
-        sempPrintf(print, "    nmeaAbortOnNonPrintable: %d", parse->nmeaAbortOnNonPrintable);
-        sempPrintf(print, "    unicoreHashAbortOnNonPrintable: %d", parse->unicoreHashAbortOnNonPrintable);
-        sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
-                   (void *)parse->scratchPad,
-                   parse->scratchPad ? (parse->buffer - (uint8_t *)parse->scratchPad)
-                                     : 0);
-        sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
-        sempPrintf(print, "    crc: 0x%08x", parse->crc);
-        sempPrintf(print, "    State: %p%s", (void *)parse->state,
-                   (parse->state == sempFirstByte) ? " (sempFirstByte)" : "");
-        sempPrintf(print, "    EomCallback: %p", (void *)parse->eomCallback);
-        sempPrintf(print, "    Buffer: %p (%d bytes)",
-                   (void *)parse->buffer, parse->bufferLength);
-        sempPrintf(print, "    length: %d message bytes", parse->length);
-        sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
+        sempPrintString(output, "SparkFun Extensible Message Parser\r\n");
+
+        sempPrintString(output, "    parserName: ");
+        sempPrintAddr(output, (void *)parse->parserName);
+        sempPrintString(output, " (");
+        sempPrintString(output, parse->parserName);
+        sempPrintCharLn(output, ')');
+
+        sempPrintString(output, "    parsers: ");
+        sempPrintAddrLn(output, (void *)parse->parsers);
+
+        sempPrintString(output, "    parserCount: ");
+        sempPrintDecimalI32Ln(output, parse->parserCount);
+
+        sempPrintString(output, "    debugOutput: ");
+        sempPrintAddrLn(output, (void *)parse->debugOutput);
+
+        sempPrintString(output, "    printError: ");
+        sempPrintAddrLn(output, (void *)parse->printError);
+
+        sempPrintString(output, "    verboseDebug: ");
+        sempPrintDecimalI32Ln(output, parse->verboseDebug);
+
+        sempPrintString(output, "    nmeaAbortOnNonPrintable: ");
+        sempPrintDecimalI32Ln(output, parse->nmeaAbortOnNonPrintable);
+
+        sempPrintString(output, "    unicoreHashAbortOnNonPrintable: ");
+        sempPrintDecimalI32Ln(output, parse->unicoreHashAbortOnNonPrintable);
+
+        sempPrintString(output, "    scratchPad: ");
+        sempPrintAddr(output, (void *)parse->scratchPad);
+        sempPrintString(output, " (");
+        if (parse->scratchPad)
+            sempPrintDecimalI32(output, parse->buffer - (uint8_t *)parse->scratchPad);
+        else
+            output('0');
+        sempPrintStringLn(output, " bytes)");
+
+        sempPrintString(output, "    computeCrc: ");
+        sempPrintAddrLn(output, (void *)parse->computeCrc);
+
+        sempPrintString(output, "    crc: 0x");
+        sempPrintHex08xLn(output, parse->crc);
+
+        sempPrintString(output, "    state: ");
+        sempPrintAddr(output, (void *)parse->state);
+        sempPrintStringLn(output, (parse->state == sempFirstByte) ? " (sempFirstByte)"
+                                                                  : "");
+
+        sempPrintString(output, "    eomCallback: ");
+        sempPrintAddrLn(output, (void *)parse->eomCallback);
+
+        sempPrintString(output, "    invalidData: ");
+        sempPrintAddrLn(output, (void *)parse->invalidData);
+
+        sempPrintString(output, "    buffer: ");
+        sempPrintAddr(output, (void *)parse->buffer);
+        sempPrintString(output, " (");
+        sempPrintDecimalI32(output, parse->bufferLength);
+        sempPrintStringLn(output, " bytes)");
+
+        sempPrintString(output, "    length: ");
+        sempPrintDecimalI32(output, parse->length);
+        sempPrintStringLn(output, " message bytes");
+
+        sempPrintString(output, "    type: ");
+        sempPrintDecimalI32(output, parse->type);
+        sempPrintString(output, " (");
+        sempPrintString(output, sempGetTypeName(parse, parse->type));
+        sempPrintCharLn(output, ')');
+    }
+}
+
+//----------------------------------------
+// Display a string
+//----------------------------------------
+void sempPrintString(SEMP_OUTPUT output, const char * string)
+{
+    // Determine if output is necessary
+    if (output && string)
+        // Output the string a character at a time
+        while (*string)
+            output(*string++);
+}
+
+//----------------------------------------
+// Display a string followed by a CR and LF
+//----------------------------------------
+void sempPrintStringLn(SEMP_OUTPUT output, const char * string)
+{
+    // Determine if output is necessary
+    if (output && string)
+    {
+        // Output the string a character at a time
+        sempPrintString(output, string);
+        sempPrintLn(output);
     }
 }
 
@@ -708,18 +1295,6 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
 //------------------------------------------------------------------------------
 // V1 routines to eliminate
 //------------------------------------------------------------------------------
-
-//----------------------------------------
-// Enable debug output
-//----------------------------------------
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print, bool verbose)
-{
-    if (parse)
-    {
-        parse->printDebug = print;
-        parse->verboseDebug = verbose;
-    }
-}
 
 //----------------------------------------
 // Enable error output

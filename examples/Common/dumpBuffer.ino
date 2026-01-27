@@ -30,29 +30,33 @@ void dumpBuffer(const uint8_t *buffer, size_t length)
             bytes = 16 - (offset & 0xf);
 
         // Display the offset
-        Serial.printf("0x%08lx: ", offset);
+        sempPrintHex0x08x(output, offset);
+        sempPrintString(output, ": ");
 
         // Skip leading bytes
         for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf("   ");
+            sempPrintString(output, "   ");
 
         // Display the data bytes
         for (index = 0; index < bytes; index++)
-            Serial.printf("%02x ", buffer[index]);
+        {
+            sempPrintHex02x(output, buffer[index]);
+            output(' ');
+        }
 
         // Separate the data bytes from the ASCII
         for (; index < (16 - (offset & 0xf)); index++)
-            Serial.printf("   ");
-        Serial.printf(" ");
+            sempPrintString(output, "   ");
+        sempPrintString(output, " ");
 
         // Skip leading bytes
         for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf(" ");
+            sempPrintString(output, " ");
 
         // Display the ASCII values
         for (index = 0; index < bytes; index++)
-            Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
-        Serial.printf("\r\n");
+            output(((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
+        sempPrintLn(output);
 
         // Set the next line of data
         buffer += bytes;

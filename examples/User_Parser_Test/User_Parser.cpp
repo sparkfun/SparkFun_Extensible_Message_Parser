@@ -56,10 +56,14 @@ bool userSecondPreambleByte(SEMP_PARSE_STATE *parse, uint8_t data)
     // Validate the second preamble byte
     if (data != 'B')
     {
+        SEMP_OUTPUT output = parse->debugOutput;
+
         // Print the error
-        sempPrintf(parse->printDebug,
-                   "USER_Parser: Bad second preamble byte after message %d",
-                   scratchPad->messageNumber);
+        if (output)
+        {
+            sempPrintString(output, "USER_Parser: Bad second preamble byte after message ");
+            sempPrintDecimalI32Ln(output, scratchPad->messageNumber);
+        }
 
         // Start searching for a preamble byte
         return sempFirstByte(parse, data);

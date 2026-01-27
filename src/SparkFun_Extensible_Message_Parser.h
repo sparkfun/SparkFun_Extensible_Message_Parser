@@ -89,6 +89,12 @@ typedef const char * (*SEMP_GET_STATE_NAME)(const struct _SEMP_PARSE_STATE * par
 // goes back to scanning for the first preamble byte.
 typedef void (*SEMP_INVALID_DATA_CALLBACK)(const uint8_t * buffer, size_t length);
 
+// Call the application to output a single character
+//
+// Inputs:
+//   data: Data byte to output
+typedef void (*SEMP_OUTPUT)(char data);
+
 // Parse routine
 //
 // Inputs:
@@ -124,7 +130,7 @@ typedef struct _SEMP_PARSE_STATE
     const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
-    Print *printDebug;             // Class to use for debug output
+    SEMP_OUTPUT debugOutput;       // Output a debug character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
@@ -177,9 +183,9 @@ typedef struct _SEMP_UNICORE_HEADER
 //   parserCount:  Number of entries in the parseTable
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
-//   oemCallback: Address of a callback routine to handle the output
+//   oemCallback: Address of a callback routine to handle the parsed messages
+//   debugOutput: Addess of a routine to output a debug character, myabe nullptr
 //   printError: Addess of a routine used to output error messages
-//   printDebug: Addess of a routine used to output debug messages
 //   badCrcCallback: Address of a routine to handle bad CRC messages
 //
 // Outputs:
@@ -229,21 +235,31 @@ SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
+                                   SEMP_OUTPUT debugOutput = nullptr,
                                    Print *printError = &Serial,
-                                   Print *printDebug = (Print *)nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
 
 // Disable debug output
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
+void sempDebugOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+//   verbose: Enable or disable verbose debug output
+void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
+                           SEMP_OUTPUT output = nullptr,
+                           bool verbose = false);
 
 // Disable error output
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
+void sempErrorOutputDisable(SEMP_PARSE_STATE *parse);
 
 // Compute the necessary buffer length in bytes to support the scratch pad
 // and parse buffer lengths.
@@ -252,7 +268,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
 //   parserCount:  Number of entries in the parseTable
 //   desiredParseAreaSize: Desired size of the parse area in bytes
-//   printDebug: Device to output any debug messages, may be nullptr
+//   output: Device to output any debug messages, may be nullptr
 //
 // Outputs:
 //    Returns the number of bytes needed for the buffer that contains
@@ -260,7 +276,7 @@ void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
                            size_t desiredParseAreaSize = 0,
-                           Print *printDebug = &Serial);
+                           SEMP_OUTPUT output = nullptr);
 
 // Translates state value into an ASCII state name
 //
@@ -567,12 +583,239 @@ void sempInvalidDataCallback(SEMP_PARSE_STATE *parse);
 //   or -1 upon failure for invalid characters
 int sempAsciiToNibble(int data);
 
+// Convert nibble to ASCII
+//
+// Inputs:
+//   nibble: Binary value, the low 4 bits will be converted into ASCII
+//
+// Outputs:
+//   Returns an ASCII character representing the lower 4 bits of the input
+//   value (0-9, a-f)
+char sempNibbleToAscii(int nibble);
+
+// Display an address value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   addr: A binary value to display as ASCII hex characters
+void sempPrintAddr(SEMP_OUTPUT output, const void *addr);
+
+// Display an address value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   addr: A binary value to display as ASCII hex characters
+void sempPrintAddrLn(SEMP_OUTPUT output, const void *addr);
+
+// Display a character
+//
+// Inputs:
+//   output: Device on which to output the string
+//   character: The character value to output
+void sempPrintChar(SEMP_OUTPUT output, char character);
+
+// Display a character followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   character: The character value to output
+void sempPrintCharLn(SEMP_OUTPUT output, char character);
+
+// Display a signed 32-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value);
+
+// Display a signed 32-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value);
+
+// Display a signed 64-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value);
+
+// Display a signed 64-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value);
+
+// Display an unsigned 32-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value);
+
+// Display an unsigned 32-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value);
+
+// Display an unsigned 64-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value);
+
+// Display an unsigned 64-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value);
+
+// Display an 8-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value);
+
+// Display an 8-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value);
+
+// Display a 16-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value);
+
+// Display a 16-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value);
+
+// Display a 32-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value);
+
+// Display a 32-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value);
+
+// Display a 64-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value);
+
+// Display a 64-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value);
+
+// Display an 8-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value);
+
+// Display an 8-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value);
+
+// Display a 16-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value);
+
+// Display a 16-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value);
+
+// Display a 32-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value);
+
+// Display a 32-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value);
+
+// Display a 64-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value);
+
+// Display a 64-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value);
+
+// Display a carriage return and line feed
+//
+// Inputs:
+//   output: Device on which to output the string
+void sempPrintLn(SEMP_OUTPUT output);
+
 // Print the contents of the parser data structure
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+//   output: Addess of a routine to output a debug character
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse,
+                                  SEMP_OUTPUT output = nullptr);
+
+// Display a string
+//
+// Inputs:
+//   output: Device on which to output the string
+//   string: A zero terminated string of characters
+void sempPrintString(SEMP_OUTPUT output, const char * string);
+
+// Display a string followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   string: A zero terminated string of characters
+void sempPrintStringLn(SEMP_OUTPUT output, const char * string);
 
 //------------------------------------------------------------------------------
 // Testing support routines - Must only be called by testing routines
@@ -766,15 +1009,6 @@ const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 //------------------------------------------------------------------------------
 // V1 routines to be eliminated
 //------------------------------------------------------------------------------
-
-// Enable debug output
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse,
-                           Print *print = &Serial,
-                           bool verbose = false);
 
 // Enable error output
 //

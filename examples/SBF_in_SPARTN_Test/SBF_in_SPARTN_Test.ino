@@ -144,8 +144,8 @@ void setup()
     }
 
     // Initialize the SBF parser
-    parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1,
-                             buffer1, bufferLength, processSbfMessage, output);
+    parse1 = sempBeginParser("SBF_Test", parserTable1, parserCount1, buffer1,
+                             bufferLength, processSbfMessage, output, output);
     if (!parse1)
         reportFatalError("Failed to initialize parser 1");
 
@@ -166,7 +166,8 @@ void setup()
 
     // Initialize the SPARTN parser
     parse2 = sempBeginParser("SPARTN_Test", parserTable2, parserCount2,
-                             buffer2, bufferLength, processSpartnMessage, output);
+                             buffer2, bufferLength, processSpartnMessage,
+                             output, output);
     if (!parse2)
         reportFatalError("Failed to initialize parser 2");
 

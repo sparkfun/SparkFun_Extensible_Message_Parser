@@ -301,25 +301,65 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse)
 {
     SEMP_UNICORE_HEADER * header;
+    SEMP_OUTPUT output;
 
-    Print *print = parse->printError;
-    if (print)
+    output = sempGetErrorOutput(parse);
+    if (output)
     {
-        sempPrintln(print, "Unicore Message Header");
+        sempPrintStringLn(output, "Unicore Message Header");
         header = (SEMP_UNICORE_HEADER *)parse->buffer;
-        sempPrintf(print, "      0x%02x: Sync A", header->syncA);
-        sempPrintf(print, "      0x%02x: Sync B", header->syncB);
-        sempPrintf(print, "      0x%02x: Sync C", header->syncC);
-        sempPrintf(print, "      %3d%%: CPU Idle Time", header->cpuIdlePercent);
-        sempPrintf(print, "     %5d: Message ID", header->messageId);
-        sempPrintf(print, "     %5d: Message Length (bytes)", header->messageLength);
-        sempPrintf(print, "       %3d: Reference Time", header->referenceTime);
-        sempPrintf(print, "      0x%02x: Time Status", header->timeStatus);
-        sempPrintf(print, "     %5d: Week Number", header->weekNumber);
-        sempPrintf(print, "%10d: Seconds of Week", header->secondsOfWeek);
-        sempPrintf(print, "0x%08x: RESERVED", header->RESERVED);
-        sempPrintf(print, "       %3d: Release Version", header->releasedVersion);
-        sempPrintf(print, "       %3d: Leap Seconds", header->leapSeconds);
-        sempPrintf(print, "     %5d: Output Delay (mSec)", header->outputDelayMSec);
+        sempPrintString(output, "      ");
+        sempPrintHex0x02x(output, header->syncA);
+        sempPrintStringLn(output, ": Sync A");
+
+        sempPrintString(output, "      ");
+        sempPrintHex0x02x(output, header->syncB);
+        sempPrintStringLn(output, ": Sync B");
+
+        sempPrintString(output, "      ");
+        sempPrintHex0x02x(output, header->syncC);
+        sempPrintStringLn(output, ": Sync C");
+
+        sempPrintString(output, "      ");
+        sempPrintDecimalI32(output, header->cpuIdlePercent, 3);
+        sempPrintStringLn(output, "%: CPU Idle Time");
+
+        sempPrintString(output, "     ");
+        sempPrintDecimalI32(output, header->messageId, 5);
+        sempPrintStringLn(output, ": Message ID");
+
+        sempPrintString(output, "     ");
+        sempPrintDecimalU32(output, header->messageLength, 5);
+        sempPrintStringLn(output, ": Message Length (bytes)");
+
+        sempPrintString(output, "       ");
+        sempPrintDecimalI32(output, header->referenceTime, 3);
+        sempPrintStringLn(output, ": Reference Time");
+
+        sempPrintString(output, "      ");
+        sempPrintHex0x02x(output, header->timeStatus);
+        sempPrintStringLn(output, ": Time Status");
+
+        sempPrintString(output, "     ");
+        sempPrintDecimalI32(output, header->weekNumber, 5);
+        sempPrintStringLn(output, ": Week Number");
+
+        sempPrintDecimalI32(output, header->secondsOfWeek, 10);
+        sempPrintStringLn(output, ": Seconds of Week");
+
+        sempPrintHex0x08x(output, header->RESERVED);
+        sempPrintStringLn(output, ": RESERVED");
+
+        sempPrintString(output, "       ");
+        sempPrintDecimalI32(output, header->releasedVersion, 3);
+        sempPrintStringLn(output, ": Release Version");
+
+        sempPrintString(output, "       ");
+        sempPrintDecimalI32(output, header->leapSeconds, 3);
+        sempPrintStringLn(output, ": Leap Seconds");
+
+        sempPrintString(output, "     ");
+        sempPrintDecimalI32(output, header->outputDelayMSec, 5);
+        sempPrintStringLn(output, ": Output Delay (mSec)");
     }
 }

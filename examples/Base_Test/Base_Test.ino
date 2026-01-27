@@ -80,44 +80,44 @@ void setup()
     }
 
     // No name specified
-    parse = sempBeginParser(nullptr, parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+    parse = sempBeginParser(nullptr, parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect parserName set to nullptr (0)");
 
     // No name specified
-    parse = sempBeginParser("", parserTable, parserCount,
-                            buffer, bufferLength, processMessage);
+    parse = sempBeginParser("", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect parserName set to empty string");
 
     // No parser table specified
-    parse = sempBeginParser("No parser", nullptr, parserCount,
-                            buffer, bufferLength, processMessage);
+    parse = sempBeginParser("No parser", nullptr, parserCount, buffer,
+                            bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect parserTable set to nullptr (0)");
 
     // Parser count is zero
-    parse = sempBeginParser("No parser", parserTable, 0,
-                            buffer, bufferLength, processMessage);
+    parse = sempBeginParser("No parser", parserTable, 0, buffer,
+                            bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed because parserCount != nameTableCount");
 
     // No buffer specified
-    parse = sempBeginParser("No parser", parserTable, parserCount,
-                            nullptr, bufferLength, processMessage);
+    parse = sempBeginParser("No parser", parserTable, parserCount, nullptr,
+                            bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect buffer set to nullptr (0)");
 
     // No buffer specified
-    parse = sempBeginParser("No parser", parserTable, parserCount,
-                            buffer, 0, processMessage);
+    parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
+                            0, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect no buffer");
 
     // Zero length usable buffer specified
-    parse = sempBeginParser("No parser", parserTable, parserCount,
-                            buffer, bufferOverhead, processMessage);
+    parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
+                            bufferOverhead, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect zero length buffer");
 
@@ -127,20 +127,21 @@ void setup()
         reportFatalError("Failed to get proper minimum buffer size");
 
     // Complain about buffer too small, but allow for testing
-    parse = sempBeginParser("No parser", parserTable, parserCount,
-                            buffer, minimumBufferBytes - 1, processMessage);
+    parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
+                            minimumBufferBytes - 1, processMessage, output);
     if (!parse)
         reportFatalError("Failed to complain about minimum buffer size");
 
     // No end-of-message callback specified
-    parse = sempBeginParser("No parser", parserTable, parserCount,
-                            buffer, bufferLength, nullptr);
+    parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
+                            bufferLength, nullptr, output);
     if (parse)
         reportFatalError("Failed to detect eomCallback set to nullptr (0)");
 
     // Start using the entire buffer
     parse = sempBeginParser("Base Test Example", parserTable, parserCount,
-                            buffer, bufferLength, processMessage, output);
+                            buffer, bufferLength, processMessage, output,
+                            output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
     sempPrintStringLn(output, "Parser successfully initialized");

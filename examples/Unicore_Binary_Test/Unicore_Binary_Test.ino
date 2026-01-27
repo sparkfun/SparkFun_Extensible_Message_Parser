@@ -148,8 +148,8 @@ void setup()
     }
 
     // Initialize the parser
-    parse = sempBeginParser("Unicore_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage, output);
+    parse = sempBeginParser("Unicore_Test", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
@@ -203,6 +203,8 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     if (displayOnce)
     {
         displayOnce = false;
+        sempPrintLn(output);
+        sempUnicoreBinaryPrintHeader(parse);
         sempPrintLn(output);
         sempPrintParserConfiguration(parse, output);
     }

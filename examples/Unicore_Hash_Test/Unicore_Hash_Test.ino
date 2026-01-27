@@ -108,7 +108,7 @@ void setup()
     // Initialize the parser
     parse = sempBeginParser("Unicore_Hash_Test", parserTable, parserCount,
                             buffer, bufferLength, processMessage, output,
-                            &Serial, badUnicoreHashChecksum);
+                            output, badUnicoreHashChecksum);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

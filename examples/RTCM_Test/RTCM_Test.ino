@@ -101,8 +101,8 @@ void setup()
     }
 
     // Initialize the parser
-    parse = sempBeginParser("RTCM_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage, output);
+    parse = sempBeginParser("RTCM_Test", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

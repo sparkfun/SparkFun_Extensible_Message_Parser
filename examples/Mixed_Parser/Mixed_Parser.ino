@@ -186,8 +186,8 @@ void setup()
     }
 
     // Initialize the parser
-    parse = sempBeginParser("Mixed_Parser", parserTable, parserCount,
-                            buffer, bufferLength, processMessage, output);
+    parse = sempBeginParser("Mixed_Parser", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

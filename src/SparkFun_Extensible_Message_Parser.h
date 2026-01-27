@@ -129,8 +129,8 @@ typedef struct _SEMP_PARSE_STATE
     SEMP_INVALID_DATA_CALLBACK invalidData; // Invalid data callback
     const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
-    Print *printError;             // Class to use for error output
     SEMP_OUTPUT debugOutput;       // Output a debug character
+    SEMP_OUTPUT errorOutput;       // Output an error character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
@@ -159,8 +159,8 @@ typedef struct _SEMP_PARSE_STATE
 //   buffer: Address of the buffer to be used for parser state, scratchpad
 //   bufferLength: Number of bytes in the buffer
 //   oemCallback: Address of a callback routine to handle the parsed messages
-//   debugOutput: Addess of a routine to output a debug character, myabe nullptr
-//   printError: Addess of a routine used to output error messages
+//   errorOutput: Address of a routine to output an error character, maybe nullptr
+//   debugOutput: Address of a routine to output a debug character, myabe nullptr
 //   badCrcCallback: Address of a routine to handle bad CRC messages
 //
 // Outputs:
@@ -199,19 +199,14 @@ typedef struct _SEMP_PARSE_STATE
 // are detected by a parser the name string value gets displayed to
 // identify the parse data structure associated with the error.  This
 // is helpful when multiple parsers are running at the same time.
-//
-// The printError value specifies a class address to use when printing
-// errors.  A nullptr value prevents any error from being output.  It is
-// possible to call sempSetPrintError later to enable or disable error
-// output.
 SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
                                    SEMP_PARSER_DESCRIPTION **parseTable,
                                    uint16_t parserCount,
                                    uint8_t * buffer,
                                    size_t bufferLength,
                                    SEMP_EOM_CALLBACK eomCallback,
+                                   SEMP_OUTPUT errorOutput = nullptr,
                                    SEMP_OUTPUT debugOutput = nullptr,
-                                   Print *printError = &Serial,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
 
 // Disable debug output
@@ -235,6 +230,13 @@ void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure
 void sempErrorOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+void sempErrorOutputEnable(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output);
 
 // Compute the necessary buffer length in bytes to support the scratch pad
 // and parse buffer lengths.
@@ -556,6 +558,15 @@ uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 // These API routines should only be called by parsers when processing
 // the incoming data stream
 //------------------------------------------------------------------------------
+
+// Get a path for an error character
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a routine to output an error character
+SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse);
 
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state
@@ -1096,32 +1107,5 @@ void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = tr
 // Outputs:
 //   Returns the address of a zero terminated sentence name string
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
-
-//------------------------------------------------------------------------------
-// V1 routines to be eliminated
-//------------------------------------------------------------------------------
-
-// Enable error output
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempEnableErrorOutput(SEMP_PARSE_STATE *parse,
-                           Print *print = &Serial);
-
-// Format and print a line of text
-//
-// Inputs:
-//   print: Address of a Print object to use for output
-//   format: Address of a zero terminated string of format characters
-//   ...: Parameters needed for the format
-void sempPrintf(Print *print, const char *format, ...);
-
-// Print a line of text
-//
-// Inputs:
-//   print: Address of a Print object to use for output
-//   string: Address of a zero terminated string of characters to output
-void sempPrintln(Print *print, const char *string = "");
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

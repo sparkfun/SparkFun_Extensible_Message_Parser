@@ -151,8 +151,8 @@ void setup()
     }
 
     // Initialize the parser
-    parse = sempBeginParser("UBLOX_Test", parserTable, parserCount,
-                            buffer, bufferLength, processMessage, output);
+    parse = sempBeginParser("UBLOX_Test", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 

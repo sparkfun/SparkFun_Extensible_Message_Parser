@@ -466,6 +466,36 @@ const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempUnicoreHashPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_UNICORE_HASH_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
+
+    // Display the remaining bytes
+    sempPrintString(output, "    bytesRemaining: ");
+    sempPrintDecimalU32Ln(output, scratchPad->bytesRemaining);
+
+    // Display the checksum bytes
+    sempPrintString(output, "    checksumBytes: ");
+    sempPrintDecimalU32Ln(output, scratchPad->checksumBytes);
+
+    // Display the sentence length
+    sempPrintString(output, "    sentenceNameLength: ");
+    sempPrintDecimalU32Ln(output, scratchPad->sentenceNameLength);
+
+    // Display the sentence name
+    sempDumpBuffer(output, scratchPad->sentenceName, sizeof(scratchPad->sentenceName));
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -481,6 +511,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription =
     "Unicore hash parser",              // parserName
     sempUnicoreHashPreamble,            // preamble
     sempUnicoreHashGetStateName,        // State to state name translation routine
+    sempUnicoreHashPrintScratchPad,     // Print the contents of the scratch pad
     145,                                // minimumParseAreaBytes
     sizeof(SEMP_UNICORE_HASH_VALUES),   // scratchPadBytes
     0,                                  // payloadOffset

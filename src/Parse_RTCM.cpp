@@ -291,6 +291,33 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempRtcmPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_RTCM_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
+
+    // Display the CRC
+    sempPrintString(output, "    crc: ");
+    sempPrintHex0x04xLn(output, scratchPad->crc);
+
+    // Display the remaining bytes
+    sempPrintString(output, "    bytesRemaining: ");
+    sempPrintDecimalU32Ln(output, scratchPad->bytesRemaining);
+
+    // Display the message number
+    sempPrintString(output, "    message: ");
+    sempPrintDecimalU32Ln(output, scratchPad->message);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -306,6 +333,7 @@ SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
     "RTCM parser",              // parserName
     sempRtcmPreamble,           // preamble
     sempRtcmGetStateName,       // State to state name translation routine
+    sempRtcmPrintScratchPad,    // Print the contents of the scratch pad
     1029,                       // minimumParseAreaBytes
     sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
     0,                          // payloadOffset

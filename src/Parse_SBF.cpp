@@ -288,6 +288,45 @@ const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempSbfPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_SBF_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+
+    // Display the expected CRC
+    sempPrintString(output, "    expectedCRC: ");
+    sempPrintHex0x04xLn(output, scratchPad->expectedCRC);
+
+    // Display the computed CRC
+    sempPrintString(output, "    computedCRC: ");
+    sempPrintHex0x04xLn(output, scratchPad->computedCRC);
+
+    // Display the SBF ID
+    sempPrintString(output, "    sbfID: ");
+    sempPrintDecimalU32Ln(output, scratchPad->sbfID);
+
+    // Display the SBF Drev
+    sempPrintString(output, "    sbfIDrev: ");
+    sempPrintDecimalU32Ln(output, scratchPad->sbfIDrev);
+
+    // Display the length
+    sempPrintString(output, "    length: ");
+    sempPrintDecimalU32Ln(output, scratchPad->length);
+
+    // Display the remaining bytes
+    sempPrintString(output, "    bytesRemaining: ");
+    sempPrintDecimalU32Ln(output, scratchPad->bytesRemaining);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -303,6 +342,7 @@ SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
     "SBF parser",               // parserName
     sempSbfPreamble,            // preamble
     sempSbfGetStateName,        // State to state name translation routine
+    sempSbfPrintScratchPad,     // Print the contents of the scratch pad
     3000,   /* ??? */           // minimumParseAreaBytes
     sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
     0,                          // payloadOffset

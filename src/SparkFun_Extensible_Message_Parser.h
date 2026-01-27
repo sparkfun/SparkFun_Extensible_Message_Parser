@@ -106,12 +106,21 @@ typedef void (*SEMP_OUTPUT)(char data);
 //   and false if this data is for another parser
 typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, uint8_t data);
 
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+typedef void (*SEMP_PRINT_SCRATCH_PAD)(P_SEMP_PARSE_STATE parse,
+                                       SEMP_OUTPUT output);
+
 // Describe the parser
 typedef const struct _SEMP_PARSER_DESCRIPTION
 {
     const char * parserName;        // Name of the parser
     SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
     SEMP_GET_STATE_NAME getStateName; // Routine to translate state into state name
+    SEMP_PRINT_SCRATCH_PAD printScratchPad; // Routine to display the scratch pad
     size_t minimumParseAreaBytes;   // Minimum parse area size for best operation
     size_t scratchPadBytes;         // Required scratch pad size
     size_t payloadOffset;           // Offset to the first byte of the payload
@@ -606,6 +615,14 @@ void sempInvalidDataCallback(SEMP_PARSE_STATE *parse);
 //   If successful, returns the 4-bit binary value matching the character
 //   or -1 upon failure for invalid characters
 int sempAsciiToNibble(int data);
+
+// Display the contents of a buffer in hexadecimal and ASCII
+//
+// Inputs:
+//   output: Address of a routine to output a character
+//   buffer: Address of a buffer containing the data to display
+//   length: Number of bytes of data to display
+void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length);
 
 // Convert nibble to ASCII
 //

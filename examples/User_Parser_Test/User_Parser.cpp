@@ -117,6 +117,25 @@ const char * userParserGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void userParserPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    USER_SCRATCH_PAD *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (USER_SCRATCH_PAD *)parse->scratchPad;
+
+    // Display the message number
+    sempPrintString(output, "    messageNumber: ");
+    sempPrintDecimalI32Ln(output, scratchPad->messageNumber);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -132,6 +151,7 @@ SEMP_PARSER_DESCRIPTION userParserDescription =
     "User parser",              // parserName
     userPreamble,               // preamble
     userParserGetStateName,     // State to state name translation routine
+    userParserPrintScratchPad,  // Print the contents of the scratch pad
     3,                          // minimumParseAreaBytes
     sizeof(USER_SCRATCH_PAD),   // scratchPadBytes
     0,                          // payloadOffset

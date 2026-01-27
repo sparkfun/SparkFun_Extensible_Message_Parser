@@ -71,6 +71,7 @@ SEMP_PARSER_DESCRIPTION noParserDescription =
     "No parser",            // parserName
     noParserPreamble,       // preamble
     noParserGetStateName,   // State to state name translation routine
+    nullptr,                // Print the contents of the scratch pad
     NO_PARSER_MINIMUM_BUFFER_SIZE, // minimumParseAreaBytes
     0,                      // scratchPadBytes
     0,                      // payloadOffset

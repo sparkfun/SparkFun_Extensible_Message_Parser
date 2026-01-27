@@ -295,6 +295,45 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempUbloxPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_UBLOX_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_UBLOX_VALUES *)parse->scratchPad;
+
+    // Display the remaining bytes
+    sempPrintString(output, "    bytesRemaining: ");
+    sempPrintDecimalU32Ln(output, scratchPad->bytesRemaining);
+
+    // Display the message class
+    sempPrintString(output, "    messageClass: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageClass);
+
+    // Display the message ID
+    sempPrintString(output, "    messageId: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageId);
+
+    // Display the payload length
+    sempPrintString(output, "    payloadLength: ");
+    sempPrintDecimalU32Ln(output, scratchPad->payloadLength);
+
+    // Display the checksum byte 1
+    sempPrintString(output, "    ck_a: ");
+    sempPrintHex0x02xLn(output, scratchPad->ck_a);
+
+    // Display the checksum byte 2
+    sempPrintString(output, "    ck_b: ");
+    sempPrintHex0x02xLn(output, scratchPad->ck_b);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -310,6 +349,7 @@ SEMP_PARSER_DESCRIPTION sempUbloxParserDescription =
     "U-Blox parser",            // parserName
     sempUbloxPreamble,          // preamble
     sempUbloxGetStateName,      // State to state name translation routine
+    sempUbloxPrintScratchPad,   // Print the contents of the scratch pad
     3000,   /* ??? */           // minimumParseAreaBytes
     sizeof(SEMP_UBLOX_VALUES),  // scratchPadBytes
     SEMP_UBLOX_PAYLOAD_OFFSET,  // payloadOffset

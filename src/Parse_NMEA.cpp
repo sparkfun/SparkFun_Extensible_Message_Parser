@@ -426,6 +426,28 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempNmeaPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_NMEA_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
+
+    // Display the sentence length
+    sempPrintString(output, "    sentenceNameLength: ");
+    sempPrintDecimalI32Ln(output, scratchPad->sentenceNameLength);
+
+    // Display the sentence name
+    sempDumpBuffer(output, scratchPad->sentenceName, sizeof(scratchPad->sentenceName));
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -441,9 +463,11 @@ SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
     "NMEA parser",              // parserName
     sempNmeaPreamble,           // preamble
     sempNmeaGetStateName,       // State to state name translation routine
+    sempNmeaPrintScratchPad,    // Print the contents of the scratch pad
     82,                         // minimumParseAreaBytes
     sizeof(SEMP_NMEA_VALUES),   // scratchPadBytes
     0,                          // payloadOffset
+
 };
 
 //----------------------------------------

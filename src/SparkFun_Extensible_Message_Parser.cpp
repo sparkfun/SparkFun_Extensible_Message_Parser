@@ -25,10 +25,14 @@ License: MIT. Please see LICENSE.md for more details
 // Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
 #define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
-//----------------------------------------
-// Support routines
-//----------------------------------------
+//------------------------------------------------------------------------------
+// SEMP private support routines
+//
+// The support routines are placed before the parser routines to eliminate
+// forward declarations.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
 // Compute the scratch pad length
 // Inputs:
 //   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
@@ -36,6 +40,7 @@ License: MIT. Please see LICENSE.md for more details
 //
 // Outputs:
 //    Returns the number of bytes needed for the scratch pad
+//----------------------------------------
 size_t sempGetScratchPadLength(SEMP_PARSER_DESCRIPTION **parserTable,
                                uint16_t parserCount)
 {
@@ -52,6 +57,7 @@ size_t sempGetScratchPadLength(SEMP_PARSER_DESCRIPTION **parserTable,
     return SEMP_ALIGN(length);
 }
 
+//----------------------------------------
 // Locate the parse structure
 // Inputs:
 //   scratchPadBytes: Desired size of the scratch pad in bytes
@@ -61,6 +67,7 @@ size_t sempGetScratchPadLength(SEMP_PARSER_DESCRIPTION **parserTable,
 //
 // Outputs:
 //    Returns the number of bytes needed for the scratch pad
+//----------------------------------------
 SEMP_PARSE_STATE * sempLocateParseStructure(uint16_t scratchPadBytes,
                                             uint8_t *buffer,
                                             size_t bufferLength,
@@ -118,7 +125,15 @@ SEMP_PARSE_STATE * sempLocateParseStructure(uint16_t scratchPadBytes,
     return parse;
 }
 
-// Convert nibble to ASCII
+//------------------------------------------------------------------------------
+// SparkFun Extensible Message Parser API routines
+//
+// These routines are called by parsers and applications
+//------------------------------------------------------------------------------
+
+//----------------------------------------
+// Convert an ASCII character (0-9, A-F, or a-f) into a 4-bit binary value
+//----------------------------------------
 int sempAsciiToNibble(int data)
 {
     // Convert the value to lower case
@@ -130,129 +145,9 @@ int sempAsciiToNibble(int data)
     return -1;
 }
 
-// Translate the type value into an ASCII type name
-const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
-{
-    const char *name = "Unknown parser";
-
-    if (parse)
-    {
-        if (type < parse->parserCount)
-            name = parse->parsers[type]->parserName;
-        else if (type == parse->parserCount)
-            name = "SEMP scanning for preamble";
-    }
-    return name;
-}
-
-// Print the parser's configuration
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
-{
-    if (print && parse)
-    {
-        sempPrintln(print, "SparkFun Extensible Message Parser");
-        sempPrintf(print, "    parserName: %p (%s)", parse->parserName, parse->parserName);
-        sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
-        sempPrintf(print, "    parserCount: %d", parse->parserCount);
-        sempPrintf(print, "    printError: %p", parse->printError);
-        sempPrintf(print, "    printDebug: %p", parse->printDebug);
-        sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
-        sempPrintf(print, "    nmeaAbortOnNonPrintable: %d", parse->nmeaAbortOnNonPrintable);
-        sempPrintf(print, "    unicoreHashAbortOnNonPrintable: %d", parse->unicoreHashAbortOnNonPrintable);
-        sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
-                   (void *)parse->scratchPad,
-                   parse->scratchPad ? (parse->buffer - (uint8_t *)parse->scratchPad)
-                                     : 0);
-        sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
-        sempPrintf(print, "    crc: 0x%08x", parse->crc);
-        sempPrintf(print, "    State: %p%s", (void *)parse->state,
-                   (parse->state == sempFirstByte) ? " (sempFirstByte)" : "");
-        sempPrintf(print, "    EomCallback: %p", (void *)parse->eomCallback);
-        sempPrintf(print, "    Buffer: %p (%d bytes)",
-                   (void *)parse->buffer, parse->bufferLength);
-        sempPrintf(print, "    length: %d message bytes", parse->length);
-        sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
-    }
-}
-
-// Format and print a line of text
-void sempPrintf(Print *print, const char *format, ...)
-{
-    if (print)
-    {
-        // https://stackoverflow.com/questions/42131753/wrapper-for-printf
-        va_list args;
-        va_start(args, format);
-        va_list args2;
-
-        va_copy(args2, args);
-        char buf[vsnprintf(nullptr, 0, format, args) + sizeof("\r\n")];
-
-        vsnprintf(buf, sizeof buf, format, args2);
-
-        // Add CR+LF
-        buf[sizeof(buf) - 3] = '\r';
-        buf[sizeof(buf) - 2] = '\n';
-        buf[sizeof(buf) - 1] = '\0';
-
-        print->write(buf, strlen(buf));
-
-        va_end(args);
-        va_end(args2);
-    }
-}
-
-// Print a line of error text
-void sempPrintln(Print *print, const char *string)
-{
-    if (print)
-        print->println(string);
-}
-
-// Translates state value into an ASCII state name
-const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
-{
-    if (parse && (parse->state == sempFirstByte))
-        return "sempFirstByte";
-    return "Unknown state";
-}
-
-// Disable debug output
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
-{
-    if (parse)
-        parse->printDebug = nullptr;
-}
-
-// Enable debug output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print, bool verbose)
-{
-    if (parse)
-    {
-        parse->printDebug = print;
-        parse->verboseDebug = verbose;
-    }
-}
-
-// Disable error output
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
-{
-    if (parse)
-        parse->printError = nullptr;
-}
-
-// Enable error output
-void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
-{
-    if (parse)
-        parse->printError = print;
-}
-
 //----------------------------------------
-// Parse routines
-//----------------------------------------
-
 // Initialize the parser
+//----------------------------------------
 SEMP_PARSE_STATE *sempBeginParser(
     const char *parserTableName,
     SEMP_PARSER_DESCRIPTION **parserTable,
@@ -334,7 +229,27 @@ SEMP_PARSE_STATE *sempBeginParser(
     return parse;
 }
 
+//----------------------------------------
+// Disable debug output
+//----------------------------------------
+void sempDisableDebugOutput(SEMP_PARSE_STATE *parse)
+{
+    if (parse)
+        parse->printDebug = nullptr;
+}
+
+//----------------------------------------
+// Disable error output
+//----------------------------------------
+void sempDisableErrorOutput(SEMP_PARSE_STATE *parse)
+{
+    if (parse)
+        parse->printError = nullptr;
+}
+
+//----------------------------------------
 // Wait for the first byte in the data stream
+//----------------------------------------
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     int index;
@@ -370,17 +285,10 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Compute the necessary buffer length in bytes to support the scratch pad
-// and parse buffer lengths.
-// Inputs:
-//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
-//   parserCount:  Number of entries in the parseTable
-//   parseBufferBytes: Desired size of the parse buffer in bytes
-//   printDebug: Device to output any debug messages, may be nullptr
-//
-// Outputs:
-//    Returns the number of bytes needed for the buffer that contains
-//    the SEMP parser state, a scratch pad area and the parse buffer
+// and parse buffer lengths
+//----------------------------------------
 size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
                            uint16_t parserCount,
                            size_t parserBufferBytes,
@@ -411,7 +319,36 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     return length;
 }
 
+//----------------------------------------
+// Translates state value into an ASCII state name
+//----------------------------------------
+const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
+{
+    if (parse && (parse->state == sempFirstByte))
+        return "sempFirstByte";
+    return "Unknown state";
+}
+
+//----------------------------------------
+// Translate the type value into an ASCII type name
+//----------------------------------------
+const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
+{
+    const char *name = "Unknown parser";
+
+    if (parse)
+    {
+        if (type < parse->parserCount)
+            name = parse->parsers[type]->parserName;
+        else if (type == parse->parserCount)
+            name = "SEMP scanning for preamble";
+    }
+    return name;
+}
+
+//----------------------------------------
 // Parse the next byte
+//----------------------------------------
 void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (parse)
@@ -441,14 +378,50 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data)
     }
 }
 
+//----------------------------------------
 // Parse the next bytes
+//----------------------------------------
 void sempParseNextBytes(SEMP_PARSE_STATE *parse, const uint8_t *data, size_t len)
 {
     for (size_t i = 0; i < len; i++)
         sempParseNextByte(parse, *data++);
 }
 
+//----------------------------------------
+// Print the parser's configuration
+//----------------------------------------
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print)
+{
+    if (print && parse)
+    {
+        sempPrintln(print, "SparkFun Extensible Message Parser");
+        sempPrintf(print, "    parserName: %p (%s)", parse->parserName, parse->parserName);
+        sempPrintf(print, "    parsers: %p", (void *)parse->parsers);
+        sempPrintf(print, "    parserCount: %d", parse->parserCount);
+        sempPrintf(print, "    printError: %p", parse->printError);
+        sempPrintf(print, "    printDebug: %p", parse->printDebug);
+        sempPrintf(print, "    verboseDebug: %d", parse->verboseDebug);
+        sempPrintf(print, "    nmeaAbortOnNonPrintable: %d", parse->nmeaAbortOnNonPrintable);
+        sempPrintf(print, "    unicoreHashAbortOnNonPrintable: %d", parse->unicoreHashAbortOnNonPrintable);
+        sempPrintf(print, "    Scratch Pad: %p (%ld bytes)",
+                   (void *)parse->scratchPad,
+                   parse->scratchPad ? (parse->buffer - (uint8_t *)parse->scratchPad)
+                                     : 0);
+        sempPrintf(print, "    computeCrc: %p", (void *)parse->computeCrc);
+        sempPrintf(print, "    crc: 0x%08x", parse->crc);
+        sempPrintf(print, "    State: %p%s", (void *)parse->state,
+                   (parse->state == sempFirstByte) ? " (sempFirstByte)" : "");
+        sempPrintf(print, "    EomCallback: %p", (void *)parse->eomCallback);
+        sempPrintf(print, "    Buffer: %p (%d bytes)",
+                   (void *)parse->buffer, parse->bufferLength);
+        sempPrintf(print, "    length: %d message bytes", parse->length);
+        sempPrintf(print, "    type: %d (%s)", parse->type, sempGetTypeName(parse, parse->type));
+    }
+}
+
+//----------------------------------------
 // Shutdown the parser
+//----------------------------------------
 void sempStopParser(SEMP_PARSE_STATE **parse)
 {
     // Prevent further references to the structure
@@ -456,20 +429,65 @@ void sempStopParser(SEMP_PARSE_STATE **parse)
         *parse = nullptr;
 }
 
-//----------------------------------------
-// Parser specific routines
-//----------------------------------------
+//------------------------------------------------------------------------------
+// V1 routines to eliminate
+//------------------------------------------------------------------------------
 
-// Abort NMEA parsing on a non-printable char
-void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+//----------------------------------------
+// Enable debug output
+//----------------------------------------
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print, bool verbose)
 {
     if (parse)
-        parse->nmeaAbortOnNonPrintable = abort;
+    {
+        parse->printDebug = print;
+        parse->verboseDebug = verbose;
+    }
 }
 
-// Abort Unicore hash parsing on a non-printable char
-void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+//----------------------------------------
+// Enable error output
+//----------------------------------------
+void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print)
 {
     if (parse)
-        parse->unicoreHashAbortOnNonPrintable = abort;
+        parse->printError = print;
+}
+
+//----------------------------------------
+// Format and print a line of text
+//----------------------------------------
+void sempPrintf(Print *print, const char *format, ...)
+{
+    if (print)
+    {
+        // https://stackoverflow.com/questions/42131753/wrapper-for-printf
+        va_list args;
+        va_start(args, format);
+        va_list args2;
+
+        va_copy(args2, args);
+        char buf[vsnprintf(nullptr, 0, format, args) + sizeof("\r\n")];
+
+        vsnprintf(buf, sizeof buf, format, args2);
+
+        // Add CR+LF
+        buf[sizeof(buf) - 3] = '\r';
+        buf[sizeof(buf) - 2] = '\n';
+        buf[sizeof(buf) - 1] = '\0';
+
+        print->write(buf, strlen(buf));
+
+        va_end(args);
+        va_end(args2);
+    }
+}
+
+//----------------------------------------
+// Print a line of error text
+//----------------------------------------
+void sempPrintln(Print *print, const char *string)
+{
+    if (print)
+        print->println(string);
 }

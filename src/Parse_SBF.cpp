@@ -34,10 +34,17 @@ typedef struct _SEMP_SBF_VALUES
     SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
 } SEMP_SBF_VALUES;
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // SBF parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
+//----------------------------------------
 bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -73,7 +80,9 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for Length MSB
+//----------------------------------------
 bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -107,7 +116,9 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Check for Length LSB
+//----------------------------------------
 bool sempSbfLengthLSB(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -120,7 +131,9 @@ bool sempSbfLengthLSB(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for ID byte 2
+//----------------------------------------
 bool sempSbfID2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -135,7 +148,9 @@ bool sempSbfID2(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for ID byte 1
+//----------------------------------------
 bool sempSbfID1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -148,7 +163,9 @@ bool sempSbfID1(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for CRC byte 2
+//----------------------------------------
 bool sempSbfCRC2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -160,7 +177,9 @@ bool sempSbfCRC2(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for CRC byte 1
+//----------------------------------------
 bool sempSbfCRC1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
@@ -171,7 +190,9 @@ bool sempSbfCRC1(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for preamble 2
+//----------------------------------------
 bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (data == 0x40) // @
@@ -179,6 +200,7 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempSbfCRC1;
         return true;
     }
+
     // else
     sempPrintf(parse->printDebug,
             "SEMP %s: SBF, 0x%04x (%d) bytes, invalid preamble2",
@@ -193,7 +215,17 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the SBF parser recgonizes the input and false
+//   if another parser should be used
+//----------------------------------------
 bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (data == 0x24) // $ - same as NMEA
@@ -208,7 +240,15 @@ bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempSbfPreamble)
@@ -232,52 +272,81 @@ const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-// Set the invalid data callback
-void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
-{
-    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
-    scratchPad->invalidDataCallback = invalidDataCallback;
-}
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
+// Describe the parser
+//----------------------------------------
+SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
+{
+    "SBF parser",               // parserName
+    sempSbfPreamble,            // preamble
+    sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
+};
+
+//----------------------------------------
 // Get the Block Number
+//----------------------------------------
 uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return scratchPad->sbfID;
 }
 
+//----------------------------------------
 // Get the Block Revision
+//----------------------------------------
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return scratchPad->sbfIDrev;
 }
 
-// Get data
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
+//----------------------------------------
+//----------------------------------------
+const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse)
 {
-    return parse->buffer[offset];
+    return (const uint8_t *)(sempSbfGetString(parse, 20));
 }
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
+
+//----------------------------------------
+//----------------------------------------
+uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse)
 {
-    uint16_t data = parse->buffer[offset];
-    data |= ((uint16_t)parse->buffer[offset + 1]) << 8;
-    return data;
+    return sempSbfGetU2(parse, 16);
 }
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
+
+//----------------------------------------
+//----------------------------------------
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
-    uint32_t data = 0;
-    for (uint16_t i = 0; i < sizeof(data); i++)
-        data |= ((uint32_t)parse->buffer[offset + i]) << (8 * i);
-    return data;
+    union {
+        uint32_t unsignedN;
+        float flt;
+    } unsignedFloat;
+    unsignedFloat.unsignedN = sempSbfGetU4(parse, offset);
+    return unsignedFloat.flt;
 }
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
+
+//----------------------------------------
+//----------------------------------------
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
-    uint64_t data = 0;
-    for (uint16_t i = 0; i < sizeof(data); i++)
-        data |= ((uint64_t)parse->buffer[offset + i]) << (8 * i);
-    return data;
+    union {
+        uint64_t unsignedN;
+        double flt;
+    } unsignedFloat;
+    unsignedFloat.unsignedN = sempSbfGetU8(parse, offset);
+    return unsignedFloat.flt;
 }
+
+//----------------------------------------
+//----------------------------------------
 int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
@@ -287,6 +356,9 @@ int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU1(parse, offset);
     return unsignedSignedN.signedN;
 }
+
+//----------------------------------------
+//----------------------------------------
 int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
@@ -296,6 +368,9 @@ int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU2(parse, offset);
     return unsignedSignedN.signedN;
 }
+
+//----------------------------------------
+//----------------------------------------
 int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
@@ -305,6 +380,9 @@ int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU4(parse, offset);
     return unsignedSignedN.signedN;
 }
+
+//----------------------------------------
+//----------------------------------------
 int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
@@ -315,58 +393,79 @@ int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset)
     return unsignedSignedN.signedN;
 }
 
+//----------------------------------------
 // Get the ID value
+//----------------------------------------
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES * scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return scratchPad->sbfID;
 }
 
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint32_t unsignedN;
-        float flt;
-    } unsignedFloat;
-    unsignedFloat.unsignedN = sempSbfGetU4(parse, offset);
-    return unsignedFloat.flt;
-}
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint64_t unsignedN;
-        double flt;
-    } unsignedFloat;
-    unsignedFloat.unsignedN = sempSbfGetU8(parse, offset);
-    return unsignedFloat.flt;
-}
+//----------------------------------------
+//----------------------------------------
 const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     return (const char *)(&parse->buffer[offset]);
 }
+
+//----------------------------------------
+//----------------------------------------
+uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
+{
+    return parse->buffer[offset];
+}
+
+//----------------------------------------
+//----------------------------------------
+uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
+{
+    uint16_t data = parse->buffer[offset];
+    data |= ((uint16_t)parse->buffer[offset + 1]) << 8;
+    return data;
+}
+
+//----------------------------------------
+//----------------------------------------
+uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
+{
+    uint32_t data = 0;
+    for (uint16_t i = 0; i < sizeof(data); i++)
+        data |= ((uint32_t)parse->buffer[offset + i]) << (8 * i);
+    return data;
+}
+
+//----------------------------------------
+//----------------------------------------
+uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
+{
+    uint64_t data = 0;
+    for (uint16_t i = 0; i < sizeof(data); i++)
+        data |= ((uint64_t)parse->buffer[offset + i]) << (8 * i);
+    return data;
+}
+
+//----------------------------------------
+//----------------------------------------
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 4));
 }
+
+//----------------------------------------
+//----------------------------------------
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 2));
 }
-uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse)
-{
-    return sempSbfGetU2(parse, 16);
-}
-const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse)
-{
-    return (const uint8_t *)(sempSbfGetString(parse, 20));
-}
 
-// Describe the parser
-SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
+//----------------------------------------
+// Set the invalid data callback
+//----------------------------------------
+void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
 {
-    "SBF parser",               // parserName
-    sempSbfPreamble,            // preamble
-    sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
-};
+    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    scratchPad->invalidDataCallback = invalidDataCallback;
+}

@@ -31,8 +31,21 @@ typedef struct _SEMP_RTCM_VALUES
 
 //----------------------------------------
 // Support routines
+//
+// The parser support routines are placed before the parser routines to eliminate
+// forward declarations.
 //----------------------------------------
 
+//----------------------------------------
+// Compute the CRC one byte at a time
+//
+// Inputs:
+//   crc: Current CRC value
+//   data: Byte to encode into the CRC value
+//
+// Outputs:
+//   Returns the updated CRC value
+//----------------------------------------
 uint32_t sempRtcmComputeCrc24q(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     uint32_t crc = parse->crc;
@@ -40,9 +53,14 @@ uint32_t sempRtcmComputeCrc24q(SEMP_PARSE_STATE *parse, uint8_t data)
     return crc & 0x00ffffff;
 }
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // RTCM parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
 //
 //    RTCM Standard 10403.2 - Chapter 4, Transport Layer
@@ -58,7 +76,9 @@ uint32_t sempRtcmComputeCrc24q(SEMP_PARSE_STATE *parse, uint8_t data)
 //    |<------------------------ CRC -------------------------->|
 //
 
+//----------------------------------------
 // Read the CRC
+//----------------------------------------
 bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -101,7 +121,9 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Read the rest of the message
+//----------------------------------------
 bool sempRtcmReadData(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -119,7 +141,9 @@ bool sempRtcmReadData(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the lower 4 bits of the message number
+//----------------------------------------
 bool sempRtcmReadMessage2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -130,7 +154,9 @@ bool sempRtcmReadMessage2(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the upper 8 bits of the message number
+//----------------------------------------
 bool sempRtcmReadMessage1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -141,7 +167,9 @@ bool sempRtcmReadMessage1(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the lower 8 bits of the length
+//----------------------------------------
 bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -167,7 +195,9 @@ bool sempRtcmReadLength2(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the upper two bits of the length
+//----------------------------------------
 bool sempRtcmReadLength1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
@@ -183,7 +213,17 @@ bool sempRtcmReadLength1(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the RTCM parser recgonizes the input and false
+//   if another parser should be used
+//----------------------------------------
 bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     if (data == 0xd3)
@@ -199,7 +239,15 @@ bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return false;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempRtcmPreamble)
@@ -219,64 +267,35 @@ const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
+
+//----------------------------------------
+// Describe the parser
+//----------------------------------------
+SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
+{
+    "RTCM parser",              // parserName
+    sempRtcmPreamble,           // preamble
+    sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
+};
+
+//----------------------------------------
 // Get the message number
+//----------------------------------------
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
 {
     SEMP_RTCM_VALUES *scratchPad = (SEMP_RTCM_VALUES *)parse->scratchPad;
     return scratchPad->message;
 }
 
-// Get unsigned integer with width bits, starting at bit start
-uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
-{
-    uint8_t *ptr = parse->buffer;
-    ptr += 3; // Skip the preamble and length bytes
-
-    uint64_t result = 0;
-    size_t count = 0;
-    uint8_t bitMask = 0x80;
-
-    // Skip whole bytes (8 bits)
-    ptr += start / 8;
-    count += (start / 8) * 8;
-
-    // Loop until we reach the start bit
-    while (count < start)
-    {
-        bitMask >>= 1; // Shift the bit mask
-        count++;       // Increment the count
-
-        if (bitMask == 0) // Have we counted 8 bits?
-        {
-            ptr++;          // Point to the next byte
-            bitMask = 0x80; // Reset the bit mask
-        }
-    }
-
-    // We have reached the start bit and ptr is pointing at the correct byte
-    // Now extract width bits, incrementing ptr and shifting bitMask as we go
-    while (count < (start + width))
-    {
-        if (*ptr & bitMask) // Is the bit set?
-            result |= 1;      // Set the corresponding bit in result
-
-        bitMask >>= 1; // Shift the bit mask
-        count++;       // Increment the count
-
-        if (bitMask == 0) // Have we counted 8 bits?
-        {
-            ptr++;          // Point to the next byte
-            bitMask = 0x80; // Reset the bit mask
-        }
-
-        if (count < (start + width)) // Do we need to shift result?
-            result <<= 1;              // Shift the result
-    }
-
-    return result;
-}
-
+//----------------------------------------
 // Get signed integer with width bits, starting at bit start
+//----------------------------------------
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
 {
     uint8_t *ptr = parse->buffer;
@@ -344,10 +363,54 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_
     return result.signed64;
 }
 
-// Describe the parser
-SEMP_PARSER_DESCRIPTION sempRtcmParserDescription =
+//----------------------------------------
+// Get unsigned integer with width bits, starting at bit start
+//----------------------------------------
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
 {
-    "RTCM parser",              // parserName
-    sempRtcmPreamble,           // preamble
-    sizeof(SEMP_RTCM_VALUES),   // scratchPadBytes
-};
+    uint8_t *ptr = parse->buffer;
+    ptr += 3; // Skip the preamble and length bytes
+
+    uint64_t result = 0;
+    size_t count = 0;
+    uint8_t bitMask = 0x80;
+
+    // Skip whole bytes (8 bits)
+    ptr += start / 8;
+    count += (start / 8) * 8;
+
+    // Loop until we reach the start bit
+    while (count < start)
+    {
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+    }
+
+    // We have reached the start bit and ptr is pointing at the correct byte
+    // Now extract width bits, incrementing ptr and shifting bitMask as we go
+    while (count < (start + width))
+    {
+        if (*ptr & bitMask) // Is the bit set?
+            result |= 1;      // Set the corresponding bit in result
+
+        bitMask >>= 1; // Shift the bit mask
+        count++;       // Increment the count
+
+        if (bitMask == 0) // Have we counted 8 bits?
+        {
+            ptr++;          // Point to the next byte
+            bitMask = 0x80; // Reset the bit mask
+        }
+
+        if (count < (start + width)) // Do we need to shift result?
+            result <<= 1;              // Shift the result
+    }
+
+    return result;
+}

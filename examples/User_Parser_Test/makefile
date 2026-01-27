@@ -11,7 +11,7 @@ SHELL=/bin/bash
 # Source files
 ##########
 
-SKETCH=User_Parser
+SKETCH=User_Parser_Test
 ESP32_CHIP=esp32
 PARTITION_FILE_NAME=RTKEverywhere
 

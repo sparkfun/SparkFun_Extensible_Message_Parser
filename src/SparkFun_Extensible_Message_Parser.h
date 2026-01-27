@@ -154,18 +154,12 @@ typedef struct _SEMP_UNICORE_HEADER
     uint16_t outputDelayMSec; // Output delay time, ms
 } SEMP_UNICORE_HEADER;
 
-//----------------------------------------
-// Support routines
-//----------------------------------------
-
-int sempAsciiToNibble(int data);
-
-//----------------------------------------
-// Public routines - Called by the application
+//------------------------------------------------------------------------------
+// SparkFun Extensible Message Parser API routines - Called by the applications
 //
-// The public routines are used to locate and release the parse data
-// structure and to pass data bytes to the parser.
-//----------------------------------------
+// The general API routines are used to locate and release the parse data
+// structure, pass data bytes to the parser and control output.
+//------------------------------------------------------------------------------
 
 // Initialize the parser
 //
@@ -243,37 +237,6 @@ void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
 //   parse: Address of a SEMP_PARSE_STATE structure
 void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
 
-// Enable debug output
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial, bool verbose = false);
-
-// Enable error output
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
-
-// Only parsers should call the routine sempFirstByte when an unexpected
-// byte is found in the data stream.  Parsers will also set the state
-// value to sempFirstByte after successfully parsing a message.  The
-// sempFirstByte routine calls each of the parsers' preamble routine to
-// determine if the parser recognizes the data byte as the preamble for
-// a message.  The first parser to acknowledge the preamble byte by
-// returning true is the parser that gets called for the following data.
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if a parser was found to process this data and false
-//   when none of the parsers recgonize the input data
-bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
-
 // Compute the necessary buffer length in bytes to support the scratch pad
 // and parse buffer lengths.
 //
@@ -329,28 +292,6 @@ void sempParseNextBytes(SEMP_PARSE_STATE *parse,
                         const uint8_t *data,
                         size_t len);
 
-// Print the contents of the parser data structure
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   print: Address of a Print object to use for output
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
-
-// Format and print a line of text
-//
-// Inputs:
-//   print: Address of a Print object to use for output
-//   format: Address of a zero terminated string of format characters
-//   ...: Parameters needed for the format
-void sempPrintf(Print *print, const char *format, ...);
-
-// Print a line of text
-//
-// Inputs:
-//   print: Address of a Print object to use for output
-//   string: Address of a zero terminated string of characters to output
-void sempPrintln(Print *print, const char *string = "");
-
 // The routine sempStopParser frees the parse data structure and sets
 // the pointer value to nullptr to prevent future references to the
 // structure.
@@ -359,24 +300,70 @@ void sempPrintln(Print *print, const char *string = "");
 //   parse: Address of a SEMP_PARSE_STATE * structure
 void sempStopParser(SEMP_PARSE_STATE **parse);
 
-//----------------------------------------
-// Parsers
-//----------------------------------------
+//------------------------------------------------------------------------------
+// SparkFun Extensible Message Parser API routines - Called by parsers
+//
+// These API routines should only be called by parsers when processing
+// the incoming data stream
+//------------------------------------------------------------------------------
 
-// The parser routines within a parser module are typically placed in
-// reverse order within the module.  This lets the routine declaration
-// proceed the routine use and eliminates the need for forward declaration.
-// Removing the forward declaration helps reduce the exposure of the
-// routines to the application layer.  As such only the preamble routine
-// should need to be listed below.
+// Only parsers should call the routine sempFirstByte when an unexpected
+// byte is found in the data stream.  Parsers will also set the state
+// value to sempFirstByte after successfully parsing a message.  The
+// sempFirstByte routine calls each of the parsers' preamble routine to
+// determine if the parser recognizes the data byte as the preamble for
+// a message.  The first parser to acknowledge the preamble byte by
+// returning true is the parser that gets called for the following data.
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if a parser was found to process this data and false
+//   when none of the parsers recgonize the input data
+bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Print support routines - Called by parsers and some applications
+//
+// The print support routines are used to output debug and error messages.
+//------------------------------------------------------------------------------
+
+// Convert an ASCII character (0-9, A-F, or a-f) into a 4-bit binary value
+//
+// Inputs:
+//   data: An ASCII character (0-9, A-F, or a-f)
+//
+// Outputs:
+//   If successful, returns the 4-bit binary value matching the character
+//   or -1 upon failure for invalid characters
+int sempAsciiToNibble(int data);
+
+// Print the contents of the parser data structure
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   print: Address of a Print object to use for output
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+
+//------------------------------------------------------------------------------
+// Parser notes
+//------------------------------------------------------------------------------
+
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  Typically
+// only the parser description is made public.
+
+//------------------------------------------------------------------------------
 // NMEA
-//----------------------------------------
+//------------------------------------------------------------------------------
 
 // Length of the sentence name array
 #define SEMP_NMEA_SENTENCE_NAME_BYTES    16
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempNmeaParserDescription;
 
 // Abort NMEA on a non-printable char
@@ -404,10 +391,11 @@ const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 //   Returns the address of a zero terminated state name string
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // RTCM
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempRtcmParserDescription;
 
 // RTCM parse routines
@@ -416,10 +404,11 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // SBF
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempSbfParserDescription;
 
 // SBF parse routines
@@ -427,12 +416,6 @@ uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
 const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
 uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
 
 // Get the ID value
 //
@@ -442,30 +425,30 @@ int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
 // Outputs:
 //    Returns the ID value
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
+
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
+bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
+bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
+
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
+int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
+int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
+int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
+int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
 const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset);
 uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset);
 uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
 uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
 uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
-bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
-bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
 void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // SPARTN
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempSpartnParserDescription;
-
-// Get the message number
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//
-// Outputs:
-//    Returns the message type number
-uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
 
 // Get the message subtype number
 //
@@ -476,6 +459,15 @@ uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
 //    Returns the message subtype number
 uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
 
+// Get the message number
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the message type number
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
 // Translates state value into an string, returns nullptr if not found
 //
 // Inputs:
@@ -485,11 +477,18 @@ uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
 //    Returns a zero terminated string of characters
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // u-blox
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempUbloxParserDescription;
+
+uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
+uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
+size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
+const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 
 // Get the 8-bit integer from the offset
 //
@@ -503,33 +502,30 @@ int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
 int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
 int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
 int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
-uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
-uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
-uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
-size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
 float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, size_t offset);
 double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, size_t offset);
-const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, size_t offset);
 uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, size_t offset); // offset is the Payload offset
 uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
 uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
 uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore Binary
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
 
 // Unicore binary parse routines
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // Unicore Hash (#)
-//----------------------------------------
+//------------------------------------------------------------------------------
 
+// Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
 
 // Abort Unicore hash on a non-printable char
@@ -540,8 +536,49 @@ extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
 void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
 // Unicore hash (#) parse routines
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated sentence name string
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
+
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
-void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
+
+//------------------------------------------------------------------------------
+// V1 routines to be eliminated
+//------------------------------------------------------------------------------
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   print: Address of a Print object to use for output
+void sempEnableDebugOutput(SEMP_PARSE_STATE *parse,
+                           Print *print = &Serial,
+                           bool verbose = false);
+
+// Enable error output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   print: Address of a Print object to use for output
+void sempEnableErrorOutput(SEMP_PARSE_STATE *parse,
+                           Print *print = &Serial);
+
+// Format and print a line of text
+//
+// Inputs:
+//   print: Address of a Print object to use for output
+//   format: Address of a zero terminated string of format characters
+//   ...: Parameters needed for the format
+void sempPrintf(Print *print, const char *format, ...);
+
+// Print a line of text
+//
+// Inputs:
+//   print: Address of a Print object to use for output
+//   string: Address of a zero terminated string of characters to output
+void sempPrintln(Print *print, const char *string = "");
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

@@ -34,9 +34,14 @@ typedef struct _SEMP_NMEA_VALUES
     uint8_t sentenceNameLength; // Length of the sentence name
 } SEMP_NMEA_VALUES;
 
-//----------------------------------------
+//------------------------------------------------------------------------------
 // NMEA parse routines
-//----------------------------------------
+//
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  The public
+// data structures and routines are listed at the end of the file.
+//------------------------------------------------------------------------------
 
 //
 //    NMEA Sentence
@@ -50,7 +55,9 @@ typedef struct _SEMP_NMEA_VALUES
 //               |<-------- Checksum -------->|
 //
 
+//----------------------------------------
 // Validate the checksum
+//----------------------------------------
 void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
 {
     int checksum;
@@ -86,7 +93,9 @@ void sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse)
                    parse->crc);
 }
 
+//----------------------------------------
 // Read the linefeed
+//----------------------------------------
 bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -110,7 +119,9 @@ bool sempNmeaLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the remaining carriage return
+//----------------------------------------
 bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -134,7 +145,9 @@ bool sempNmeaCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the line termination
+//----------------------------------------
 bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Don't add the current character to the length
@@ -159,7 +172,9 @@ bool sempNmeaLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the second checksum byte
+//----------------------------------------
 bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Validate the checksum character
@@ -178,7 +193,9 @@ bool sempNmeaChecksumByte2(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the first checksum byte
+//----------------------------------------
 bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     // Validate the checksum character
@@ -197,7 +214,9 @@ bool sempNmeaChecksumByte1(SEMP_PARSE_STATE *parse, uint8_t data)
     return sempFirstByte(parse, data);
 }
 
+//----------------------------------------
 // Read the sentence data
+//----------------------------------------
 bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
@@ -240,7 +259,9 @@ bool sempNmeaFindAsterisk(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Read the sentence name
+//----------------------------------------
 bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
@@ -279,7 +300,17 @@ bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Check for the preamble
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if the NMEA parser recgonizes the input and false
+//   if another parser should be used
+//----------------------------------------
 bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
@@ -290,7 +321,15 @@ bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
+//----------------------------------------
 // Translates state value into an string, returns nullptr if not found
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+//----------------------------------------
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
 {
     if (parse->state == sempNmeaPreamble)
@@ -312,17 +351,37 @@ const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
-// Return the NMEA sentence name as a string
-const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
-{
-    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
-    return (const char *)scratchPad->sentenceName;
-}
+//------------------------------------------------------------------------------
+// Public data and routines
+//
+// The following data structures and routines are listed in the .h file and are
+// exposed to the SEMP routine and application layer.
+//------------------------------------------------------------------------------
 
+//----------------------------------------
 // Describe the parser
+//----------------------------------------
 SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
 {
     "NMEA parser",              // parserName
     sempNmeaPreamble,           // preamble
     sizeof(SEMP_NMEA_VALUES),   // scratchPadBytes
 };
+
+//----------------------------------------
+// Abort NMEA parsing on a non-printable char
+//----------------------------------------
+void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort)
+{
+    if (parse)
+        parse->nmeaAbortOnNonPrintable = abort;
+}
+
+//----------------------------------------
+// Return the NMEA sentence name as a string
+//----------------------------------------
+const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_NMEA_VALUES *scratchPad = (SEMP_NMEA_VALUES *)parse->scratchPad;
+    return (const char *)scratchPad->sentenceName;
+}

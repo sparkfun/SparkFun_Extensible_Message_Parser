@@ -74,7 +74,7 @@ make
 make clean
 
 # User_Parser_Test
-cd ../User_Parser
+cd ../User_Parser_Test
 make clean
 make
 make clean

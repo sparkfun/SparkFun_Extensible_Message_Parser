@@ -183,6 +183,16 @@ const uint32_t semp_u32Crc32Table[] = {
 // Support for SPARTN parsing
 // Mostly stolen from https://github.com/u-blox/ubxlib/blob/master/common/spartn/src/u_spartn_crc.c
 
+//----------------------------------------
+// Compute the CRC value
+//
+// Inputs:
+//   pU8Msg: Address of the beginning of the message
+//   size: Number of bytes in the message
+//
+// Outputs:
+//   Returns the CRC value associated with the message
+//----------------------------------------
 uint8_t semp_uSpartnCrc4(const uint8_t *pU8Msg, size_t size)
 {
     // Initialize local variables
@@ -200,6 +210,16 @@ uint8_t semp_uSpartnCrc4(const uint8_t *pU8Msg, size_t size)
     return u8Remainder;
 }
 
+//----------------------------------------
+// Compute the CRC value
+//
+// Inputs:
+//   pU8Msg: Address of the beginning of the message
+//   size: Number of bytes in the message
+//
+// Outputs:
+//   Returns the CRC value associated with the message
+//----------------------------------------
 uint8_t semp_uSpartnCrc8(const uint8_t *pU8Msg, size_t size)
 {
     // Initialize local variables
@@ -217,6 +237,16 @@ uint8_t semp_uSpartnCrc8(const uint8_t *pU8Msg, size_t size)
     return u8Remainder;
 }
 
+//----------------------------------------
+// Compute the CRC value
+//
+// Inputs:
+//   pU8Msg: Address of the beginning of the message
+//   size: Number of bytes in the message
+//
+// Outputs:
+//   Returns the CRC value associated with the message
+//----------------------------------------
 uint16_t semp_uSpartnCrc16(const uint8_t *pU8Msg, size_t size)
 {
     // Initialize local variables
@@ -235,6 +265,16 @@ uint16_t semp_uSpartnCrc16(const uint8_t *pU8Msg, size_t size)
     return u16Remainder;
 }
 
+//----------------------------------------
+// Compute the CRC value
+//
+// Inputs:
+//   pU8Msg: Address of the beginning of the message
+//   size: Number of bytes in the message
+//
+// Outputs:
+//   Returns the CRC value associated with the message
+//----------------------------------------
 uint32_t semp_uSpartnCrc24(const uint8_t *pU8Msg, size_t size)
 {
     // Initialize local variables
@@ -254,6 +294,16 @@ uint32_t semp_uSpartnCrc24(const uint8_t *pU8Msg, size_t size)
     return u32Remainder;
 }
 
+//----------------------------------------
+// Compute the CRC value
+//
+// Inputs:
+//   pU8Msg: Address of the beginning of the message
+//   size: Number of bytes in the message
+//
+// Outputs:
+//   Returns the CRC value associated with the message
+//----------------------------------------
 uint32_t semp_uSpartnCrc32(const uint8_t *pU8Msg, size_t size)
 {
     // Initialize local variables

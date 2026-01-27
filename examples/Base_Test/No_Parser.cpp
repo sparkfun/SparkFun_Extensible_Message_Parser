@@ -69,6 +69,7 @@ SEMP_PARSER_DESCRIPTION noParserDescription =
 {
     "No parser",            // parserName
     noParserPreamble,       // preamble
+    noParserGetStateName,   // State to state name translation routine
     0,                      // scratchPadBytes
     0,                      // payloadOffset
 };

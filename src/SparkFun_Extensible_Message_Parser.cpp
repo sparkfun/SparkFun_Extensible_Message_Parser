@@ -455,8 +455,16 @@ int64_t sempGetI8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 //----------------------------------------
 const char * sempGetStateName(const SEMP_PARSE_STATE *parse)
 {
-    if (parse && (parse->state == sempFirstByte))
-        return "sempFirstByte";
+    const char * stateName;
+
+    if (parse)
+    {
+        if (parse->state == sempFirstByte)
+            return "sempFirstByte";
+        stateName = parse->parsers[parse->type]->getStateName(parse);
+        if (stateName)
+            return stateName;
+    }
     return "Unknown state";
 }
 

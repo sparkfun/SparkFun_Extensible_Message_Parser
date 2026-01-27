@@ -110,7 +110,7 @@ const char * userParserGetStateName(const SEMP_PARSE_STATE *parse)
         return "userSecondPreambleByte";
     if (parse->state == userFindNumber)
         return "userFindNumber";
-    return sempGetStateName(parse);
+    return nullptr;
 }
 
 //------------------------------------------------------------------------------
@@ -127,6 +127,7 @@ SEMP_PARSER_DESCRIPTION userParserDescription =
 {
     "User parser",              // parserName
     userPreamble,               // preamble
+    userParserGetStateName,     // State to state name translation routine
     sizeof(USER_SCRATCH_PAD),   // scratchPadBytes
     0,                          // payloadOffset
 };

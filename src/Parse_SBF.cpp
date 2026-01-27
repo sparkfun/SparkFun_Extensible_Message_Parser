@@ -275,6 +275,7 @@ SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
 {
     "SBF parser",               // parserName
     sempSbfPreamble,            // preamble
+    sempSbfGetStateName,        // State to state name translation routine
     sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
     0,                          // payloadOffset
 };

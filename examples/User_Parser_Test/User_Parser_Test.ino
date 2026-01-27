@@ -98,14 +98,14 @@ void setup()
 
         // Get the parse state before entering the parser to enable
         // printing of the parser transition
-        startState = userParserGetStateName(parse);
+        startState = sempGetStateName(parse);
 
         // Update the parser state based on the incoming byte
         data = rawDataStream[dataOffset];
         sempParseNextByte(parse, data);
 
         // Print the parser transition
-        endState = userParserGetStateName(parse);
+        endState = sempGetStateName(parse);
         Serial.printf("0x%02x (%c), state: (%p) %s --> %s (%p)\r\n",
                       rawDataStream[dataOffset],
                       ((data >= ' ') && (data < 0x7f)) ? data : '.',

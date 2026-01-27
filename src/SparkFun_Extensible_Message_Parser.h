@@ -75,6 +75,14 @@ typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, uint8_t dataByte)
 // data bytes in the buffer.
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, uint16_t type);
 
+// Get a zero terminated state name string from the parser
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs
+//   Returns the address of the zero terminated state name string
+typedef const char * (*SEMP_GET_STATE_NAME)(const struct _SEMP_PARSE_STATE * parse);
+
 // Invalid data callback
 //
 // Inputs:
@@ -103,6 +111,7 @@ typedef const struct _SEMP_PARSER_DESCRIPTION
 {
     const char * parserName;        // Name of the parser
     SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
+    SEMP_GET_STATE_NAME getStateName; // Routine to translate state into state name
     size_t scratchPadBytes;         // Required scratch pad size
     size_t payloadOffset;           // Offset to the first byte of the payload
 } SEMP_PARSER_DESCRIPTION;
@@ -605,15 +614,6 @@ void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 //   Returns the address of a zero terminated sentence name string
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 
-// Get the state name
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//
-// Outputs:
-//   Returns the address of a zero terminated state name string
-const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
-
 //------------------------------------------------------------------------------
 // RTCM
 //------------------------------------------------------------------------------
@@ -624,7 +624,6 @@ extern SEMP_PARSER_DESCRIPTION sempRtcmParserDescription;
 // RTCM parse routines
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
-const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
 
 //------------------------------------------------------------------------------
@@ -648,7 +647,6 @@ uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
 // Outputs:
 //    Returns the ID value
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
-const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
 
@@ -690,15 +688,6 @@ uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
 //    Returns the message type number
 uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
 
-// Translates state value into an string, returns nullptr if not found
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//
-// Outputs:
-//    Returns a zero terminated string of characters
-const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
-
 //------------------------------------------------------------------------------
 // u-blox
 //------------------------------------------------------------------------------
@@ -710,7 +699,6 @@ uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
 uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
 uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
 size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
-const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 
 // Deprecated duplicate routines
 #define sempUbloxGetI1      sempGetI1
@@ -732,8 +720,6 @@ const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
 // Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
 
-// Unicore binary parse routines
-const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 
 //------------------------------------------------------------------------------
@@ -757,8 +743,6 @@ void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = tr
 // Outputs:
 //   Returns the address of a zero terminated sentence name string
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
-
-const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
 
 //------------------------------------------------------------------------------
 // V1 routines to be eliminated

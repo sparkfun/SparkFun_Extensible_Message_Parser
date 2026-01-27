@@ -220,6 +220,7 @@ SEMP_PARSE_STATE *sempBeginParser(
         parse->eomCallback = eomCallback;
         parse->parserName = parserTableName;
         parse->badCrc = badCrc;
+        parse->type = parserCount;  // No active parser
 
         // Display the parser configuration
         sempPrintParserConfiguration(parse, parse->printDebug);
@@ -263,20 +264,14 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->length = 0;
         parse->buffer[parse->length++] = data;
 
-        // Indicate no parser selected
-        parse->type = parse->parserCount;
-
         // Walk through the parse table
-        for (index = 0; index < parse->parserCount; index++)
+        for (parse->type = 0; parse->type < parse->parserCount; parse->type++)
         {
             // Determine if this parser is able to parse this stream
             parseDescripion = parse->parsers[index];
             if (parseDescripion->preamble(parse, data))
-            {
                 // This parser claims to be able to parse this stream
-                parse->type = index;
                 return true;
-            }
         }
 
         // Preamble not found, pass this data to another parser if requested

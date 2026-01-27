@@ -402,17 +402,6 @@ const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 //   Returns the address of a zero terminated state name string
 const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
 
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the NMEA parser recgonizes the input and false
-//   another parser should be used
-bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
 //----------------------------------------
 // RTCM
 //----------------------------------------
@@ -424,17 +413,6 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
 int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
 const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
-
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the RTCM parser recgonizes the input and false
-//   another parser should be used
-bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 
 //----------------------------------------
 // SBF
@@ -470,17 +448,6 @@ uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
 uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
-
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the SBF parser recgonizes the input and false
-//   another parser should be used
-bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
 void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 
 //----------------------------------------
@@ -516,17 +483,6 @@ uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
 //    Returns a zero terminated string of characters
 const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
 
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the SPARTN parser recgonizes the input and false
-//   another parser should be used
-bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
 //----------------------------------------
 // u-blox
 //----------------------------------------
@@ -558,17 +514,6 @@ uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
 uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
 uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
 
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the UBLOX parser recgonizes the input and false
-//   another parser should be used
-bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
 //----------------------------------------
 // Unicore Binary
 //----------------------------------------
@@ -577,18 +522,6 @@ extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
 
 // Unicore binary parse routines
 const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
-
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the Unicore Binary parser recgonizes the input and
-//   false another parser should be used
-bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
 void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
 
 //----------------------------------------
@@ -607,18 +540,6 @@ void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = tr
 // Unicore hash (#) parse routines
 const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
-
-// Start the parser by processing the first byte of data
-//
-// Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
-//   data: First data byte in the stream of data to parse
-//
-// Outputs:
-//   Returns true if the Unicore Hash parser recgonizes the input and
-//   false another parser should be used
-bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-
 void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

@@ -128,6 +128,7 @@ SEMP_PARSER_DESCRIPTION userParserDescription =
     "User parser",              // parserName
     userPreamble,               // preamble
     userParserGetStateName,     // State to state name translation routine
+    3,                          // minimumParseAreaBytes
     sizeof(USER_SCRATCH_PAD),   // scratchPadBytes
     0,                          // payloadOffset
 };

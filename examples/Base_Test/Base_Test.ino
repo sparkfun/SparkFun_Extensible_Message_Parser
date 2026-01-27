@@ -13,6 +13,8 @@
 // Constants
 //----------------------------------------
 
+#define BUFFER_LENGTH           3000
+
 const uint8_t rawDataStream[] =
 {
     0, 1, 2, 3, 4, 5
@@ -45,6 +47,9 @@ void setup()
 {
     uint8_t * buffer;
     size_t bufferLength;
+    size_t bufferOverhead;
+    size_t length;
+    size_t minimumBufferBytes;
 
     delay(1000);
 
@@ -52,6 +57,18 @@ void setup()
     Serial.println();
     Serial.println("Base_Test example sketch");
     Serial.println();
+
+    // Determine the buffer overhead (no parse area)
+    bufferOverhead = sempComputeBufferOverhead(parserTable,
+                                               parserCount,
+                                               nullptr,
+                                               nullptr,
+                                               nullptr,
+                                               nullptr);
+
+    // Determine the buffer length
+    bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
+    buffer = (uint8_t *)malloc(bufferLength);
 
     // No name specified
     parse = sempBeginParser(nullptr, parserTable, parserCount,
@@ -66,8 +83,6 @@ void setup()
         reportFatalError("Failed to detect parserName set to empty string");
 
     // No parser table specified
-    bufferLength = sempGetBufferLength(parserTable, parserCount, 3000);
-    buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("No parser", nullptr, parserCount,
                             buffer, bufferLength, processMessage);
     if (parse)
@@ -85,23 +100,37 @@ void setup()
     if (parse)
         reportFatalError("Failed to detect buffer set to nullptr (0)");
 
-    // Too small a buffer specified
+    // No buffer specified
     parse = sempBeginParser("No parser", parserTable, parserCount,
                             buffer, 0, processMessage);
     if (parse)
-        reportFatalError("Failed to detect buffer set to nullptr (0)");
+        reportFatalError("Failed to detect no buffer");
+
+    // Zero length usable buffer specified
+    length = bufferLength - BUFFER_LENGTH;
+    parse = sempBeginParser("No parser", parserTable, parserCount,
+                            buffer, length, processMessage);
+    if (parse)
+        reportFatalError("Failed to detect zero length buffer");
+
+    // Get the minimum buffer size
+    minimumBufferBytes = sempGetBufferLength(parserTable, parserCount, 0);
+    if ((minimumBufferBytes - bufferOverhead) != NO_PARSER_MINIMUM_BUFFER_SIZE)
+        reportFatalError("Failed to get proper minimum buffer size");
+
+    // Complain about buffer too small, but allow for testing
+    parse = sempBeginParser("No parser", parserTable, parserCount,
+                            buffer, minimumBufferBytes - 1, processMessage);
+    if (!parse)
+        reportFatalError("Failed to complain about minimum buffer size");
 
     // No end-of-message callback specified
     parse = sempBeginParser("No parser", parserTable, parserCount,
                             buffer, bufferLength, nullptr);
     if (parse)
         reportFatalError("Failed to detect eomCallback set to nullptr (0)");
-    free(buffer);
 
-    // Initialize the parser, specify a large scratch pad area
-    bufferLength = sempGetBufferLength(parserTable, parserCount, 3000);
-    buffer = (uint8_t *)malloc(bufferLength);
-
+    // Start using the entire buffer
     parse = sempBeginParser("Base Test Example", parserTable, parserCount,
                             buffer, bufferLength, processMessage);
     if (!parse)

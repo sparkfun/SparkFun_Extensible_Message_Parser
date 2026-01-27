@@ -477,6 +477,16 @@ int16_t sempGetI2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
+// Get the number of digits in a 32-bit signed number
+//----------------------------------------
+int sempGetI4Digits(int32_t value)
+{
+    if (value < 0)
+        return sempGetU4Digits(1 + ~(uint32_t)value) + 1;
+    return sempGetU8Digits(value);
+}
+
+//----------------------------------------
 // Get a 32-bit integer value
 //----------------------------------------
 int32_t sempGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
@@ -507,6 +517,16 @@ int64_t sempGetI8(const SEMP_PARSE_STATE *parse, size_t offset)
     SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset + parserDescription->payloadOffset], sizeof(value));
     return value;
+}
+
+//----------------------------------------
+// Get the number of digits in a 64-bit signed number
+//----------------------------------------
+int sempGetI8Digits(int64_t value)
+{
+    if (value < 0)
+        return sempGetU8Digits(1 + ~(uint64_t)value) + 1;
+    return sempGetU8Digits(value);
 }
 
 //----------------------------------------
@@ -574,7 +594,7 @@ const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type)
 }
 
 //----------------------------------------
-// Get an 8-bit integer value
+// Get an 8-bit unsigned integer value
 //----------------------------------------
 uint8_t sempGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -585,7 +605,7 @@ uint8_t sempGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get an 8-bit integer value
+// Get an 8-bit unsigned integer value
 //----------------------------------------
 uint8_t sempGetU1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -596,7 +616,7 @@ uint8_t sempGetU1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 16-bit integer value
+// Get a 16-bit unsigned integer value
 //----------------------------------------
 uint16_t sempGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -607,7 +627,7 @@ uint16_t sempGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 16-bit integer value
+// Get a 16-bit unsigned integer value
 //----------------------------------------
 uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -618,7 +638,7 @@ uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 32-bit integer value
+// Get a 32-bit unsigned integer value
 //----------------------------------------
 uint32_t sempGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -629,7 +649,15 @@ uint32_t sempGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 32-bit integer value
+// Get the number of digits in a 32-bit unsigned number
+//----------------------------------------
+int sempGetU4Digits(uint32_t value)
+{
+    return sempGetU8Digits(value);
+}
+
+//----------------------------------------
+// Get a 32-bit unsigned integer value
 //----------------------------------------
 uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -640,7 +668,7 @@ uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 64-bit integer value
+// Get a 64-bit unsigned integer value
 //----------------------------------------
 uint64_t sempGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -651,7 +679,25 @@ uint64_t sempGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
 }
 
 //----------------------------------------
-// Get a 64-bit integer value
+// Get the number of digits in a 64-bit unsigned number
+//----------------------------------------
+int sempGetU8Digits(uint64_t value)
+{
+    int digits;
+    int index;
+
+    for (index = 0; index < (sempPower10U64Entries - 1); index++)
+    {
+        if (sempPower10U64[index] <= value)
+
+            break;
+    }
+    digits = sempPower10U64Entries - index;
+    return digits;
+}
+
+//----------------------------------------
+// Get a 64-bit unsigned integer value
 //----------------------------------------
 uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
@@ -669,6 +715,27 @@ void sempInvalidDataCallback(SEMP_PARSE_STATE *parse)
     if (parse->invalidData)
         parse->invalidData(parse->buffer, parse->length);
     parse->state = sempFirstByte;
+}
+
+//----------------------------------------
+// Justify a value within a field
+//----------------------------------------
+int sempJustifyField(SEMP_OUTPUT output, int fieldWidth, int digits)
+{
+    if (fieldWidth)
+    {
+        // Left justified fields are negative
+        if (fieldWidth < 0)
+            // Convert to positive to output next time
+            return -fieldWidth;
+
+        // Right justified fields are positive
+        while (fieldWidth-- > digits)
+            output(' ');
+    }
+
+    // Done with the justification
+    return 0;
 }
 
 //----------------------------------------
@@ -787,27 +854,43 @@ void sempPrintCharLn(SEMP_OUTPUT output, char character)
 //----------------------------------------
 // Display a signed 32-bit decimal value
 //----------------------------------------
-void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value)
+void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value, int fieldWidth)
 {
+    int digits;
+
     // Determine if output is necessary
     if (output)
     {
+        // Count the digits
+        digits = 0;
+        if (fieldWidth)
+        {
+            digits = sempGetI4Digits(value);
+
+            // Right justify the field with a positive fieldWidth value
+            fieldWidth = sempJustifyField(output, fieldWidth, digits);
+        }
+
         // Display the minus sign if necessary
         if (value < 0)
             output('-');
-        sempPrintDecimalU32(output, (uint32_t)((value >= 0) ? value : -value));
+        sempPrintDecimalU32(output, (uint32_t)((value >= 0) ? value : -value), 0);
+
+        // Left justify the field if necessary
+        if (fieldWidth)
+            sempJustifyField(output, fieldWidth, digits);
     }
 }
 
 //----------------------------------------
 // Display a signed 32-bit decimal value followed by a CR and LF
 //----------------------------------------
-void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value)
+void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
-        sempPrintDecimalI32(output, value);
+        sempPrintDecimalI32(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -815,27 +898,43 @@ void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value)
 //----------------------------------------
 // Display a signed 64-bit decimal value
 //----------------------------------------
-void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value)
+void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value, int fieldWidth)
 {
+    int digits;
+
     // Determine if output is necessary
     if (output)
     {
+        // Count the digits
+        digits = 0;
+        if (fieldWidth)
+        {
+            digits = sempGetI8Digits(value);
+
+            // Right justify the field with a positive fieldWidth value
+            fieldWidth = sempJustifyField(output, fieldWidth, digits);
+        }
+
         // Display the minus sign if necessary
         if (value < 0)
             output('-');
-        sempPrintDecimalU64(output, (uint64_t)((value >= 0) ? value : -value));
+        sempPrintDecimalU64(output, (uint64_t)((value >= 0) ? value : -value), 0);
+
+        // Left justify the field if necessary
+        if (fieldWidth)
+            sempJustifyField(output, fieldWidth, digits);
     }
 }
 
 //----------------------------------------
 // Display a signed 64-bit decimal value followed by a CR and LF
 //----------------------------------------
-void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value)
+void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
-        sempPrintDecimalI64(output, value);
+        sempPrintDecimalI64(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -843,9 +942,10 @@ void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value)
 //----------------------------------------
 // Display an unsigned 32-bit decimal value
 //----------------------------------------
-void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value)
+void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     int digit;
+    int digits;
     int index;
     const uint32_t power10[] =
     {
@@ -869,6 +969,16 @@ void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value)
     {
         u32 = value;
 
+        // Count the digits
+        digits = 0;
+        if (fieldWidth)
+        {
+            digits = sempGetU4Digits(value);
+
+            // Right justify the field with a positive fieldWidth value
+            fieldWidth = sempJustifyField(output, fieldWidth, digits);
+        }
+
         // Output the decimal value
         suppressZeros = true;
         for (index = 0; index < entries; index++)
@@ -880,18 +990,22 @@ void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value)
             suppressZeros = false;
             output(sempNibbleToAscii(digit));
         }
+
+        // Left justify the field if necessary
+        if (fieldWidth)
+            sempJustifyField(output, fieldWidth, digits);
     }
 }
 
 //----------------------------------------
 // Display an unsigned 32-bit decimal value followed by a CR and LF
 //----------------------------------------
-void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value)
+void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
-        sempPrintDecimalU32(output, value);
+        sempPrintDecimalU32(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -899,9 +1013,10 @@ void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value)
 //----------------------------------------
 // Display an unsigned 64-bit decimal value
 //----------------------------------------
-void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value)
+void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     int digit;
+    int digits;
     int index;
     bool suppressZeros;
     uint64_t u64;
@@ -910,6 +1025,16 @@ void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value)
     if (output)
     {
         u64 = value;
+
+        // Count the digits
+        digits = 0;
+        if (fieldWidth)
+        {
+            digits = sempGetU8Digits(value);
+
+            // Right justify the field with a positive fieldWidth value
+            fieldWidth = sempJustifyField(output, fieldWidth, digits);
+        }
 
         // Output the decimal value
         suppressZeros = true;
@@ -922,18 +1047,22 @@ void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value)
             suppressZeros = false;
             output(sempNibbleToAscii(digit));
         }
+
+        // Left justify the field if necessary
+        if (fieldWidth)
+            sempJustifyField(output, fieldWidth, digits);
     }
 }
 
 //----------------------------------------
 // Display an unsigned 64-bit decimal value followed by a CR and LF
 //----------------------------------------
-void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value)
+void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
-        sempPrintDecimalU64(output, value);
+        sempPrintDecimalU64(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -941,27 +1070,35 @@ void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value)
+void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 16);
+
         // Output the hex value
-        sempPrintHex08x(output, value >> 32);
-        sempPrintHex08x(output, value);
+        sempPrintHex08x(output, value >> 32, 0);
+        sempPrintHex08x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 16);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value)
+void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex016x(output, value);
+        sempPrintHex016x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -969,27 +1106,35 @@ void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value)
+void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 2);
+
         // Output the hex value
         output(sempNibbleToAscii(value >> 4));
         output(sempNibbleToAscii(value));
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 2);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value)
+void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex02x(output, value);
+        sempPrintHex02x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -997,27 +1142,35 @@ void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value)
+void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 4);
+
         // Output the hex value
-        sempPrintHex02x(output, value >> 8);
-        sempPrintHex02x(output, value);
+        sempPrintHex02x(output, value >> 8, 0);
+        sempPrintHex02x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 4);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value)
+void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex04x(output, value);
+        sempPrintHex04x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1025,27 +1178,35 @@ void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value)
+void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 8);
+
         // Output the hex value
-        sempPrintHex04x(output, value >> 16);
-        sempPrintHex04x(output, value);
+        sempPrintHex04x(output, value >> 16, 0);
+        sempPrintHex04x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 8);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value)
+void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex08x(output, value);
+        sempPrintHex08x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1053,27 +1214,35 @@ void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value)
+void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 18);
+
         // Output the hex value
         sempPrintString(output, "0x");
-        sempPrintHex016x(output, value);
+        sempPrintHex016x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 18);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value)
+void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex0x016x(output, value);
+        sempPrintHex0x016x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1081,27 +1250,35 @@ void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value)
+void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 4);
+
         // Output the hex value
         sempPrintString(output, "0x");
-        sempPrintHex02x(output, value);
+        sempPrintHex02x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 4);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value)
+void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex0x02x(output, value);
+        sempPrintHex0x02x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1109,27 +1286,35 @@ void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value)
+void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 6);
+
         // Output the hex value
         sempPrintString(output, "0x");
-        sempPrintHex04x(output, value);
+        sempPrintHex04x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 6);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value)
+void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex0x04x(output, value);
+        sempPrintHex0x04x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1137,27 +1322,35 @@ void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value)
 //----------------------------------------
 // Display a hex value
 //----------------------------------------
-void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value)
+void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
+        // Right justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 10);
+
         // Output the hex value
         sempPrintString(output, "0x");
-        sempPrintHex08x(output, value);
+        sempPrintHex08x(output, value, 0);
+
+        // Left justify the value
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, 10);
     }
 }
 
 //----------------------------------------
 // Display a hex value followed by a CR and LF
 //----------------------------------------
-void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value)
+void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
 {
     // Determine if output is necessary
     if (output)
     {
         // Output the hex value
-        sempPrintHex0x08x(output, value);
+        sempPrintHex0x08x(output, value, fieldWidth);
         sempPrintLn(output);
     }
 }
@@ -1262,25 +1455,41 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 //----------------------------------------
 // Display a string
 //----------------------------------------
-void sempPrintString(SEMP_OUTPUT output, const char * string)
+void sempPrintString(SEMP_OUTPUT output, const char * string, int fieldWidth)
 {
+    int stringWidth;
+
     // Determine if output is necessary
     if (output && string)
+    {
+        // Right justify the string
+        stringWidth = 0;
+        if (fieldWidth)
+        {
+            stringWidth = strlen(string);
+            fieldWidth = sempJustifyField(output, fieldWidth, stringWidth);
+        }
+
         // Output the string a character at a time
         while (*string)
             output(*string++);
+
+        // Left justify the string
+        if (fieldWidth)
+            fieldWidth = sempJustifyField(output, fieldWidth, stringWidth);
+    }
 }
 
 //----------------------------------------
 // Display a string followed by a CR and LF
 //----------------------------------------
-void sempPrintStringLn(SEMP_OUTPUT output, const char * string)
+void sempPrintStringLn(SEMP_OUTPUT output, const char * string, int fieldWidth)
 {
     // Determine if output is necessary
     if (output && string)
     {
         // Output the string a character at a time
-        sempPrintString(output, string);
+        sempPrintString(output, string, fieldWidth);
         sempPrintLn(output);
     }
 }

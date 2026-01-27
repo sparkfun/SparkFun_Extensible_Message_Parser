@@ -379,6 +379,69 @@ const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempSpartnPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_SPARTN_VALUES *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
+
+    // Display the frame count
+    sempPrintString(output, "    frameCount: ");
+    sempPrintDecimalU32Ln(output, scratchPad->frameCount);
+
+    // Display the CRC
+    sempPrintString(output, "    crcBytes: ");
+    sempPrintHex0x04xLn(output, scratchPad->crcBytes);
+
+    // Display the TF007toTF016
+    sempPrintString(output, "    TF007toTF016: ");
+    sempPrintDecimalU32Ln(output, scratchPad->TF007toTF016);
+
+    // Display the message type
+    sempPrintString(output, "    messageType: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageType);
+
+    // Display the payload length
+    sempPrintString(output, "    payloadLength: ");
+    sempPrintDecimalU32Ln(output, scratchPad->payloadLength);
+
+    // Display the EAF
+    sempPrintString(output, "    EAF: ");
+    sempPrintDecimalU32Ln(output, scratchPad->EAF);
+
+    // Display the crcType
+    sempPrintString(output, "    crcType: ");
+    sempPrintDecimalU32Ln(output, scratchPad->crcType);
+
+    // Display the frame CRC
+    sempPrintString(output, "    frameCRC: ");
+    sempPrintHex0x02xLn(output, scratchPad->frameCRC);
+
+    // Display the sub message type
+    sempPrintString(output, "    messageSubtype: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageSubtype);
+
+    // Display the time tag type
+    sempPrintString(output, "    timeTagType: ");
+    sempPrintDecimalU32Ln(output, scratchPad->timeTagType);
+
+    // Display the authenticationIndicator
+    sempPrintString(output, "    authenticationIndicator: ");
+    sempPrintDecimalU32Ln(output, scratchPad->authenticationIndicator);
+
+    // Display the embedded application length
+    sempPrintString(output, "    embeddedApplicationLengthBytes: ");
+    sempPrintDecimalU32Ln(output, scratchPad->embeddedApplicationLengthBytes);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -394,6 +457,7 @@ SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
     "SPARTN parser",            // parserName
     sempSpartnPreamble,         // preamble
     sempSpartnGetStateName,     // State to state name translation routine
+    sempSpartnPrintScratchPad,  // Print the contents of the scratch pad
     3000,   /* ??? */           // minimumParseAreaBytes
     sizeof(SEMP_SPARTN_VALUES), // scratchPadBytes
     0,                          // payloadOffset

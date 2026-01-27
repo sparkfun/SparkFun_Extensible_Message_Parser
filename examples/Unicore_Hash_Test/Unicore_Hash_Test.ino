@@ -174,6 +174,7 @@ bool badUnicoreHashChecksum(SEMP_PARSE_STATE *parse)
 //----------------------------------------
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
+    static bool displayOnce = true;
     uint32_t offset;
 
     // Determine the raw data stream offset
@@ -193,4 +194,14 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     sempPrintDecimalI32(output, offset);
     sempPrintCharLn(output, ')');
     dumpBuffer(parse->buffer, parse->length);
+
+    // Display the parser state
+    if (displayOnce)
+    {
+        displayOnce = false;
+        sempPrintLn(output);
+        sempUnicoreBinaryPrintHeader(parse);
+        sempPrintLn(output);
+        sempPrintParserConfiguration(parse, output);
+    }
 }

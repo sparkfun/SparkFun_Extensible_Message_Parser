@@ -275,6 +275,78 @@ const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse)
     return nullptr;
 }
 
+//----------------------------------------
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+//----------------------------------------
+void sempUnicoreBinaryPrintScratchPad(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
+{
+    SEMP_UNICORE_HEADER *scratchPad;
+
+    // Get the scratch pad address
+    scratchPad = (SEMP_UNICORE_HEADER *)parse->scratchPad;
+
+    // Display the sync A byte
+    sempPrintString(output, "    syncA: ");
+    sempPrintHex0x02xLn(output, scratchPad->syncA);
+
+    // Display the sync B byte
+    sempPrintString(output, "    syncB: ");
+    sempPrintHex0x02xLn(output, scratchPad->syncB);
+
+    // Display the sync C byte
+    sempPrintString(output, "    syncC: ");
+    sempPrintHex0x02xLn(output, scratchPad->syncC);
+
+    // Display the CPU idle percent
+    sempPrintString(output, "    cpuIdlePercent: ");
+    sempPrintDecimalU32(output, scratchPad->cpuIdlePercent);
+    sempPrintCharLn(output, '%');
+
+    // Display the message ID
+    sempPrintString(output, "    messageId: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageId);
+
+    // Display the message length
+    sempPrintString(output, "    messageLength: ");
+    sempPrintDecimalU32Ln(output, scratchPad->messageLength);
+
+    // Display the reference time
+    sempPrintString(output, "    referenceTime: ");
+    sempPrintDecimalU32Ln(output, scratchPad->referenceTime);
+
+    // Display the time status
+    sempPrintString(output, "    timeStatus: ");
+    sempPrintDecimalU32Ln(output, scratchPad->timeStatus);
+
+    // Display the week number
+    sempPrintString(output, "    weekNumber: ");
+    sempPrintDecimalU32Ln(output, scratchPad->weekNumber);
+
+    // Display the seconds of week
+    sempPrintString(output, "    secondsOfWeek: ");
+    sempPrintDecimalU32Ln(output, scratchPad->secondsOfWeek);
+
+    // Display the reserved
+    sempPrintString(output, "    RESERVED: ");
+    sempPrintHex0x08xLn(output, scratchPad->RESERVED);
+
+    // Display the release version
+    sempPrintString(output, "    releasedVersion: ");
+    sempPrintDecimalU32Ln(output, scratchPad->releasedVersion);
+
+    // Display the leap seconds
+    sempPrintString(output, "    leapSeconds: ");
+    sempPrintDecimalU32Ln(output, scratchPad->leapSeconds);
+
+    // Display the sentence
+    sempPrintString(output, "    outputDelayMSec: ");
+    sempPrintDecimalU32Ln(output, scratchPad->outputDelayMSec);
+}
+
 //------------------------------------------------------------------------------
 // Public data and routines
 //
@@ -290,6 +362,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
     "Unicore binary parser",            // parserName
     sempUnicoreBinaryPreamble,          // preamble
     sempUnicoreBinaryGetStateName,      // State to state name translation routine
+    sempUnicoreBinaryPrintScratchPad,   // Print the contents of the scratch pad
     3000,   /* ??? */                   // minimumParseAreaBytes
     sizeof(SEMP_UNICORE_BINARY_VALUES), // scratchPadBytes
     0,                                  // payloadOffset

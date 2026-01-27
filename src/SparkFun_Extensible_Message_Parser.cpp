@@ -271,6 +271,65 @@ void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
 }
 
 //----------------------------------------
+// Display the contents of a buffer in hexadecimal and ASCII
+//
+// Inputs:
+//   output: Address of a routine to output a character
+//   buffer: Address of a buffer containing the data to display
+//   length: Number of bytes of data to display
+//----------------------------------------
+void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length)
+{
+    int bytes;
+    const uint8_t *end;
+    int index;
+    size_t offset;
+
+    end = &buffer[length];
+    offset = 0;
+    while (buffer < end)
+    {
+        // Determine the number of bytes to display on the line
+        bytes = end - buffer;
+        if (bytes > (16 - (offset & 0xf)))
+            bytes = 16 - (offset & 0xf);
+
+        // Display the offset
+        sempPrintHex0x08x(output, offset);
+        sempPrintString(output, ": ");
+
+        // Skip leading bytes
+        for (index = 0; index < (offset & 0xf); index++)
+            sempPrintString(output, "   ");
+
+        // Display the data bytes
+        for (index = 0; index < bytes; index++)
+        {
+            sempPrintHex02x(output, buffer[index]);
+            output(' ');
+        }
+
+        // Separate the data bytes from the ASCII
+        for (; index < (16 - (offset & 0xf)); index++)
+            sempPrintString(output, "   ");
+        sempPrintString(output, " ");
+
+        // Skip leading bytes
+        for (index = 0; index < (offset & 0xf); index++)
+            sempPrintString(output, " ");
+
+        // Display the ASCII values
+        for (index = 0; index < bytes; index++)
+            output(((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
+        sempPrintLn(output);
+
+        // Set the next line of data
+        buffer += bytes;
+        offset += bytes;
+    }
+}
+
+//----------------------------------------
 // Disable error output
 //----------------------------------------
 void sempErrorOutputDisable(SEMP_PARSE_STATE *parse)
@@ -1402,6 +1461,8 @@ void sempPrintLn(SEMP_OUTPUT output)
 //----------------------------------------
 void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 {
+    SEMP_PRINT_SCRATCH_PAD printScratchPad;
+
     if (output && parse)
     {
         sempPrintString(output, "SparkFun Extensible Message Parser\r\n");
@@ -1474,6 +1535,18 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         sempPrintString(output, " (");
         sempPrintString(output, sempGetTypeName(parse, parse->type));
         sempPrintCharLn(output, ')');
+
+        // Display the scratch pad if available
+        SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
+        printScratchPad = parse->type < parse->parserCount
+                        ? parserDescription->printScratchPad
+                        : nullptr;
+        if (parse->scratchPad && printScratchPad)
+        {
+            sempPrintString(output, parserDescription->parserName);
+            sempPrintStringLn(output, " scratch pad area:");
+            printScratchPad(parse, output);
+        }
     }
 }
 

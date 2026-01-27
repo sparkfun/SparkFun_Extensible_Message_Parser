@@ -366,6 +366,7 @@ SEMP_PARSER_DESCRIPTION sempNmeaParserDescription =
     "NMEA parser",              // parserName
     sempNmeaPreamble,           // preamble
     sizeof(SEMP_NMEA_VALUES),   // scratchPadBytes
+    0,                          // payloadOffset
 };
 
 //----------------------------------------

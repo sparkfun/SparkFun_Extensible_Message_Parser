@@ -370,6 +370,7 @@ SEMP_PARSER_DESCRIPTION sempSpartnParserDescription =
     "SPARTN parser",            // parserName
     sempSpartnPreamble,         // preamble
     sizeof(SEMP_SPARTN_VALUES), // scratchPadBytes
+    0,                          // payloadOffset
 };
 
 //----------------------------------------

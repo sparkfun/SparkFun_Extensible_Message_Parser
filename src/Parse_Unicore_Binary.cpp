@@ -257,6 +257,7 @@ SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription =
     "Unicore binary parser",            // parserName
     sempUnicoreBinaryPreamble,          // preamble
     sizeof(SEMP_UNICORE_BINARY_VALUES), // scratchPadBytes
+    0,                                  // payloadOffset
 };
 
 //----------------------------------------

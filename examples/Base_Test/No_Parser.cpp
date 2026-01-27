@@ -70,4 +70,5 @@ SEMP_PARSER_DESCRIPTION noParserDescription =
     "No parser",            // parserName
     noParserPreamble,       // preamble
     0,                      // scratchPadBytes
+    0,                      // payloadOffset
 };

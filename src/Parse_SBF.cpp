@@ -287,6 +287,7 @@ SEMP_PARSER_DESCRIPTION sempSbfParserDescription =
     "SBF parser",               // parserName
     sempSbfPreamble,            // preamble
     sizeof(SEMP_SBF_VALUES),    // scratchPadBytes
+    0,                          // payloadOffset
 };
 
 //----------------------------------------
@@ -322,127 +323,12 @@ uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse)
 }
 
 //----------------------------------------
-//----------------------------------------
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint32_t unsignedN;
-        float flt;
-    } unsignedFloat;
-    unsignedFloat.unsignedN = sempSbfGetU4(parse, offset);
-    return unsignedFloat.flt;
-}
-
-//----------------------------------------
-//----------------------------------------
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint64_t unsignedN;
-        double flt;
-    } unsignedFloat;
-    unsignedFloat.unsignedN = sempSbfGetU8(parse, offset);
-    return unsignedFloat.flt;
-}
-
-//----------------------------------------
-//----------------------------------------
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint8_t unsignedN;
-        int8_t signedN;
-    } unsignedSignedN;
-    unsignedSignedN.unsignedN = sempSbfGetU1(parse, offset);
-    return unsignedSignedN.signedN;
-}
-
-//----------------------------------------
-//----------------------------------------
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint16_t unsignedN;
-        int16_t signedN;
-    } unsignedSignedN;
-    unsignedSignedN.unsignedN = sempSbfGetU2(parse, offset);
-    return unsignedSignedN.signedN;
-}
-
-//----------------------------------------
-//----------------------------------------
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint32_t unsignedN;
-        int32_t signedN;
-    } unsignedSignedN;
-    unsignedSignedN.unsignedN = sempSbfGetU4(parse, offset);
-    return unsignedSignedN.signedN;
-}
-
-//----------------------------------------
-//----------------------------------------
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    union {
-        uint64_t unsignedN;
-        int64_t signedN;
-    } unsignedSignedN;
-    unsignedSignedN.unsignedN = sempSbfGetU8(parse, offset);
-    return unsignedSignedN.signedN;
-}
-
-//----------------------------------------
 // Get the ID value
 //----------------------------------------
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES * scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return scratchPad->sbfID;
-}
-
-//----------------------------------------
-//----------------------------------------
-const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    return (const char *)(&parse->buffer[offset]);
-}
-
-//----------------------------------------
-//----------------------------------------
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    return parse->buffer[offset];
-}
-
-//----------------------------------------
-//----------------------------------------
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    uint16_t data = parse->buffer[offset];
-    data |= ((uint16_t)parse->buffer[offset + 1]) << 8;
-    return data;
-}
-
-//----------------------------------------
-//----------------------------------------
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    uint32_t data = 0;
-    for (uint16_t i = 0; i < sizeof(data); i++)
-        data |= ((uint32_t)parse->buffer[offset + i]) << (8 * i);
-    return data;
-}
-
-//----------------------------------------
-//----------------------------------------
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
-{
-    uint64_t data = 0;
-    for (uint16_t i = 0; i < sizeof(data); i++)
-        data |= ((uint64_t)parse->buffer[offset + i]) << (8 * i);
-    return data;
 }
 
 //----------------------------------------

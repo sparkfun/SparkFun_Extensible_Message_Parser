@@ -227,13 +227,13 @@ uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse)
 }
 
 // Get unsigned integer with width bits, starting at bit start
-uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width)
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
 {
     uint8_t *ptr = parse->buffer;
     ptr += 3; // Skip the preamble and length bytes
 
     uint64_t result = 0;
-    uint16_t count = 0;
+    size_t count = 0;
     uint8_t bitMask = 0x80;
 
     // Skip whole bytes (8 bits)
@@ -277,7 +277,7 @@ uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, 
 }
 
 // Get signed integer with width bits, starting at bit start
-int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width)
+int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width)
 {
     uint8_t *ptr = parse->buffer;
     ptr += 3; // Skip the preamble and length bytes
@@ -294,7 +294,7 @@ int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uin
 
     bool isNegative;
 
-    uint16_t count = 0;
+    size_t count = 0;
     uint8_t bitMask = 0x80;
 
     // Skip whole bytes (8 bits)

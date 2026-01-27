@@ -254,31 +254,31 @@ uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse)
 }
 
 // Get data
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset)
+uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     return parse->buffer[offset];
 }
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset)
+uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint16_t data = parse->buffer[offset];
     data |= ((uint16_t)parse->buffer[offset + 1]) << 8;
     return data;
 }
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint32_t data = 0;
     for (uint16_t i = 0; i < sizeof(data); i++)
         data |= ((uint32_t)parse->buffer[offset + i]) << (8 * i);
     return data;
 }
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint64_t data = 0;
     for (uint16_t i = 0; i < sizeof(data); i++)
         data |= ((uint64_t)parse->buffer[offset + i]) << (8 * i);
     return data;
 }
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset)
+int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint8_t unsignedN;
@@ -287,7 +287,7 @@ int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU1(parse, offset);
     return unsignedSignedN.signedN;
 }
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset)
+int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint16_t unsignedN;
@@ -296,7 +296,7 @@ int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU2(parse, offset);
     return unsignedSignedN.signedN;
 }
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint32_t unsignedN;
@@ -305,7 +305,7 @@ int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedSignedN.unsignedN = sempSbfGetU4(parse, offset);
     return unsignedSignedN.signedN;
 }
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint64_t unsignedN;
@@ -322,7 +322,7 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
     return scratchPad->sbfID;
 }
 
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+float sempSbfGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint32_t unsignedN;
@@ -331,7 +331,7 @@ float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedFloat.unsignedN = sempSbfGetU4(parse, offset);
     return unsignedFloat.flt;
 }
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset)
+double sempSbfGetF8(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     union {
         uint64_t unsignedN;
@@ -340,7 +340,7 @@ double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset)
     unsignedFloat.unsignedN = sempSbfGetU8(parse, offset);
     return unsignedFloat.flt;
 }
-const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset)
+const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     return (const char *)(&parse->buffer[offset]);
 }

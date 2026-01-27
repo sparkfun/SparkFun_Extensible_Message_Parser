@@ -173,7 +173,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 }
 
 // Display the contents of a buffer
-void dumpBuffer(uint8_t *buffer, uint16_t length)
+void dumpBuffer(uint8_t *buffer, size_t length)
 {
     int bytes;
     uint8_t *end;

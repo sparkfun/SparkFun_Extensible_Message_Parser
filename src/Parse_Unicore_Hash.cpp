@@ -104,7 +104,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
             sempPrintString(output, ", ");
             sempPrintHex0x04x(output, parse->length);
             sempPrintString(output, " (");
-            sempPrintDecimalI32(output, parse->length);
+            sempPrintDecimalU32(output, parse->length);
             sempPrintString(output, ") bytes, bad CRC received ");
             sempPrintHex0x08x(output, crcRx);
             sempPrintString(output, ", computed: ");
@@ -123,7 +123,7 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
             sempPrintString(output, parse->parserName);
             sempPrintString(output, ": Unicore hash (#) ");
             sempPrintString(output, "sentence too long, increase the buffer size >= ");
-            sempPrintDecimalI32Ln(output, parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
+            sempPrintDecimalU32Ln(output, parse->buffer - (uint8_t *)parse + parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
         }
 
         // Start searching for a preamble byte
@@ -186,7 +186,7 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
         sempPrintString(output, ", ");
         sempPrintHex0x04x(output, parse->length);
         sempPrintString(output, " (");
-        sempPrintDecimalI32(output, parse->length);
+        sempPrintDecimalU32(output, parse->length);
         sempPrintString(output, ") bytes, bad checksum, received 0x");
         output(parse->buffer[parse->length - 2]);
         output( parse->buffer[parse->length - 1]);

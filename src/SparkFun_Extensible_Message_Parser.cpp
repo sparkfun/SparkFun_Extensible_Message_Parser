@@ -339,9 +339,9 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
         if (output)
         {
             sempPrintString(output, "SEMP: Increasing parse area from ");
-            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintDecimalU32(output, parseAreaBytes);
             sempPrintString(output, " to ");
-            sempPrintDecimalI32(output, parseArea);
+            sempPrintDecimalU32(output, parseArea);
             sempPrintStringLn(output, " bytes, due to minimize size requirement");
         }
         parseAreaBytes = parseArea;
@@ -354,9 +354,9 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
         if (output)
         {
             sempPrintString(output, "SEMP: Increasing parse area from ");
-            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintDecimalU32(output, parseAreaBytes);
             sempPrintString(output, " to ");
-            sempPrintDecimalI32(output, payloadOffset);
+            sempPrintDecimalU32(output, payloadOffset);
             sempPrintStringLn(output, " bytes, due to payload offset requirement");
         }
         parseAreaBytes = payloadOffset;
@@ -369,7 +369,7 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
         if (output)
         {
             sempPrintString(output, "SEMP: Increasing parse area from ");
-            sempPrintDecimalI32(output, parseAreaBytes);
+            sempPrintDecimalU32(output, parseAreaBytes);
             sempPrintStringLn(output, " to 1 byte, requires at least one byte");
         }
         parseAreaBytes = 1;
@@ -382,7 +382,7 @@ size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
     if (output)
     {
         sempPrintString(output, "SEMP: Buffer length ");
-        sempPrintDecimalI32(output, bufferLength);
+        sempPrintDecimalU32(output, bufferLength);
         sempPrintStringLn(output, " bytes");
     }
     return bufferLength;
@@ -1216,10 +1216,13 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         sempPrintAddr(output, (void *)parse->scratchPad);
         sempPrintString(output, " (");
         if (parse->scratchPad)
-            sempPrintDecimalI32(output, parse->buffer - (uint8_t *)parse->scratchPad);
+            sempPrintDecimalU32(output, parse->buffer - (uint8_t *)parse->scratchPad);
         else
             output('0');
         sempPrintStringLn(output, " bytes)");
+
+        sempPrintString(output, "    badCrc: ");
+        sempPrintAddrLn(output, (void *)parse->badCrc);
 
         sempPrintString(output, "    computeCrc: ");
         sempPrintAddrLn(output, (void *)parse->computeCrc);
@@ -1241,11 +1244,11 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         sempPrintString(output, "    buffer: ");
         sempPrintAddr(output, (void *)parse->buffer);
         sempPrintString(output, " (");
-        sempPrintDecimalI32(output, parse->bufferLength);
+        sempPrintDecimalU32(output, parse->bufferLength);
         sempPrintStringLn(output, " bytes)");
 
         sempPrintString(output, "    length: ");
-        sempPrintDecimalI32(output, parse->length);
+        sempPrintDecimalU32(output, parse->length);
         sempPrintStringLn(output, " message bytes");
 
         sempPrintString(output, "    type: ");

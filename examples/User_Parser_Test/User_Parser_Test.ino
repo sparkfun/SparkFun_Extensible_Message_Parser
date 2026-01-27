@@ -98,7 +98,7 @@ void setup()
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempDebugOutputEnable(parse);
+    sempDebugOutputEnable(parse, output);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
     {
         uint8_t data;

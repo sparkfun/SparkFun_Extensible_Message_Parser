@@ -200,7 +200,7 @@ void setup()
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempDebugOutputEnable(parse);
+    sempDebugOutputEnable(parse, output);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
         for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)

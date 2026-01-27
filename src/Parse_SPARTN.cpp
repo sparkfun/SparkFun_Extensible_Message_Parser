@@ -123,7 +123,7 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, parse->length);
                 sempPrintString(output, " (");
-                sempPrintDecimalI32(output, parse->length);
+                sempPrintDecimalU32(output, parse->length);
                 sempPrintStringLn(output, ") bytes, bad CRC");
             }
         }
@@ -297,7 +297,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, scratchPad->payloadLength);
                 sempPrintString(output, " (");
-                sempPrintDecimalI32(output, scratchPad->payloadLength);
+                sempPrintDecimalU32(output, scratchPad->payloadLength);
                 sempPrintStringLn(output, ") bytes");
             }
             parse->state = sempSpartnReadTF007;
@@ -316,7 +316,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, parse->length);
                 sempPrintString(output, " (");
-                sempPrintDecimalI32(output, parse->length);
+                sempPrintDecimalU32(output, parse->length);
                 sempPrintStringLn(output, ") bytes, bad header CRC");
             }
             return false;

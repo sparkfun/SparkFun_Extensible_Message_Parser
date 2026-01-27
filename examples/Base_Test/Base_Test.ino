@@ -156,7 +156,7 @@ void setup()
     sempPrintStringLn(output, sempGetTypeName(parse, parse->type));
 
     // Obtain a raw data stream from somewhere
-    sempDebugOutputEnable(parse);
+    sempDebugOutputEnable(parse, output);
     sempPrintString(output, "Raw data stream: ");
     sempPrintDecimalI32(output, RAW_DATA_BYTES);
     sempPrintStringLn(output, " bytes");

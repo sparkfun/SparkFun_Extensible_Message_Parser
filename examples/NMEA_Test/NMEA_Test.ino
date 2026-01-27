@@ -62,6 +62,15 @@ const uint8_t rawDataStream[] =
     //        1         2         3         4         5         6         7         8
     //2345678901234567890123456789012345678901234567890123456789012345678901234567890
     "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E+*69\r\n" // 981
+
+    // Test different line endings with valid NMEA sentences
+    //        1         2         3         4         5         6         7         8
+    //2345678901234567890123456789012345678901234567890123456789012345678901234567890
+    "$GPGGA,210230,3855.4487,N,09446.0071,W,1,07,1.1,370.5,M,-29.5,M,,*7A"
+    "$GPGSV,2,1,08,02,74,042,45,04,18,190,36,07,67,279,42,12,29,323,36*77\n"
+    "$GPGSV,2,2,08,15,30,050,47,19,09,158,,26,12,281,40,27,38,173,41*7B\n\r"
+    "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r"
+    "$GPGGA,210230,3855.4487,N,09446.0071,W,1,07,1.1,370.5,M,-29.5,M,,*7A\r\n"
 };
 
 // Number of bytes in the rawDataStream
@@ -101,6 +110,9 @@ void setup()
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
+    // Add the callback for invalid data
+    sempSetInvalidDataCallback(parse, invalidData);
+
     // Obtain a raw data stream from somewhere
     Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
 
@@ -139,7 +151,7 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 
     // Display the raw message
     Serial.println();
-        Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
+    Serial.printf("Valid NMEA Sentence: %s, %d bytes at 0x%08x (%d)\r\n",
                   sempNmeaGetSentenceName(parse), parse->length, offset, offset);
     dumpBuffer(parse->buffer, parse->length);
 
@@ -150,4 +162,14 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         Serial.println();
         sempPrintParserConfiguration(parse, &Serial);
     }
+}
+
+//----------------------------------------
+// Callback from within the parser when invalid data is identified
+//----------------------------------------
+void invalidData(const uint8_t * buffer, size_t length)
+{
+    // Display the invalid data
+    Serial.printf("Invalid data:\r\n");
+    dumpBuffer(buffer, length);
 }

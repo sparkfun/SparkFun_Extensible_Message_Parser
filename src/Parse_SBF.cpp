@@ -30,8 +30,6 @@ typedef struct _SEMP_SBF_VALUES
     uint8_t sbfIDrev = 0;
     uint16_t length;
     uint16_t bytesRemaining;
-    // Invalid data callback routine (parser-specific)
-    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
 } SEMP_SBF_VALUES;
 
 //------------------------------------------------------------------------------
@@ -70,8 +68,7 @@ bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
                     scratchPad->sbfID,
                     parse->length, parse->length);
 
-            if (scratchPad->invalidDataCallback)
-                scratchPad->invalidDataCallback(parse);
+            sempInvalidDataCallback(parse);
         }
 
         return false;
@@ -109,9 +106,7 @@ bool sempSbfLengthMSB(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->parserName,
             parse->length, parse->length);
 
-    if (scratchPad->invalidDataCallback)
-        scratchPad->invalidDataCallback(parse);
-
+    sempInvalidDataCallback(parse);
     parse->state = sempFirstByte;
     return false;
 }
@@ -208,9 +203,7 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
             parse->length, parse->length);
 
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
-    if (scratchPad->invalidDataCallback)
-        scratchPad->invalidDataCallback(parse);
-
+    sempInvalidDataCallback(parse);
     parse->state = sempFirstByte;
     return false;
 }
@@ -233,10 +226,6 @@ bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
         parse->state = sempSbfPreamble2;
         return true;
     }
-    // else
-    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
-    if (scratchPad->invalidDataCallback)
-        scratchPad->invalidDataCallback(parse);
     return false;
 }
 
@@ -345,13 +334,4 @@ bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 2));
-}
-
-//----------------------------------------
-// Set the invalid data callback
-//----------------------------------------
-void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback)
-{
-    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
-    scratchPad->invalidDataCallback = invalidDataCallback;
 }

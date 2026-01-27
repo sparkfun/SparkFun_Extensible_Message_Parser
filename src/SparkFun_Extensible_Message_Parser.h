@@ -76,14 +76,16 @@ typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, uint8_t dataByte)
 typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, uint16_t type);
 
 // Invalid data callback
+//
 // Inputs:
-//   parse: Address of a SEMP_PARSE_STATE structure
+//   buffer: Address of a buffer containing the invalid data
+//   length: Number of bytes in the buffer
 //
 // Normally this routine pointer is set to nullptr.  When this routine is
 // specified, it is called when ever the parser detects an invalid data
 // stream.  All invalid data is passed to this routine and the parser
 // goes back to scanning for the first preamble byte.
-typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse);
+typedef void (*SEMP_INVALID_DATA_CALLBACK)(const uint8_t * buffer, size_t length);
 
 // Parse routine
 //
@@ -114,6 +116,7 @@ typedef struct _SEMP_PARSE_STATE
     SEMP_EOM_CALLBACK eomCallback; // End of message callback routine
     SEMP_BAD_CRC_CALLBACK badCrc;  // Bad CRC callback routine
     SEMP_COMPUTE_CRC computeCrc;   // Routine to compute the CRC when set
+    SEMP_INVALID_DATA_CALLBACK invalidData; // Invalid data callback
     const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
     Print *printError;             // Class to use for error output
@@ -292,6 +295,14 @@ void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
 void sempParseNextBytes(SEMP_PARSE_STATE *parse,
                         const uint8_t *data,
                         size_t len);
+
+// Set the invalid data callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE * structure
+//   invalidDataCallback: Routine to call to handle invalid data
+void sempSetInvalidDataCallback(SEMP_PARSE_STATE *parse,
+                                SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 
 // The routine sempStopParser frees the parse data structure and sets
 // the pointer value to nullptr to prevent future references to the
@@ -530,6 +541,12 @@ uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
 //   when none of the parsers recgonize the input data
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 
+// Perform the invalid data callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+void sempInvalidDataCallback(SEMP_PARSE_STATE *parse);
+
 //------------------------------------------------------------------------------
 // Print support routines - Called by parsers and some applications
 //
@@ -634,7 +651,6 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
-void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 
 // Deprecated duplicate routines
 #define sempSbfGetF4        sempGetF4

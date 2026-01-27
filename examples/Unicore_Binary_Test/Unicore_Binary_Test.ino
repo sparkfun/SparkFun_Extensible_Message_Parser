@@ -110,13 +110,12 @@ const uint8_t rawDataStream[] =
 // Number of bytes in the rawDataStream
 #define RAW_DATA_BYTES      sizeof(rawDataStream)
 
-// Account for the largest Unicore messages
-#define BUFFER_LENGTH   3000
-
 //----------------------------------------
 // Locals
 //----------------------------------------
 
+// Account for the largest Unicore messages
+uint8_t buffer[3080];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -129,6 +128,8 @@ SEMP_PARSE_STATE *parse;
 //----------------------------------------
 void setup()
 {
+    size_t bufferLength;
+
     delay(1000);
 
     Serial.begin(115200);
@@ -136,9 +137,15 @@ void setup()
     Serial.println("Unicore_Test example sketch");
     Serial.println();
 
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable, parserCount);
+    if (sizeof(buffer) < bufferLength)
+    {
+        Serial.printf("Set buffer size to >= %d\r\n", bufferLength);
+        reportFatalError("Fix the buffer size!");
+    }
+
     // Initialize the parser
-    size_t bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
-    uint8_t * buffer = (uint8_t *)malloc(bufferLength);
     parse = sempBeginParser("Unicore_Test", parserTable, parserCount,
                             buffer, bufferLength, processMessage);
     if (!parse)
@@ -155,7 +162,6 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(buffer);
     Serial.printf("All done\r\n");
 }
 

@@ -14,6 +14,7 @@
 //----------------------------------------
 
 #define BUFFER_LENGTH           3000
+#define BUFFER_OVERHEAD         72
 
 const uint8_t rawDataStream[] =
 {
@@ -33,6 +34,7 @@ const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 // Locals
 //----------------------------------------
 
+uint8_t buffer[BUFFER_OVERHEAD + BUFFER_LENGTH];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -45,10 +47,8 @@ SEMP_PARSE_STATE *parse;
 //----------------------------------------
 void setup()
 {
-    uint8_t * buffer;
     size_t bufferLength;
     size_t bufferOverhead;
-    size_t length;
     size_t minimumBufferBytes;
 
     delay(1000);
@@ -68,7 +68,11 @@ void setup()
 
     // Determine the buffer length
     bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
-    buffer = (uint8_t *)malloc(bufferLength);
+    if (sizeof(buffer) != bufferLength)
+    {
+        Serial.printf("Set BUFFER_OVERHEAD to %d\r\n", bufferLength - BUFFER_LENGTH);
+        reportFatalError("Update BUFFER_OVERHEAD value!");
+    }
 
     // No name specified
     parse = sempBeginParser(nullptr, parserTable, parserCount,
@@ -107,9 +111,8 @@ void setup()
         reportFatalError("Failed to detect no buffer");
 
     // Zero length usable buffer specified
-    length = bufferLength - BUFFER_LENGTH;
     parse = sempBeginParser("No parser", parserTable, parserCount,
-                            buffer, length, processMessage);
+                            buffer, bufferOverhead, processMessage);
     if (parse)
         reportFatalError("Failed to detect zero length buffer");
 
@@ -158,7 +161,6 @@ void setup()
 
     // Done parsing the data
     sempStopParser(&parse);
-    free(buffer);
     Serial.printf("All done\r\n");
 }
 

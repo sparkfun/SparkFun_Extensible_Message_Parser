@@ -1,7 +1,9 @@
 /*------------------------------------------------------------------------------
 Parse_SPARTN.cpp
 
-SPARTN message parsing support routines
+SPARTN message parsing support routines as defined by
+https://www.spartnformat.org/download/
+https://www.spartnformat.org/wp-content/uploads/251107_SPARTN_v2.0.3.pdf
 
 The parser routines within a parser module are typically placed in
 reverse order within the module.  This lets the routine declaration
@@ -48,8 +50,9 @@ typedef struct _SEMP_SPARTN_VALUES
 // data structures and routines are listed at the end of the file.
 //------------------------------------------------------------------------------
 
-//----------------------------------------
-//----------------------------------------
+//------------------------------------------
+// Read and validate the Message CRC (TF018)
+//------------------------------------------
 bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -134,8 +137,9 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
-//----------------------------------------
-//----------------------------------------
+//----------------------------------------------
+// Read the Embedded Authentication Data (TF017)
+//----------------------------------------------
 bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_SPARTN_VALUES *scratchPad = (SEMP_SPARTN_VALUES *)parse->scratchPad;
@@ -151,6 +155,7 @@ bool sempSpartnReadTF017(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 //----------------------------------------
+// Read the Message payload (TF016)
 //----------------------------------------
 bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -175,6 +180,8 @@ bool sempSpartnReadTF016(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 //----------------------------------------
+// Read the GNSS time tag (TF009) through
+// Embedded Authentication Length (TF015)
 //----------------------------------------
 bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -223,6 +230,7 @@ bool sempSpartnReadTF009(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 //----------------------------------------
+// Read the Message Subtype (TF007)
 //----------------------------------------
 bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -243,8 +251,9 @@ bool sempSpartnReadTF007(SEMP_PARSE_STATE *parse, uint8_t data)
     return true;
 }
 
-//----------------------------------------
-//----------------------------------------
+//--------------------------------------------------------
+// Read the Message type (TF002) through Frame CRC (TF006)
+//--------------------------------------------------------
 bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
 {
     SEMP_OUTPUT output = parse->debugOutput;
@@ -328,7 +337,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
 }
 
 //----------------------------------------
-// Check for the preamble
+// Check for the preamble (TF001)
 //
 // Inputs:
 //   parse: Address of a SEMP_PARSE_STATE structure

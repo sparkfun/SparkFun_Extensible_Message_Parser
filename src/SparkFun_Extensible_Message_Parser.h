@@ -1031,6 +1031,15 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
 
+// Get the length
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the length
+uint16_t sempSbfGetLength(const SEMP_PARSE_STATE *parse);
+
 // Deprecated duplicate routines
 #define sempSbfGetF4        sempGetF4
 #define sempSbfGetF8        sempGetF8

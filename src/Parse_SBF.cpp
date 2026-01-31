@@ -390,6 +390,15 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
 }
 
 //----------------------------------------
+// Get the length
+//----------------------------------------
+uint16_t sempSbfGetLength(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SBF_VALUES * scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return scratchPad->length;
+}
+
+//----------------------------------------
 //----------------------------------------
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse)
 {

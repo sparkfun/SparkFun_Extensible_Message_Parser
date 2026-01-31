@@ -474,7 +474,7 @@ SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse)
 //----------------------------------------
 // Get a 32-bit floating point value
 //----------------------------------------
-float sempGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+float sempGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     float value;
     SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
@@ -485,7 +485,7 @@ float sempGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
 //----------------------------------------
 // Get a 32-bit floating point value
 //----------------------------------------
-float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, uint16_t offset)
+float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     float value;
     SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];

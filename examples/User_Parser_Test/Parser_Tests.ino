@@ -154,21 +154,6 @@ void userMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 }
 
 //----------------------------------------
-// Output a character
-//
-// Inputs:
-//   character: The character to output
-//----------------------------------------
-void output(char character)
-{
-    // Wait until space is available in the FIFO
-    while (Serial.availableForWrite() == 0);
-
-    // Output the character
-    Serial.write(character);
-}
-
-//----------------------------------------
 // Print the error message every 15 seconds
 //
 // Inputs:
@@ -180,6 +165,6 @@ void reportFatalError(const char *errorMsg)
     {
         sempPrintString(output, "HALTED: ");
         sempPrintStringLn(output, errorMsg);
-        delay(15 * 1000);   // sleep(15);
+        sleep(15);
     }
 }

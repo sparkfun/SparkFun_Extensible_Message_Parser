@@ -16,6 +16,7 @@
 */
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
+#include "ESP32.h"
 
 //----------------------------------------
 // Locals
@@ -28,9 +29,7 @@ bool runTests;
 //----------------------------------------
 void setup()
 {
-    delay(1000);
-
-    Serial.begin(115200);
+    initUart();
     sempPrintLn(output);
     sempPrintStringLn(output, "SBF_in_SPARTN_Test example sketch");
     sempPrintLn(output);

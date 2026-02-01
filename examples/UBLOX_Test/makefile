@@ -141,7 +141,7 @@ terminal:
 #DEBUG_LEVEL=debug
 DEBUG_LEVEL=none
 
-$(ESP32_BIN_FILE):	$(SKETCH).ino   *.ino   makefile
+$(ESP32_BIN_FILE):	$(SKETCH).ino   *.h   *.ino   makefile
 	$(CLEAR)
 	echo "----------------------------------------------------------------------"
 	echo $(SKETCH) - ESP32

@@ -16,8 +16,6 @@ License: MIT. Please see LICENSE.md for more details
 // Constants
 //----------------------------------------
 
-#define SEMP_ALIGNMENT_MASK        7
-
 const uint64_t sempPower10U64[] =
 {
     10ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull * 1000ull,  // 0
@@ -43,13 +41,6 @@ const uint64_t sempPower10U64[] =
     1ull,                                                               // 19
 };
 const int sempPower10U64Entries = sizeof(sempPower10U64) / sizeof(sempPower10U64[0]);
-
-//----------------------------------------
-// Macros
-//----------------------------------------
-
-// Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
-#define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
 //------------------------------------------------------------------------------
 // SparkFun Extensible Message Parser API routines
@@ -133,12 +124,13 @@ SEMP_PARSE_STATE *sempBeginParser(
         }
 
         // Determine the buffer overhead
-        bufferOverhead = sempComputeBufferOverhead(parserTable,
-                                                   parserCount,
-                                                   &parseAreaBytes,
-                                                   &payloadOffset,
-                                                   &parseStateBytes,
-                                                   &scratchPadBytes);
+        sempComputeBufferOverhead(parserTable,
+                                  parserCount,
+                                  &parseAreaBytes,
+                                  &payloadOffset,
+                                  &parseStateBytes,
+                                  &scratchPadBytes);
+        bufferOverhead = parseStateBytes + scratchPadBytes;
 
         // Verify that there is a parsing area within the buffer
         if (bufferLength <= bufferOverhead)
@@ -148,7 +140,7 @@ SEMP_PARSE_STATE *sempBeginParser(
             {
                 sempPrintString(output, "SEMP ERROR: Buffer too small, increase size to >= ");
                 sempPrintDecimalU32(output, bufferOverhead + 1);
-                sempPrintStringLn(output, " bytes (1 byte of parse area");
+                sempPrintStringLn(output, " bytes (1 byte of parse area)");
             }
             break;
         }
@@ -170,11 +162,41 @@ SEMP_PARSE_STATE *sempBeginParser(
         // Initialize the buffer
         memset(buffer, 0, bufferLength);
 
+        //  buffer
+        //  +-----------------------+-------------+-------------+------------+
+        //  | Alignment 0 - 7 bytes | Parse State | Scratch Pad | Parse Area |
+        //  +-----------------------+-------------+-------------+------------+
+        //
         // Divide up the buffer
-        parse = (SEMP_PARSE_STATE *)buffer;
+        parse = (SEMP_PARSE_STATE *)(SEMP_ALIGN((uintptr_t)buffer));
         parse->scratchPad = ((uint8_t *)parse) + parseStateBytes;
         parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
-        parse->bufferLength = bufferLength - bufferOverhead;
+        parse->bufferLength = &buffer[bufferLength] - parse->buffer;
+
+        // Verify the buffer division
+        if (((uint8_t *)parse < buffer) || ((uint8_t *)parse > &buffer[SEMP_ALIGNMENT_MASK]))
+        {
+            sempPrintString(output, "ERROR: parse out of bounds, (buffer) ");
+            sempPrintAddr(output, buffer);
+            sempPrintString(output, " <= ");
+            sempPrintAddr(output, parse);
+            sempPrintString(output, " <= ");
+            sempPrintAddr(output, &buffer[SEMP_ALIGNMENT_MASK]);
+            sempPrintString(output, " (buffer + ");
+            sempPrintDecimalI32(output, SEMP_ALIGNMENT_MASK);
+            sempPrintCharLn(output, ')');
+        }
+
+        if ((parse->buffer + parse->bufferLength) != &buffer[bufferLength])
+            sempPrintStringLn(output, "ERROR: Wrong end of buffer, parse->buffer + parse->bufferLength != &buffer[bufferLength]");
+
+        // Display the buffer offset
+        if ((uint8_t *)parse != buffer)
+        {
+            sempPrintString(output, "WARNING: Unaligned buffer, parse area reduced by ");
+            sempPrintDecimalI32(output, (uint8_t *)parse - buffer);
+            sempPrintStringLn(output, " bytes");
+        }
 
         // Initialize the parse state
         parse->debugOutput = debugOutput;
@@ -244,7 +266,7 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
         *scratchPadBytes = minScratchArea;
 
     // Return the buffer size
-    return parseState + minScratchArea;
+    return SEMP_ALIGNMENT_MASK + parseState + minScratchArea;
 }
 
 //----------------------------------------

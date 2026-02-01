@@ -108,10 +108,10 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest SBF messages
-uint8_t buffer1[3088];
+uint8_t buffer1[3084];
 
 // Account for the largest SPARTN messages
-uint8_t buffer2[3096];
+uint8_t buffer2[3095];
 uint32_t dataOffset1;
 SEMP_PARSE_STATE *parse1;
 SEMP_PARSE_STATE *parse2;

@@ -15,7 +15,7 @@
 //----------------------------------------
 
 #define BUFFER_LENGTH           3000
-#define BUFFER_OVERHEAD         72
+#define BUFFER_OVERHEAD         68
 
 const uint8_t rawDataStream[] =
 {
@@ -35,7 +35,8 @@ const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 // Locals
 //----------------------------------------
 
-uint8_t buffer[BUFFER_OVERHEAD + BUFFER_LENGTH];
+uint8_t bufferArea[SEMP_ALIGNMENT_MASK + BUFFER_OVERHEAD + BUFFER_LENGTH];
+uint8_t * buffer;
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -51,6 +52,8 @@ void setup()
     size_t bufferLength;
     size_t bufferOverhead;
     size_t minimumBufferBytes;
+    size_t parseStateBytes;
+    size_t scratchPadBytes;
 
     delay(1000);
 
@@ -63,21 +66,38 @@ void setup()
     outputTest();
 
     // Determine the buffer overhead (no parse area)
-    bufferOverhead = sempComputeBufferOverhead(parserTable,
-                                               parserCount,
-                                               nullptr,
-                                               nullptr,
-                                               nullptr,
-                                               nullptr);
+    sempComputeBufferOverhead(parserTable,
+                              parserCount,
+                              nullptr,
+                              nullptr,
+                              &parseStateBytes,
+                              &scratchPadBytes);
+    bufferOverhead = parseStateBytes + scratchPadBytes;
 
-    // Determine the buffer length
-    bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
-    if (sizeof(buffer) != bufferLength)
+    // Verify the buffer overhead
+    if (bufferOverhead != BUFFER_OVERHEAD)
     {
         sempPrintString(output, "Set BUFFER_OVERHEAD to ");
-        sempPrintDecimalI32(output, bufferLength - BUFFER_LENGTH);
+        sempPrintDecimalI32Ln(output, bufferOverhead);
         reportFatalError("Update BUFFER_OVERHEAD value!");
     }
+
+    // Align the buffer
+    buffer = (uint8_t *)SEMP_ALIGN((uintptr_t)bufferArea);
+
+    // Verify the unaligned buffer length
+    bufferLength = sempGetBufferLength(parserTable, parserCount, BUFFER_LENGTH);
+    if (bufferLength != sizeof(bufferArea))
+    {
+        sempPrintString(output, "ERROR: Buffer length, expected ");
+        sempPrintDecimalI32(output, sizeof(bufferArea));
+        sempPrintString(output, ", actual: ");
+        sempPrintDecimalI32Ln(output, bufferLength);
+        reportFatalError("Failed to verify the buffer length");
+    }
+
+    // Reduce the buffer size due to the alignment
+    bufferLength = BUFFER_OVERHEAD + BUFFER_LENGTH;
 
     // No name specified
     parse = sempBeginParser(nullptr, parserTable, parserCount, buffer,
@@ -103,26 +123,27 @@ void setup()
     if (parse)
         reportFatalError("Failed because parserCount != nameTableCount");
 
-    // No buffer specified
+    // No buffer specified, nullptr
     parse = sempBeginParser("No parser", parserTable, parserCount, nullptr,
                             bufferLength, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect buffer set to nullptr (0)");
 
-    // No buffer specified
+    // No buffer specified, zero length
     parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
                             0, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect no buffer");
 
-    // Zero length usable buffer specified
+    // Zero length parse area specified
     parse = sempBeginParser("No parser", parserTable, parserCount, buffer,
                             bufferOverhead, processMessage, output);
     if (parse)
         reportFatalError("Failed to detect zero length buffer");
 
     // Get the minimum buffer size
-    minimumBufferBytes = sempGetBufferLength(parserTable, parserCount, 0);
+    minimumBufferBytes = sempGetBufferLength(parserTable, parserCount, 0)
+                       - SEMP_ALIGNMENT_MASK;
     if ((minimumBufferBytes - bufferOverhead) != NO_PARSER_MINIMUM_BUFFER_SIZE)
         reportFatalError("Failed to get proper minimum buffer size");
 
@@ -137,6 +158,55 @@ void setup()
                             bufferLength, nullptr, output);
     if (parse)
         reportFatalError("Failed to detect eomCallback set to nullptr (0)");
+
+    // Test the buffer alignment
+    for (int offset = 1; offset <= SEMP_ALIGNMENT_MASK; offset++)
+    {
+        uint8_t * offsetBuffer = buffer + offset;
+        parse = sempBeginParser("Base Test Example", parserTable, parserCount,
+                                offsetBuffer, bufferLength - offset,
+                                processMessage, output, output);
+        if (!parse)
+            reportFatalError("Failed to initialize the parser");
+        if ((uint8_t *)parse < offsetBuffer)
+        {
+            sempPrintString(output, "Offset ");
+            sempPrintDecimalI32(output, offset);
+            sempPrintString(output, ", parse: ");
+            sempPrintAddr(output, parse);
+            sempPrintString(output, " < ");
+            sempPrintAddr(output, offsetBuffer);
+            sempPrintStringLn(output, " buffer");
+            reportFatalError("Parse state area located before buffer");
+        }
+        if ((uint8_t *)parse > &offsetBuffer[SEMP_ALIGNMENT_MASK])
+        {
+            sempPrintString(output, "Offset ");
+            sempPrintDecimalI32(output, offset);
+            sempPrintString(output, ", parse: ");
+            sempPrintAddr(output, parse);
+            sempPrintString(output, " > ");
+            sempPrintAddr(output, &offsetBuffer[SEMP_ALIGNMENT_MASK]);
+            sempPrintStringLn(output, " &buffer[SEMP_ALIGNMENT_MASK]");
+            reportFatalError("Parse state area starts after alignment area");
+        }
+        if ((parse->buffer + parse->bufferLength) != &offsetBuffer[bufferLength - offset])
+        {
+            sempPrintString(output, "Offset ");
+            sempPrintDecimalI32(output, offset);
+            sempPrintString(output, ", parse->buffer + parse->bufferLength: ");
+            sempPrintAddr(output, parse->buffer + parse->bufferLength);
+            sempPrintString(output, " != ");
+            sempPrintAddr(output, &offsetBuffer[bufferLength - offset]);
+            sempPrintStringLn(output, " &buffer[bufferLength]");
+            reportFatalError("Parse area length computation failed");
+        }
+    }
+
+    // Display the parser configuration
+    sempPrintString(output, "&parserTable: ");
+    sempPrintAddrLn(output, parserTable);
+    sempPrintParserConfiguration(parse, output);
 
     // Start using the entire buffer
     parse = sempBeginParser("Base Test Example", parserTable, parserCount,

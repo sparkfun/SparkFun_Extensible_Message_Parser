@@ -153,8 +153,13 @@ void parserTests()
     // The raw data stream is passed to the parser one byte at a time
     sempDebugOutputEnable(parse, output);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
+    {
+        // Prevent system reboot
+        petWDT();
+
         // Update the parser state based on the incoming byte
         sempParseNextByte(parse, rawDataStream[dataOffset]);
+    }
 
     // Done parsing the data
     sempStopParser(&parse);

@@ -138,14 +138,18 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     // If this is PVTGeodetic, extract some data
     if (sempSbfGetBlockNumber(parse) == 4007)
     {
+        char line[64];
+
         sempPrintString(output, "TOW: ");
         sempPrintDecimalI32Ln(output, sempSbfGetU4(parse, 8));
         sempPrintString(output, "Mode: ");
         sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 14));
         sempPrintString(output, "Error: ");
         sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 15));
-        Serial.printf("Latitude: %.7g\r\n", sempSbfGetF8(parse, 16) * 180.0 / PI);
-        Serial.printf("Longitude: %.7g\r\n", sempSbfGetF8(parse, 24) * 180.0 / PI);
+        sprintf(line, "Latitude: %.7g\r\n", sempSbfGetF8(parse, 16) * 180.0 / PI);
+        sempPrintString(output, line);
+        sprintf(line, "Longitude: %.7g\r\n", sempSbfGetF8(parse, 24) * 180.0 / PI);
+        sempPrintString(output, line);
     }
 
     // Display the parser state

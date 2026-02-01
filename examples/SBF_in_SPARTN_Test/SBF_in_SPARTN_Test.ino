@@ -17,6 +17,7 @@
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 #include "ESP32.h"
+#include "SAMD21.h"
 
 //----------------------------------------
 // Locals
@@ -43,6 +44,9 @@ void setup()
 //----------------------------------------
 void loop()
 {
+    // Keep the system running
+    petWDT();
+
     // Determine if a character was input
     if (Serial)
     {

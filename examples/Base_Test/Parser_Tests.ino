@@ -148,8 +148,9 @@ void parserTests()
     if (parse)
         reportFatalError("Failed to detect eomCallback set to nullptr (0)");
 
-    // Test the buffer alignment
-    for (int offset = 1; offset <= SEMP_ALIGNMENT_MASK; offset++)
+    // Test the buffer alignment up to 7 bytes of offset to ensure that
+    // 64-bit accesses work successfully
+    for (int offset = 1; offset <= 7; offset++)
     {
         uint8_t * offsetBuffer = buffer + offset;
         parse = sempBeginParser("Base Test Example", parserTable, parserCount,
@@ -190,6 +191,7 @@ void parserTests()
             sempPrintStringLn(output, " &buffer[bufferLength]");
             reportFatalError("Parse area length computation failed");
         }
+        accessTests((uint8_t *)parse);
     }
 
     // Display the parser configuration

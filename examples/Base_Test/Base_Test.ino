@@ -7,6 +7,7 @@
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
 #include "ESP32.h"
 #include "SAMD21.h"
+#include "SAMD51.h"
 
 //----------------------------------------
 // Locals

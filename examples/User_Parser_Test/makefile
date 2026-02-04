@@ -87,6 +87,8 @@ ESP32_BIN_FILE=$(ESP32_BIN_PATH)$(SKETCH).ino.bin
 
 EXECUTABLES += $(ESP32_BIN_FILE)
 EXECUTABLES += samd21_LoRaSerial
+EXECUTABLES += samd51_thing_plus
+EXECUTABLES += micromod_samd51
 
 .PHONY: all
 
@@ -269,6 +271,118 @@ samd21_LoRaSerial_upload:	$(SKETCH).ino   samd21_LoRaSerial
         upload   $<                         \
         -p   $$TERMINAL_PORT                \
         -b   SparkFun:samd:LoRaSerial
+	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
+
+##########
+# Build the SAMD51 Firmware
+##########
+
+samd51_thing_plus:	$(SKETCH).ino   *.cpp   *.h   *.ino   makefile
+	$(CLEAR)
+	echo "----------------------------------------------------------------------"
+	echo $(SKETCH) - $@
+	$(ARDUINO_CLI)                                  \
+		compile                                     \
+		$<                                          \
+		--fqbn   SparkFun:samd:samd51_thing_plus
+
+##########
+# Upload the SAMD51 firmware
+##########
+
+samd51_thing_plus_upload:	$(SKETCH).ino   samd51_thing_plus
+	if   [   -a   "/dev/ttyUSB0"   ];   then
+	    export TERMINAL_PORT=/dev/ttyUSB0
+	else
+	    if   [   -a   "/dev/ttyUSB1"   ];   then
+	        export TERMINAL_PORT=/dev/ttyUSB1
+	    else
+	        if   [   -a   "/dev/ttyUSB2"   ];   then
+	            export TERMINAL_PORT=/dev/ttyUSB2
+	        else
+	            if   [   -a   "/dev/ttyUSB3"   ];   then
+	                export TERMINAL_PORT=/dev/ttyUSB3
+	            else
+	                if   [   -a   "/dev/ttyACM0"   ];   then
+	                    export TERMINAL_PORT=/dev/ttyACM0
+	                else
+	                    if   [   -a   "/dev/ttyACM1"   ];   then
+	                        export TERMINAL_PORT=/dev/ttyACM1
+	                    else
+	                        if   [   -a   "/dev/ttyACM2"   ];   then
+	                            export TERMINAL_PORT=/dev/ttyACM2
+	                        else
+	                            if   [   -a   "/dev/ttyACM3"   ];   then
+	                                export TERMINAL_PORT=/dev/ttyACM3
+	                            fi
+	                        fi
+	                    fi
+	                fi
+	            fi
+	        fi
+	    fi
+	fi
+	echo $$TERMINAL_PORT
+	$(ARDUINO_CLI)                              \
+        upload   $<                             \
+        -p   $$TERMINAL_PORT                    \
+        -b   SparkFun:samd:samd51_thing_plus
+	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
+
+##########
+# Build the MicroMod SAMD51 Firmware
+##########
+
+micromod_samd51:	$(SKETCH).ino   *.cpp   *.h   *.ino   makefile
+	$(CLEAR)
+	echo "----------------------------------------------------------------------"
+	echo $(SKETCH) - $@
+	$(ARDUINO_CLI)                                  \
+		compile                                     \
+		$<                                          \
+		--fqbn   SparkFun:samd:micromod_samd51
+
+##########
+# Upload the MicroMod SAMD51 firmware
+##########
+
+micromod_samd51_upload:	$(SKETCH).ino   micromod_samd51
+	if   [   -a   "/dev/ttyUSB0"   ];   then
+	    export TERMINAL_PORT=/dev/ttyUSB0
+	else
+	    if   [   -a   "/dev/ttyUSB1"   ];   then
+	        export TERMINAL_PORT=/dev/ttyUSB1
+	    else
+	        if   [   -a   "/dev/ttyUSB2"   ];   then
+	            export TERMINAL_PORT=/dev/ttyUSB2
+	        else
+	            if   [   -a   "/dev/ttyUSB3"   ];   then
+	                export TERMINAL_PORT=/dev/ttyUSB3
+	            else
+	                if   [   -a   "/dev/ttyACM0"   ];   then
+	                    export TERMINAL_PORT=/dev/ttyACM0
+	                else
+	                    if   [   -a   "/dev/ttyACM1"   ];   then
+	                        export TERMINAL_PORT=/dev/ttyACM1
+	                    else
+	                        if   [   -a   "/dev/ttyACM2"   ];   then
+	                            export TERMINAL_PORT=/dev/ttyACM2
+	                        else
+	                            if   [   -a   "/dev/ttyACM3"   ];   then
+	                                export TERMINAL_PORT=/dev/ttyACM3
+	                            fi
+	                        fi
+	                    fi
+	                fi
+	            fi
+	        fi
+	    fi
+	fi
+	echo $$TERMINAL_PORT
+	$(ARDUINO_CLI)                              \
+        upload   $<                             \
+        -p   $$TERMINAL_PORT                    \
+        -b   SparkFun:samd:micromod_samd51
 	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
 
 ##########

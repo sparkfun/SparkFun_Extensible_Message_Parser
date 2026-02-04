@@ -164,7 +164,7 @@ SEMP_PARSE_STATE *sempBeginParser(
 
         //  buffer
         //  +-----------------------+-------------+-------------+------------+
-        //  | Alignment 0 - 7 bytes | Parse State | Scratch Pad | Parse Area |
+        //  | Alignment 0 - 3 bytes | Parse State | Scratch Pad | Parse Area |
         //  +-----------------------+-------------+-------------+------------+
         //
         // Divide up the buffer

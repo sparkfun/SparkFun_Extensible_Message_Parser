@@ -151,7 +151,7 @@ const DataStream dataStream[] =
 // Locals
 //----------------------------------------
 
-uint8_t buffer[3096];
+uint8_t buffer[3099];
 int byteOffset;
 int dataIndex;
 uint32_t dataOffset;

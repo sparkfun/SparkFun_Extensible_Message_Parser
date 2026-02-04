@@ -74,7 +74,7 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest Unicore hash (#) sentence + zero termination
-uint8_t buffer[241];
+uint8_t buffer[237];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

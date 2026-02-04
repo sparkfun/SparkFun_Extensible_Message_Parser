@@ -146,8 +146,8 @@ const int ubloxParserCount = sizeof(ubloxParserTable) / sizeof(ubloxParserTable[
 //----------------------------------------
 
 // Account for the largest u-blox messages
-uint8_t buffer1[178];
-uint8_t buffer2[3080];
+uint8_t buffer1[181];
+uint8_t buffer2[3083];
 int byteOffset;
 int dataIndex;
 uint32_t dataOffset;

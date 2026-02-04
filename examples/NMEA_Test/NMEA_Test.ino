@@ -82,7 +82,7 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest NMEA sentence + CR + LF + zero termination
-uint8_t buffer[178];
+uint8_t buffer[174];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

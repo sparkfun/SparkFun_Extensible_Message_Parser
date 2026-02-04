@@ -116,7 +116,7 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest Unicore messages
-uint8_t buffer[3080];
+uint8_t buffer[3079];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

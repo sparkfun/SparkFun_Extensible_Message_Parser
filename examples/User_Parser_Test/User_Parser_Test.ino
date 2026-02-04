@@ -53,7 +53,7 @@ const int userParserCount = sizeof(userParserTable) / sizeof(userParserTable[0])
 //----------------------------------------
 
 // Account for the largest message
-uint8_t buffer[83];
+uint8_t buffer[79];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

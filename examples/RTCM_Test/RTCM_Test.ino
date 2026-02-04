@@ -69,7 +69,7 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest RTCM message
-uint8_t buffer[1109];
+uint8_t buffer[1108];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

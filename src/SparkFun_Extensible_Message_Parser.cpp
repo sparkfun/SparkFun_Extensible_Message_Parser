@@ -1487,7 +1487,8 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 
     if (output && parse)
     {
-        sempPrintString(output, "SparkFun Extensible Message Parser\r\n");
+        sempPrintString(output, "SparkFun Extensible Message Parser: ");
+        sempPrintAddrLn(output, parse);
 
         sempPrintString(output, "    parserName: ");
         sempPrintAddr(output, (void *)parse->parserName);

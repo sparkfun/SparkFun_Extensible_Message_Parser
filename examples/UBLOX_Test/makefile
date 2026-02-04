@@ -86,6 +86,7 @@ ESP32_BIN_FILE=$(ESP32_BIN_PATH)$(SKETCH).ino.bin
 ##########
 
 EXECUTABLES += $(ESP32_BIN_FILE)
+EXECUTABLES += samd21_LoRaSerial
 
 .PHONY: all
 
@@ -141,7 +142,7 @@ terminal:
 #DEBUG_LEVEL=debug
 DEBUG_LEVEL=none
 
-$(ESP32_BIN_FILE):	$(SKETCH).ino   *.ino   makefile
+$(ESP32_BIN_FILE):	$(SKETCH).ino   *.h   *.ino   makefile
 	$(CLEAR)
 	echo "----------------------------------------------------------------------"
 	echo $(SKETCH) - ESP32
@@ -212,6 +213,62 @@ upload:	$(ESP32_BIN_FILE)
          0x8000   $(BOOT_LOADER_PATH)RTK_Surveyor_Partitions_4MB.bin \
          0xe000   $(BOOT_LOADER_PATH)boot_app0.bin \
         0x10000   $<
+	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
+
+##########
+# Build the SAMD21 Firmware
+##########
+
+samd21_LoRaSerial:	$(SKETCH).ino   *.h   *.ino   makefile
+	$(CLEAR)
+	echo "----------------------------------------------------------------------"
+	echo $(SKETCH) - $@
+	$(ARDUINO_CLI)                          \
+		compile                             \
+		$<                                  \
+		--fqbn   SparkFun:samd:LoRaSerial
+
+##########
+# Upload the SAMD21 firmware
+##########
+
+samd21_LoRaSerial_upload:	$(SKETCH).ino   samd21_LoRaSerial
+	if   [   -a   "/dev/ttyUSB0"   ];   then
+	    export TERMINAL_PORT=/dev/ttyUSB0
+	else
+	    if   [   -a   "/dev/ttyUSB1"   ];   then
+	        export TERMINAL_PORT=/dev/ttyUSB1
+	    else
+	        if   [   -a   "/dev/ttyUSB2"   ];   then
+	            export TERMINAL_PORT=/dev/ttyUSB2
+	        else
+	            if   [   -a   "/dev/ttyUSB3"   ];   then
+	                export TERMINAL_PORT=/dev/ttyUSB3
+	            else
+	                if   [   -a   "/dev/ttyACM0"   ];   then
+	                    export TERMINAL_PORT=/dev/ttyACM0
+	                else
+	                    if   [   -a   "/dev/ttyACM1"   ];   then
+	                        export TERMINAL_PORT=/dev/ttyACM1
+	                    else
+	                        if   [   -a   "/dev/ttyACM2"   ];   then
+	                            export TERMINAL_PORT=/dev/ttyACM2
+	                        else
+	                            if   [   -a   "/dev/ttyACM3"   ];   then
+	                                export TERMINAL_PORT=/dev/ttyACM3
+	                            fi
+	                        fi
+	                    fi
+	                fi
+	            fi
+	        fi
+	    fi
+	fi
+	echo $$TERMINAL_PORT
+	$(ARDUINO_CLI)                          \
+        upload   $<                         \
+        -p   $$TERMINAL_PORT                \
+        -b   SparkFun:samd:LoRaSerial
 	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
 
 ##########

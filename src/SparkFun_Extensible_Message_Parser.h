@@ -105,8 +105,9 @@ typedef void (*SEMP_INVALID_DATA_CALLBACK)(const uint8_t * buffer, size_t length
 // Call the application to output a single character
 //
 // Inputs:
-//   data: Data byte to output
-typedef void (*SEMP_OUTPUT)(char data);
+//   buffer: Address of a buffer of data to output
+//   length: Number of bytes of data to output
+typedef void (*SEMP_OUTPUT)(uint8_t * buffer, size_t length);
 
 // Parse routine
 //

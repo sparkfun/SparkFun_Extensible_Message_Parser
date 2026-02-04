@@ -157,7 +157,7 @@ bool sempUbloxLength2(SEMP_PARSE_STATE *parse, uint8_t data)
             sempPrintString(output, parse->parserName);
             sempPrintString(output, ": Incoming UBLOX ");
             sempPrintHex0x02x(output, scratchPad->messageClass);
-            output(':');
+            sempPrintChar(output, ':');
             sempPrintHex02x(output, scratchPad->messageId);
             sempPrintString(output, ", ");
             sempPrintHex0x04x(output, scratchPad->payloadLength);

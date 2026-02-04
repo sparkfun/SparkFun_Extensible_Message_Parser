@@ -142,7 +142,7 @@ bool badUnicoreHashChecksum(SEMP_PARSE_STATE *parse)
     if (!badChecksum)
     {
         sempPrintString(output, "UM980: Message improperly includes ");
-        output(parse->buffer[0]);
+        sempPrintChar(output, parse->buffer[0]);
         sempPrintStringLn(output, " in checksum");
         sempDumpBuffer(output, parse->buffer, parse->length);
     }

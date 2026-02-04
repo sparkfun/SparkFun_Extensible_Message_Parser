@@ -113,8 +113,8 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
             sempPrintDecimalU32(output, length);
             sempPrintString(output, ") bytes, bad checksum, received ");
             sempPrintString(output, "0x");
-            output(parse->buffer[length - 2]);
-            output(parse->buffer[length - 1]);
+            sempPrintChar(output, parse->buffer[length - 2]);
+            sempPrintChar(output, parse->buffer[length - 1]);
             sempPrintString(output, ", computed: ");
             sempPrintHex0x02xLn(output, parse->crc);
         }

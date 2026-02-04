@@ -6,7 +6,6 @@ Parse messages from GNSS radios
 License: MIT. Please see LICENSE.md for more details
 ------------------------------------------------------------------------------*/
 
-#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 #include "SparkFun_Extensible_Message_Parser.h"
@@ -328,7 +327,7 @@ void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length)
         for (index = 0; index < bytes; index++)
         {
             sempPrintHex02x(output, buffer[index]);
-            output(' ');
+            sempPrintChar(output, ' ');
         }
 
         // Separate the data bytes from the ASCII
@@ -342,7 +341,7 @@ void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length)
 
         // Display the ASCII values
         for (index = 0; index < bytes; index++)
-            output(((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
+            sempPrintChar(output, ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
         sempPrintLn(output);
 
         // Set the next line of data
@@ -836,7 +835,7 @@ int sempJustifyField(SEMP_OUTPUT output, int fieldWidth, int digits)
 
         // Right justified fields are positive
         while (fieldWidth-- > digits)
-            output(' ');
+            sempPrintChar(output, ' ');
     }
 
     // Done with the justification
@@ -940,10 +939,15 @@ void sempPrintAddrLn(SEMP_OUTPUT output, const void *addr)
 //----------------------------------------
 void sempPrintChar(SEMP_OUTPUT output, char character)
 {
+    uint8_t data;
+
     // Determine if output is necessary
     if (output)
+    {
         // Output the character
-        output(character);
+        data = character;
+        output(&data, 1);
+    }
 }
 
 //----------------------------------------
@@ -951,11 +955,14 @@ void sempPrintChar(SEMP_OUTPUT output, char character)
 //----------------------------------------
 void sempPrintCharLn(SEMP_OUTPUT output, char character)
 {
+    uint8_t data;
+
     // Determine if output is necessary
     if (output)
     {
         // Output the character
-        output(character);
+        data = character;
+        output(&data, 1);
         sempPrintLn(output);
     }
 }
@@ -982,7 +989,7 @@ void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value, int fieldWidth)
 
         // Display the minus sign if necessary
         if (value < 0)
-            output('-');
+            sempPrintChar(output, '-');
         sempPrintDecimalU32(output, (uint32_t)((value >= 0) ? value : -value), 0);
 
         // Left justify the field if necessary
@@ -1026,7 +1033,7 @@ void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value, int fieldWidth)
 
         // Display the minus sign if necessary
         if (value < 0)
-            output('-');
+            sempPrintChar(output, '-');
         sempPrintDecimalU64(output, (uint64_t)((value >= 0) ? value : -value), 0);
 
         // Left justify the field if necessary
@@ -1097,7 +1104,7 @@ void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
             if ((digit == 0) && suppressZeros && (index != (entries - 1)))
                 continue;
             suppressZeros = false;
-            output(sempNibbleToAscii(digit));
+            sempPrintChar(output, sempNibbleToAscii(digit));
         }
 
         // Left justify the field if necessary
@@ -1154,7 +1161,7 @@ void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
             if ((digit == 0) && suppressZeros && (index != (sempPower10U64Entries - 1)))
                 continue;
             suppressZeros = false;
-            output(sempNibbleToAscii(digit));
+            sempPrintChar(output, sempNibbleToAscii(digit));
         }
 
         // Left justify the field if necessary
@@ -1225,8 +1232,8 @@ void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
             fieldWidth = sempJustifyField(output, fieldWidth, 2);
 
         // Output the hex value
-        output(sempNibbleToAscii(value >> 4));
-        output(sempNibbleToAscii(value));
+        sempPrintChar(output, sempNibbleToAscii(value >> 4));
+        sempPrintChar(output, sempNibbleToAscii(value));
 
         // Left justify the value
         if (fieldWidth)
@@ -1473,8 +1480,8 @@ void sempPrintLn(SEMP_OUTPUT output)
     if (output)
     {
         // Output the carriage return and linefeed
-        output('\r');
-        output('\n');
+        sempPrintChar(output, '\r');
+        sempPrintChar(output, '\n');
     }
 }
 
@@ -1520,7 +1527,7 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         if (parse->scratchPad)
             sempPrintDecimalU32(output, parse->buffer - (uint8_t *)parse->scratchPad);
         else
-            output('0');
+            sempPrintChar(output, '0');
         sempPrintStringLn(output, " bytes)");
 
         sempPrintString(output, "    badCrc: ");
@@ -1592,8 +1599,7 @@ void sempPrintString(SEMP_OUTPUT output, const char * string, int fieldWidth)
         }
 
         // Output the string a character at a time
-        while (*string)
-            output(*string++);
+        output((uint8_t*)string, strlen(string));
 
         // Left justify the string
         if (fieldWidth)

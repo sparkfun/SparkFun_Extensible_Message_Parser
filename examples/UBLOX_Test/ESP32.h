@@ -27,20 +27,24 @@ void initUart()
 }
 
 //----------------------------------------
-// Output a character
-//
-// Inputs:
-//   character: The character to output
+// Output a buffer of data
 //----------------------------------------
-void output(char character)
+void output(uint8_t * buffer, size_t length)
 {
+    size_t bytesWritten;
+
     if (Serial)
     {
-        // Wait until space is available in the FIFO
-        while (Serial.availableForWrite() == 0);
+        while (length)
+        {
+            // Wait until space is available in the FIFO
+            while (Serial.availableForWrite() == 0);
 
-        // Output the character
-        Serial.write(character);
+            // Output the character
+            bytesWritten = Serial.write(buffer, length);
+            buffer += bytesWritten;
+            length -= bytesWritten;
+        }
     }
 }
 

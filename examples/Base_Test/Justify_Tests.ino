@@ -15,9 +15,9 @@
 //----------------------------------------
 void outputLine(int fieldWidth, char corner)
 {
-    output(corner);
+    sempPrintChar(output, corner);
     while (fieldWidth--)
-        output('-');
+        sempPrintChar(output, '-');
     sempPrintCharLn(output, corner);
 }
 
@@ -29,51 +29,51 @@ void justifyTest(int fieldWidth)
     // Right justification
     outputLine(fieldWidth, '.');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 0, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 1, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, -1, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 0x7fffffff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, (int32_t)0x80000000, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex02x(output, 0xff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex04x(output, 0xffff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex08x(output, 0xffffffff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x02x(output, 0xff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x04x(output, 0xffff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x08x(output, 0xffffffff, fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintString(output, "Test", fieldWidth);
     sempPrintCharLn(output, '|');
 
@@ -81,85 +81,85 @@ void justifyTest(int fieldWidth)
     if (fieldWidth > 11)
     {
         // Right justification
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 0, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 1, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, -1, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 0x7fffffffffffffff, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, (int64_t)0x8000000000000000ull, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintHex016x(output, 0xffffffffffffffffull, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintHex0x016x(output, 0xffffffffffffffffull, fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintString(output, "This is a test", fieldWidth);
         sempPrintCharLn(output, '|');
     }
 
     // Left justification
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 0, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 1, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, -1, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, 0x7fffffff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintDecimalI32(output, (int32_t)0x80000000, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex02x(output, 0xff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex04x(output, 0xffff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex08x(output, 0xffffffff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x02x(output, 0xff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x04x(output, 0xffff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintHex0x08x(output, 0xffffffff, -fieldWidth);
     sempPrintCharLn(output, '|');
 
-    output('|');
+    sempPrintChar(output, '|');
     sempPrintString(output, "Test", -fieldWidth);
     sempPrintCharLn(output, '|');
 
@@ -167,39 +167,39 @@ void justifyTest(int fieldWidth)
     if (fieldWidth > 11)
     {
         // Left justification
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 0, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 1, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, -1, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, 0x7fffffffffffffffull, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalI64(output, (int64_t)0x8000000000000000ull, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintDecimalU64(output, 0xffffffffffffffffull, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintHex016x(output, 0xffffffffffffffffull, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintHex0x016x(output, 0xffffffffffffffffull, -fieldWidth);
         sempPrintCharLn(output, '|');
 
-        output('|');
+        sempPrintChar(output, '|');
         sempPrintString(output, "This is a test", -fieldWidth);
         sempPrintCharLn(output, '|');
     }

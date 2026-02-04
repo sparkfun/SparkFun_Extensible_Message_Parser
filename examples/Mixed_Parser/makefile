@@ -105,6 +105,7 @@ DEBUG_LEVEL=none
 $(BIN_FILE):	$(SKETCH).ino   *.ino   makefile
 	$(CLEAR)
 	echo "----------------------------------------------------------------------"
+	echo $(SKETCH)
 	$(ARDUINO_CLI)                                                \
 		compile                                                   \
 		--fqbn   "esp32:esp32:$(ESP32_CHIP)":DebugLevel=$(DEBUG_LEVEL)  \

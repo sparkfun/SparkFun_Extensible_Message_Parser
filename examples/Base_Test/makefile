@@ -89,6 +89,7 @@ EXECUTABLES += $(ESP32_BIN_FILE)
 EXECUTABLES += samd21_LoRaSerial
 EXECUTABLES += samd51_thing_plus
 EXECUTABLES += micromod_samd51
+#EXECUTABLES += arduino_uno_r3
 
 .PHONY: all
 
@@ -383,6 +384,64 @@ micromod_samd51_upload:	$(SKETCH).ino   micromod_samd51
         upload   $<                             \
         -p   $$TERMINAL_PORT                    \
         -b   SparkFun:samd:micromod_samd51
+	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
+
+##########
+# Build the Arduino Uno R3 firmware
+##########
+
+arduino_uno_r3:	$(SKETCH).ino   *.cpp   *.h   *.ino   makefile
+	$(CLEAR)
+	echo "----------------------------------------------------------------------"
+	echo $(SKETCH) - $@
+	$(ARDUINO_CLI)                  \
+		compile                     \
+		$<                          \
+		--fqbn   arduino:avr:uno
+
+##########
+# Upload the Arduino Uno R3 firmware
+##########
+
+arduino_uno_r3_upload:	$(SKETCH).ino   arduino_uno_r3
+	if   [   -a   "/dev/ttyUSB0"   ];   then
+	    export TERMINAL_PORT=/dev/ttyUSB0
+	else
+	    if   [   -a   "/dev/ttyUSB1"   ];   then
+	        export TERMINAL_PORT=/dev/ttyUSB1
+	    else
+	        if   [   -a   "/dev/ttyUSB2"   ];   then
+	            export TERMINAL_PORT=/dev/ttyUSB2
+	        else
+	            if   [   -a   "/dev/ttyUSB3"   ];   then
+	                export TERMINAL_PORT=/dev/ttyUSB3
+	            else
+	                if   [   -a   "/dev/ttyACM0"   ];   then
+	                    export TERMINAL_PORT=/dev/ttyACM0
+	                else
+	                    if   [   -a   "/dev/ttyACM1"   ];   then
+	                        export TERMINAL_PORT=/dev/ttyACM1
+	                    else
+	                        if   [   -a   "/dev/ttyACM2"   ];   then
+	                            export TERMINAL_PORT=/dev/ttyACM2
+	                        else
+	                            if   [   -a   "/dev/ttyACM3"   ];   then
+	                                export TERMINAL_PORT=/dev/ttyACM3
+	                            fi
+	                        fi
+	                    fi
+	                fi
+	            fi
+	        fi
+	    fi
+	fi
+	echo $$TERMINAL_PORT
+	$(ARDUINO_CLI)                  \
+        upload                      \
+        -p   $$TERMINAL_PORT        \
+        --fqbn   arduino:avr:uno    \
+        --verbose                   \
+        .
 	$(TERMINAL_APP)   -D $$TERMINAL_PORT   -b $(BAUDRATE)   $(TERMINAL_PARAMS)
 
 ##########

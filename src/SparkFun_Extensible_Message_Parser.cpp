@@ -6,7 +6,6 @@ Parse messages from GNSS radios
 License: MIT. Please see LICENSE.md for more details
 ------------------------------------------------------------------------------*/
 
-#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 #include "SparkFun_Extensible_Message_Parser.h"
@@ -15,8 +14,6 @@ License: MIT. Please see LICENSE.md for more details
 //----------------------------------------
 // Constants
 //----------------------------------------
-
-#define SEMP_ALIGNMENT_MASK        7
 
 const uint64_t sempPower10U64[] =
 {
@@ -43,13 +40,6 @@ const uint64_t sempPower10U64[] =
     1ull,                                                               // 19
 };
 const int sempPower10U64Entries = sizeof(sempPower10U64) / sizeof(sempPower10U64[0]);
-
-//----------------------------------------
-// Macros
-//----------------------------------------
-
-// Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
-#define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
 //------------------------------------------------------------------------------
 // SparkFun Extensible Message Parser API routines
@@ -133,12 +123,13 @@ SEMP_PARSE_STATE *sempBeginParser(
         }
 
         // Determine the buffer overhead
-        bufferOverhead = sempComputeBufferOverhead(parserTable,
-                                                   parserCount,
-                                                   &parseAreaBytes,
-                                                   &payloadOffset,
-                                                   &parseStateBytes,
-                                                   &scratchPadBytes);
+        sempComputeBufferOverhead(parserTable,
+                                  parserCount,
+                                  &parseAreaBytes,
+                                  &payloadOffset,
+                                  &parseStateBytes,
+                                  &scratchPadBytes);
+        bufferOverhead = parseStateBytes + scratchPadBytes;
 
         // Verify that there is a parsing area within the buffer
         if (bufferLength <= bufferOverhead)
@@ -148,7 +139,7 @@ SEMP_PARSE_STATE *sempBeginParser(
             {
                 sempPrintString(output, "SEMP ERROR: Buffer too small, increase size to >= ");
                 sempPrintDecimalU32(output, bufferOverhead + 1);
-                sempPrintStringLn(output, " bytes (1 byte of parse area");
+                sempPrintStringLn(output, " bytes (1 byte of parse area)");
             }
             break;
         }
@@ -170,11 +161,41 @@ SEMP_PARSE_STATE *sempBeginParser(
         // Initialize the buffer
         memset(buffer, 0, bufferLength);
 
+        //  buffer
+        //  +-----------------------+-------------+-------------+------------+
+        //  | Alignment 0 - 3 bytes | Parse State | Scratch Pad | Parse Area |
+        //  +-----------------------+-------------+-------------+------------+
+        //
         // Divide up the buffer
-        parse = (SEMP_PARSE_STATE *)buffer;
+        parse = (SEMP_PARSE_STATE *)(SEMP_ALIGN((uintptr_t)buffer));
         parse->scratchPad = ((uint8_t *)parse) + parseStateBytes;
         parse->buffer = ((uint8_t *)parse->scratchPad + scratchPadBytes);
-        parse->bufferLength = bufferLength - bufferOverhead;
+        parse->bufferLength = &buffer[bufferLength] - parse->buffer;
+
+        // Verify the buffer division
+        if (((uint8_t *)parse < buffer) || ((uint8_t *)parse > &buffer[SEMP_ALIGNMENT_MASK]))
+        {
+            sempPrintString(output, "ERROR: parse out of bounds, (buffer) ");
+            sempPrintAddr(output, buffer);
+            sempPrintString(output, " <= ");
+            sempPrintAddr(output, parse);
+            sempPrintString(output, " <= ");
+            sempPrintAddr(output, &buffer[SEMP_ALIGNMENT_MASK]);
+            sempPrintString(output, " (buffer + ");
+            sempPrintDecimalI32(output, SEMP_ALIGNMENT_MASK);
+            sempPrintCharLn(output, ')');
+        }
+
+        if ((parse->buffer + parse->bufferLength) != &buffer[bufferLength])
+            sempPrintStringLn(output, "ERROR: Wrong end of buffer, parse->buffer + parse->bufferLength != &buffer[bufferLength]");
+
+        // Display the buffer offset
+        if ((uint8_t *)parse != buffer)
+        {
+            sempPrintString(output, "WARNING: Unaligned buffer, parse area reduced by ");
+            sempPrintDecimalI32(output, (uint8_t *)parse - buffer);
+            sempPrintStringLn(output, " bytes");
+        }
 
         // Initialize the parse state
         parse->debugOutput = debugOutput;
@@ -244,7 +265,7 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
         *scratchPadBytes = minScratchArea;
 
     // Return the buffer size
-    return parseState + minScratchArea;
+    return SEMP_ALIGNMENT_MASK + parseState + minScratchArea;
 }
 
 //----------------------------------------
@@ -306,7 +327,7 @@ void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length)
         for (index = 0; index < bytes; index++)
         {
             sempPrintHex02x(output, buffer[index]);
-            output(' ');
+            sempPrintChar(output, ' ');
         }
 
         // Separate the data bytes from the ASCII
@@ -320,7 +341,7 @@ void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length)
 
         // Display the ASCII values
         for (index = 0; index < bytes; index++)
-            output(((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
+            sempPrintChar(output, ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
         sempPrintLn(output);
 
         // Set the next line of data
@@ -474,7 +495,7 @@ SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse)
 //----------------------------------------
 // Get a 32-bit floating point value
 //----------------------------------------
-float sempGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
+float sempGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     float value;
     SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
@@ -485,7 +506,7 @@ float sempGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset)
 //----------------------------------------
 // Get a 32-bit floating point value
 //----------------------------------------
-float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, uint16_t offset)
+float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     float value;
     SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
@@ -814,7 +835,7 @@ int sempJustifyField(SEMP_OUTPUT output, int fieldWidth, int digits)
 
         // Right justified fields are positive
         while (fieldWidth-- > digits)
-            output(' ');
+            sempPrintChar(output, ' ');
     }
 
     // Done with the justification
@@ -918,10 +939,15 @@ void sempPrintAddrLn(SEMP_OUTPUT output, const void *addr)
 //----------------------------------------
 void sempPrintChar(SEMP_OUTPUT output, char character)
 {
+    uint8_t data;
+
     // Determine if output is necessary
     if (output)
+    {
         // Output the character
-        output(character);
+        data = character;
+        output(&data, 1);
+    }
 }
 
 //----------------------------------------
@@ -929,11 +955,14 @@ void sempPrintChar(SEMP_OUTPUT output, char character)
 //----------------------------------------
 void sempPrintCharLn(SEMP_OUTPUT output, char character)
 {
+    uint8_t data;
+
     // Determine if output is necessary
     if (output)
     {
         // Output the character
-        output(character);
+        data = character;
+        output(&data, 1);
         sempPrintLn(output);
     }
 }
@@ -960,7 +989,7 @@ void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value, int fieldWidth)
 
         // Display the minus sign if necessary
         if (value < 0)
-            output('-');
+            sempPrintChar(output, '-');
         sempPrintDecimalU32(output, (uint32_t)((value >= 0) ? value : -value), 0);
 
         // Left justify the field if necessary
@@ -1004,7 +1033,7 @@ void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value, int fieldWidth)
 
         // Display the minus sign if necessary
         if (value < 0)
-            output('-');
+            sempPrintChar(output, '-');
         sempPrintDecimalU64(output, (uint64_t)((value >= 0) ? value : -value), 0);
 
         // Left justify the field if necessary
@@ -1075,7 +1104,7 @@ void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value, int fieldWidth)
             if ((digit == 0) && suppressZeros && (index != (entries - 1)))
                 continue;
             suppressZeros = false;
-            output(sempNibbleToAscii(digit));
+            sempPrintChar(output, sempNibbleToAscii(digit));
         }
 
         // Left justify the field if necessary
@@ -1132,7 +1161,7 @@ void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value, int fieldWidth)
             if ((digit == 0) && suppressZeros && (index != (sempPower10U64Entries - 1)))
                 continue;
             suppressZeros = false;
-            output(sempNibbleToAscii(digit));
+            sempPrintChar(output, sempNibbleToAscii(digit));
         }
 
         // Left justify the field if necessary
@@ -1203,8 +1232,8 @@ void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth)
             fieldWidth = sempJustifyField(output, fieldWidth, 2);
 
         // Output the hex value
-        output(sempNibbleToAscii(value >> 4));
-        output(sempNibbleToAscii(value));
+        sempPrintChar(output, sempNibbleToAscii(value >> 4));
+        sempPrintChar(output, sempNibbleToAscii(value));
 
         // Left justify the value
         if (fieldWidth)
@@ -1451,8 +1480,8 @@ void sempPrintLn(SEMP_OUTPUT output)
     if (output)
     {
         // Output the carriage return and linefeed
-        output('\r');
-        output('\n');
+        sempPrintChar(output, '\r');
+        sempPrintChar(output, '\n');
     }
 }
 
@@ -1465,7 +1494,8 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 
     if (output && parse)
     {
-        sempPrintString(output, "SparkFun Extensible Message Parser\r\n");
+        sempPrintString(output, "SparkFun Extensible Message Parser: ");
+        sempPrintAddrLn(output, parse);
 
         sempPrintString(output, "    parserName: ");
         sempPrintAddr(output, (void *)parse->parserName);
@@ -1497,7 +1527,7 @@ void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
         if (parse->scratchPad)
             sempPrintDecimalU32(output, parse->buffer - (uint8_t *)parse->scratchPad);
         else
-            output('0');
+            sempPrintChar(output, '0');
         sempPrintStringLn(output, " bytes)");
 
         sempPrintString(output, "    badCrc: ");
@@ -1569,8 +1599,7 @@ void sempPrintString(SEMP_OUTPUT output, const char * string, int fieldWidth)
         }
 
         // Output the string a character at a time
-        while (*string)
-            output(*string++);
+        output((uint8_t*)string, strlen(string));
 
         // Left justify the string
         if (fieldWidth)

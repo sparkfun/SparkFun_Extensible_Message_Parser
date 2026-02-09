@@ -121,7 +121,7 @@ bool sempSpartnReadTF018(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, parse->parserName);
                 sempPrintString(output, ": SPARTN ");
                 sempPrintDecimalI32(output, scratchPad->messageType);
-                output(' ');
+                sempPrintChar(output, ' ');
                 sempPrintDecimalI32(output, scratchPad->messageSubtype);
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, parse->length);
@@ -301,7 +301,7 @@ bool sempSpartnReadTF002TF006(SEMP_PARSE_STATE *parse, uint8_t data)
                 sempPrintString(output, parse->parserName);
                 sempPrintString(output, ": Incoming SPARTN ");
                 sempPrintDecimalI32(output, scratchPad->messageType);
-                output(' ');
+                sempPrintChar(output, ' ');
                 sempPrintDecimalI32(output, scratchPad->messageSubtype);
                 sempPrintString(output, ", ");
                 sempPrintHex0x04x(output, scratchPad->payloadLength);

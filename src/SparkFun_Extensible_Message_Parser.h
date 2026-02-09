@@ -12,6 +12,19 @@ License: MIT. Please see LICENSE.md for more details
 #include <Arduino.h>
 
 //----------------------------------------
+// Constants
+//----------------------------------------
+
+#define SEMP_ALIGNMENT_MASK        3
+
+//----------------------------------------
+// Macros
+//----------------------------------------
+
+// Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
+#define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
+
+//----------------------------------------
 // Externals
 //----------------------------------------
 
@@ -92,8 +105,9 @@ typedef void (*SEMP_INVALID_DATA_CALLBACK)(const uint8_t * buffer, size_t length
 // Call the application to output a single character
 //
 // Inputs:
-//   data: Data byte to output
-typedef void (*SEMP_OUTPUT)(char data);
+//   buffer: Address of a buffer of data to output
+//   length: Number of bytes of data to output
+typedef void (*SEMP_OUTPUT)(uint8_t * buffer, size_t length);
 
 // Parse routine
 //
@@ -1030,6 +1044,15 @@ uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
 uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
+
+// Get the length
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the length
+uint16_t sempSbfGetLength(const SEMP_PARSE_STATE *parse);
 
 // Deprecated duplicate routines
 #define sempSbfGetF4        sempGetF4

@@ -112,19 +112,19 @@ bool sempUnicoreBinaryReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintString(output, parse->parserName);
         sempPrintString(output, ": Unicore, bad CRC, received ");
         sempPrintHex02x(output, parse->buffer[parse->length - 4]);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, parse->buffer[parse->length - 3]);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, parse->buffer[parse->length - 2]);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, parse->buffer[parse->length - 1]);
         sempPrintString(output, ", computed: ");
         sempPrintHex02x(output, scratchPad->crc & 0xff);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, (scratchPad->crc >> 8) & 0xff);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, (scratchPad->crc >> 16) & 0xff);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02xLn(output, (scratchPad->crc >> 24) & 0xff);
     }
     parse->state = sempFirstByte;

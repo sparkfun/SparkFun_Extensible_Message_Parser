@@ -394,6 +394,15 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
     return scratchPad->sbfID;
 }
 
+//----------------------------------------
+// Get the length
+//----------------------------------------
+uint16_t sempSbfGetLength(const SEMP_PARSE_STATE *parse)
+{
+    SEMP_SBF_VALUES * scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
+    return scratchPad->length;
+}
+
 //---------------------------------------------------
 // Test if SBF is Encapsulated Output containing NMEA
 //---------------------------------------------------

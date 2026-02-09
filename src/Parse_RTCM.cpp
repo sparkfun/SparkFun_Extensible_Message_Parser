@@ -121,9 +121,9 @@ bool sempRtcmReadCrc(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintDecimalU32(output, parse->length);
         sempPrintString(output, ") bytes, bad CRC, received ");
         sempPrintHex02x(output, parse->buffer[parse->length - 3]);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, parse->buffer[parse->length - 2]);
-        output(' ');
+        sempPrintChar(output, ' ');
         sempPrintHex02x(output, parse->buffer[parse->length - 1]);
         sempPrintString(output, ", computed: ");
         sempPrintHex02x(output, (scratchPad->crc >> 16) & 0xff);

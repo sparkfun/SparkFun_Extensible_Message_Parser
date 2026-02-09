@@ -68,58 +68,20 @@ const uint8_t rawDataStream[] =
 // Locals
 //----------------------------------------
 
-// Account for the largest SBF messages
-uint8_t buffer[3088];
-uint32_t dataOffset;
-SEMP_PARSE_STATE *parse;
-
-//------------------------------------------------------------------------------
-// Test routines
-//------------------------------------------------------------------------------
+bool runTests;
 
 //----------------------------------------
 // Application entry point used to initialize the system
 //----------------------------------------
 void setup()
 {
-    size_t bufferLength;
-
-    delay(1000);
-
-    Serial.begin(115200);
+    initUart();
     sempPrintLn(output);
     sempPrintStringLn(output, "SBF_Test example sketch");
     sempPrintLn(output);
 
-    // Verify the buffer size
-    bufferLength = sempGetBufferLength(parserTable, parserCount);
-    if (sizeof(buffer) < bufferLength)
-    {
-        sempPrintString(output, "Set buffer size to >= ");
-        sempPrintDecimalI32Ln(output, bufferLength);
-        reportFatalError("Fix the buffer size!");
-    }
-
-    // Initialize the parser
-    parse = sempBeginParser("SBF_Test", parserTable, parserCount, buffer,
-                            bufferLength, processMessage, output, output);
-    if (!parse)
-        reportFatalError("Failed to initialize the parser");
-
-    // Obtain a raw data stream from somewhere
-    sempPrintString(output, "Raw data stream: ");
-    sempPrintDecimalI32(output, RAW_DATA_BYTES);
-    sempPrintStringLn(output, " bytes");
-
-    // The raw data stream is passed to the parser one byte at a time
-    sempDebugOutputEnable(parse, output);
-    for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
-
-    // Done parsing the data
-    sempStopParser(&parse);
-    sempPrintStringLn(output, "All done");
+    // Run the tests
+    runTests = true;
 }
 
 //----------------------------------------
@@ -127,37 +89,11 @@ void setup()
 //----------------------------------------
 void loop()
 {
-    // Nothing to do here...
-}
+    // Keep the system running
+    petWDT();
 
-//----------------------------------------
-// Call back from within parser, for end of message
-// Process a complete message incoming from parser
-//----------------------------------------
-void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
-{
-    uint32_t offset;
-
-    // Display the raw message
-    sempPrintLn(output);
-    offset = dataOffset + 1 - parse->length;
-    sempPrintString(output, "Valid SBF message block ");
-    sempPrintDecimalI32(output, sempSbfGetId(parse));
-    sempPrintString(output, " : ");
-    sempPrintDecimalI32(output, parse->length);
-    sempPrintString(output, " bytes at ");
-    sempPrintHex0x08x(output, offset);
-    sempPrintString(output, " (");
-    sempPrintDecimalI32(output, offset);
-    sempPrintCharLn(output, ')');
-    dumpBuffer(parse->buffer, parse->length);
-
-    // Display Block Number
-    sempPrintString(output, "SBF Block Number: ");
-    sempPrintDecimalI32Ln(output, sempSbfGetBlockNumber(parse));
-
-    // If this is PVTGeodetic, extract some data
-    if (sempSbfGetBlockNumber(parse) == 4007)
+    // Determine if a character was input
+    if (Serial)
     {
         sempPrintString(output, "TOW: ");
         sempPrintDecimalI32Ln(output, sempSbfGetU4(parse, 8));
@@ -169,12 +105,13 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         Serial.printf("Longitude: %.8g\r\n", sempSbfGetF8(parse, 24) * 180.0 / PI);
     }
 
-    // Display the parser state
-    static bool displayOnce = true;
-    if (displayOnce)
+    // Run the tests when requested
+    if (runTests)
     {
-        displayOnce = false;
-        sempPrintLn(output);
-        sempPrintParserConfiguration(parse, output);
+        runTests = false;
+
+        // Run the tests
+        parserTests();
+        sempPrintStringLn(output, "All done");
     }
 }

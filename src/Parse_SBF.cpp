@@ -42,6 +42,7 @@ typedef struct _SEMP_SBF_VALUES
 //------------------------------------------------------------------------------
 
 //----------------------------------------
+// Read the payload
 //----------------------------------------
 bool sempSbfReadBytes(SEMP_PARSE_STATE *parse, uint8_t data)
 {
@@ -366,14 +367,18 @@ uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse)
     return scratchPad->sbfIDrev;
 }
 
-//----------------------------------------
-//----------------------------------------
+//------------------------------------------------------------------------
+// Extract a pointer to the payload from SBF Encapsulated Output
+// The pointer points to the first byte of the encapsulated RTCMv3 or NMEA
+//------------------------------------------------------------------------
 const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse)
 {
     return (const uint8_t *)(sempSbfGetString(parse, 20));
 }
 
 //----------------------------------------
+// Extract the payload length from SBF Encapsulated Output
+// Use this to extract the length of the encapsulated RTCMv3 or NMEA
 //----------------------------------------
 uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse)
 {
@@ -389,16 +394,18 @@ uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse)
     return scratchPad->sbfID;
 }
 
-//----------------------------------------
-//----------------------------------------
+//---------------------------------------------------
+// Test if SBF is Encapsulated Output containing NMEA
+//---------------------------------------------------
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     return ((scratchPad->sbfID == 4097) && (parse->buffer[14] == 4));
 }
 
-//----------------------------------------
-//----------------------------------------
+//-----------------------------------------------------
+// Test if SBF is Encapsulated Output containing RTCMv3
+//-----------------------------------------------------
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse)
 {
     SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;

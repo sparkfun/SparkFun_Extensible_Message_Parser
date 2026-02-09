@@ -188,8 +188,8 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
         sempPrintString(output, " (");
         sempPrintDecimalU32(output, parse->length);
         sempPrintString(output, ") bytes, bad checksum, received 0x");
-        output(parse->buffer[parse->length - 2]);
-        output( parse->buffer[parse->length - 1]);
+        sempPrintChar(output, parse->buffer[parse->length - 2]);
+        sempPrintChar(output,  parse->buffer[parse->length - 1]);
         sempPrintString(output, ", computed: ");
         sempPrintHex0x02xLn(output, parse->crc);
     }

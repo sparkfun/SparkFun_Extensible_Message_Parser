@@ -7,169 +7,28 @@
 */
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
-
-#include "../Common/output.ino"
-#include "../Common/dumpBuffer.ino"
-#include "../Common/reportFatalError.ino"
-
-//----------------------------------------
-// Constants
-//----------------------------------------
-
-// Build the table listing all of the parsers
-SEMP_PARSER_DESCRIPTION * parserTable[] =
-{
-    &sempUbloxParserDescription
-};
-const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-// Provide some valid and invalid u-blox messages
-const uint8_t rawDataStream[] =
-{
-    // Invalid data - must skip over
-    0, 1, 2, 3, 4, 5, 6, 7,                         //     0
-
-    // Valid u-blox messages
-    0xb5, 0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x24, //     8
-    0x01, 0x00, 0x08, 0x30, 0x02, 0x00, 0x55, 0x55,
-    0x95, 0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x55, 0x00, 0x40, 0xbd, 0x52, 0x45, 0x5c,
-    0x9e, 0xa3, 0xea, 0x40, 0x40, 0xee, 0x75, 0x45,
-    0xaa, 0xaa, 0x00, 0x40, 0x3f, 0x85, 0x20, 0xc1,
-
-                                        0xb5, 0x62, //  0x38
-    0x02, 0x13, 0x28, 0x00, 0x02, 0x05, 0x05, 0x00,
-    0x08, 0x49, 0x02, 0x43, 0x55, 0x55, 0x95, 0x00,
-    0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x00, 0x40, 0xbd, 0x52, 0x00, 0x80, 0x9e, 0xa3,
-    0x2a, 0x00, 0x00, 0x00, 0x30, 0xb2, 0xaa, 0xaa,
-    0x00, 0x40, 0x7f, 0x0a, 0xff, 0xb4,
-
-                                        0xb5, 0x62, //  0x68
-    0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05, 0x00,
-    0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95, 0x00,
-    0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x00, 0x40, 0xbd, 0x52, 0x00, 0x80, 0x9e, 0xa3,
-    0x2a, 0x00, 0x00, 0x00, 0x30, 0xb2, 0xaa, 0xaa,
-    0x00, 0x40, 0x7f, 0x0a, 0xfa, 0x15,
-
-
-                                              0xb5, //  0x98
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x02, 0x00,
-    0x03, 0x04, 0x0d, 0x02, 0x00, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0x92, 0x8a,
-
-                                              0xb5, //  0xb8
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x0c, 0x02,
-    0x06, 0x04, 0x5b, 0x02, 0x43, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0x32, 0x18,
-
-                                              0xb5, //  0xd8
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x03, 0x00,
-    0x0c, 0x04, 0x11, 0x02, 0x00, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0xa0, 0xaa,
-
-    // Invalid second sync byte
-    0xb5, 1, 2, 3, 4, 5, 6, 7,                      //  0xf8
-
-    // Valid u-blox message
-                                              0xb5, // 0x100
-    0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05,
-    0x00, 0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95,
-    0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x00, 0x40, 0xbd, 0x52, 0x00, 0x00, 0xe5,
-    0xa3, 0x2a, 0x00, 0x00, 0x00, 0xf6, 0x8e, 0xaa,
-    0xaa, 0x00, 0x40, 0x3f, 0x50, 0x69, 0x71,
-
-    // Bad checksum
-                                              0xb5, // 0x130
-    0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05,
-    0x00, 0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95,
-    0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x00, 0x40, 0xbd, 0x52, 0x00, 0x00, 0xe5,
-    0xa3, 0x2a, 0x00, 0x00, 0x00, 0xf6, 0x8e, 0xaa,
-    0xaa, 0x00, 0x40, 0x3f, 0x50, 0x69, 0x70,
-
-    // Message too long - needs BUFFER_LENGTH of at least 100 bytes
-    // Valid u-blox NAV-PVT message // 0x160
-    0xB5,0x62,0x01,0x07,0x5C,0x00, // Header
-    0x50,0x32,0x20,0x17,0xE3,0x07,0x0A,0x11, // Payload
-    0x0B,0x2E,0x08,0x37,0x0F,0x00,0x00,0x00,
-    0x2E,0x3A,0x01,0x00,0x03,0x01,0xEA,0x0F,
-    0x46,0x4E,0x44,0x04,0xFE,0x81,0x90,0x1E,
-    0x03,0x9A,0x03,0x00,0x46,0xE4,0x02,0x00,
-    0xD3,0x10,0x00,0x00,0xB9,0x1B,0x00,0x00,
-    0x89,0xFF,0xFF,0xFF,0xE5,0xFF,0xFF,0xFF,
-    0x7C,0xFF,0xFF,0xFF,0x7A,0x00,0x00,0x00,
-    0x63,0xFD,0xC9,0x00,0xFF,0x01,0x00,0x00,
-    0x1C,0x0D,0x4B,0x00,0x8D,0x00,0x00,0x00,
-    0xB8,0x41,0x47,0x3D,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    0x9D,0x7C // Checksum
-};
-
-// Number of bytes in the rawDataStream
-#define RAW_DATA_BYTES      sizeof(rawDataStream)
+#include "ESP32.h"
+#include "SAMD21.h"
+#include "SAMD51.h"
 
 //----------------------------------------
 // Locals
 //----------------------------------------
 
-// Account for the largest u-blox messages
-uint8_t buffer[3080];
-uint32_t dataOffset;
-SEMP_PARSE_STATE *parse;
-
-//------------------------------------------------------------------------------
-// Test routines
-//------------------------------------------------------------------------------
+bool runTests;
 
 //----------------------------------------
 // Application entry point used to initialize the system
 //----------------------------------------
 void setup()
 {
-    size_t bufferLength;
-
-    delay(1000);
-
-    Serial.begin(115200);
+    initUart();
     sempPrintLn(output);
     sempPrintStringLn(output, "UBLOX_Test example sketch");
     sempPrintLn(output);
 
-    // Verify the buffer size
-    bufferLength = sempGetBufferLength(parserTable, parserCount);
-    if (sizeof(buffer) < bufferLength)
-    {
-        sempPrintString(output, "Set buffer size to >= ");
-        sempPrintDecimalI32Ln(output, bufferLength);
-        reportFatalError("Fix the buffer size!");
-    }
-
-    // Initialize the parser
-    parse = sempBeginParser("UBLOX_Test", parserTable, parserCount, buffer,
-                            bufferLength, processMessage, output, output);
-    if (!parse)
-        reportFatalError("Failed to initialize the parser");
-
-    // Obtain a raw data stream from somewhere
-    sempPrintString(output, "Raw data stream: ");
-    sempPrintDecimalI32(output, RAW_DATA_BYTES);
-    sempPrintStringLn(output, " bytes");
-
-    // The raw data stream is passed to the parser one byte at a time
-    sempDebugOutputEnable(parse, output);
-    for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
-
-    // Done parsing the data
-    sempStopParser(&parse);
-    sempPrintStringLn(output, "All done");
+    // Run the tests
+    runTests = true;
 }
 
 //----------------------------------------
@@ -177,55 +36,28 @@ void setup()
 //----------------------------------------
 void loop()
 {
-}
+    // Keep the system running
+    petWDT();
 
-//----------------------------------------
-// Call back from within parser, for end of message
-// Process a complete message incoming from parser
-//----------------------------------------
-void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
-{
-    static bool displayOnce = true;
-    uint32_t offset;
-
-    // Display the raw message
-    sempPrintLn(output);
-    offset = dataOffset + 1 - parse->length;
-    sempPrintString(output, "Valid u-blox message: ");
-    sempPrintDecimalI32(output, parse->length);
-    sempPrintString(output, " bytes at ");
-    sempPrintHex0x08x(output, offset);
-    sempPrintString(output, " (");
-    sempPrintDecimalI32(output, offset);
-    sempPrintCharLn(output, ')');
-    dumpBuffer(parse->buffer, parse->length);
-
-    // Display the parser state
-    if (displayOnce)
+    // Determine if a character was input
+    if (Serial)
     {
-        displayOnce = false;
-        sempPrintLn(output);
-        sempPrintParserConfiguration(parse, output);
+        if (Serial.available())
+        {
+            Serial.read();
+
+            // If so, run the tests again
+            runTests = true;
+        }
     }
 
-    // Test UBX data parse routines
-    if (sempUbloxGetMessageClass(parse) == 0x01) // Class: NAV
-        if (sempUbloxGetMessageId(parse) == 0x07) // ID: PVT
+    // Run the tests when requested
+    if (runTests)
     {
-        sempPrintStringLn(output, "UBX-NAV-PVT:");
-        sempPrintString(output, "Payload Length: ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetPayloadLength(parse));
-        sempPrintString(output, "iTOW:  ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetU4(parse, 0));
-        sempPrintString(output, "Year:  ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetU2(parse, 4));
-        sempPrintString(output, "Month: ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetU1(parse, 6));
-        sempPrintString(output, "Day:   ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetU1(parse, 7));
-        sempPrintString(output, "Latitude: ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetI4(parse, 28));
-        sempPrintString(output, "Longitude: ");
-        sempPrintDecimalI32Ln(output, sempUbloxGetI4(parse, 24));
+        runTests = false;
+
+        // Run the tests
+        parserTests();
+        sempPrintStringLn(output, "All done");
     }
 }

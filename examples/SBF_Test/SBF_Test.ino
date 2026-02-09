@@ -43,13 +43,14 @@ void loop()
     // Determine if a character was input
     if (Serial)
     {
-        if (Serial.available())
-        {
-            Serial.read();
-
-            // If so, run the tests again
-            runTests = true;
-        }
+        sempPrintString(output, "TOW: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU4(parse, 8));
+        sempPrintString(output, "Mode: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 14));
+        sempPrintString(output, "Error: ");
+        sempPrintDecimalI32Ln(output, sempSbfGetU1(parse, 15));
+        Serial.printf("Latitude: %.8g\r\n", sempSbfGetF8(parse, 16) * 180.0 / PI);
+        Serial.printf("Longitude: %.8g\r\n", sempSbfGetF8(parse, 24) * 180.0 / PI);
     }
 
     // Run the tests when requested

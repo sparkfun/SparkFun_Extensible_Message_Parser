@@ -13,6 +13,10 @@
 #include "SAMD51.h"
 
 //----------------------------------------
+// Constants
+//----------------------------------------
+
+//----------------------------------------
 // Locals
 //----------------------------------------
 
@@ -23,13 +27,13 @@ bool runTests;
 //----------------------------------------
 void setup()
 {
-    initUart();
-    sempPrintLn(output);
-    sempPrintStringLn(output, "SBF_Test example sketch");
-    sempPrintLn(output);
+  initUart();
+  sempPrintLn(output);
+  sempPrintStringLn(output, "SBF_Test example sketch");
+  sempPrintLn(output);
 
-    // Run the tests
-    runTests = true;
+  // Run the tests
+  runTests = true;
 }
 
 //----------------------------------------
@@ -37,28 +41,28 @@ void setup()
 //----------------------------------------
 void loop()
 {
-    // Keep the system running
-    petWDT();
+  // Keep the system running
+  petWDT();
 
-    // Determine if a character was input
-    if (Serial)
+  // Determine if a character was input
+  if (Serial)
+  {
+    if (Serial.available())
     {
-        if (Serial.available())
-        {
-            Serial.read();
+      Serial.read();
 
-            // If so, run the tests again
-            runTests = true;
-        }
+      // If so, run the tests again
+      runTests = true;
     }
+  }
 
-    // Run the tests when requested
-    if (runTests)
-    {
-        runTests = false;
+  // Run the tests when requested
+  if (runTests)
+  {
+    runTests = false;
 
-        // Run the tests
-        parserTests();
-        sempPrintStringLn(output, "All done");
-    }
+    // Run the tests
+    parserTests();
+    sempPrintStringLn(output, "All done");
+  }
 }

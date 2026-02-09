@@ -7,257 +7,58 @@
 */
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
-
-//----------------------------------------
-// Constants
-//----------------------------------------
-
-// Build the table listing all of the parsers
-SEMP_PARSE_ROUTINE const parserTable[] =
-{
-    sempUbloxPreamble
-};
-const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-const char * const parserNames[] =
-{
-    "U-Blox parser"
-};
-const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
-
-// Provide some valid and invalid u-blox messages
-const uint8_t rawDataStream[] =
-{
-    // Invalid data - must skip over
-    0, 1, 2, 3, 4, 5, 6, 7,                         //     0
-
-    // Valid u-blox messages
-    0xb5, 0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x24, //     8
-    0x01, 0x00, 0x08, 0x30, 0x02, 0x00, 0x55, 0x55,
-    0x95, 0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x55, 0x00, 0x40, 0xbd, 0x52, 0x45, 0x5c,
-    0x9e, 0xa3, 0xea, 0x40, 0x40, 0xee, 0x75, 0x45,
-    0xaa, 0xaa, 0x00, 0x40, 0x3f, 0x85, 0x20, 0xc1,
-
-                                        0xb5, 0x62, //  0x38
-    0x02, 0x13, 0x28, 0x00, 0x02, 0x05, 0x05, 0x00,
-    0x08, 0x49, 0x02, 0x43, 0x55, 0x55, 0x95, 0x00,
-    0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x00, 0x40, 0xbd, 0x52, 0x00, 0x80, 0x9e, 0xa3,
-    0x2a, 0x00, 0x00, 0x00, 0x30, 0xb2, 0xaa, 0xaa,
-    0x00, 0x40, 0x7f, 0x0a, 0xff, 0xb4,
-
-                                        0xb5, 0x62, //  0x68
-    0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05, 0x00,
-    0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95, 0x00,
-    0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x00, 0x40, 0xbd, 0x52, 0x00, 0x80, 0x9e, 0xa3,
-    0x2a, 0x00, 0x00, 0x00, 0x30, 0xb2, 0xaa, 0xaa,
-    0x00, 0x40, 0x7f, 0x0a, 0xfa, 0x15,
-
-
-                                              0xb5, //  0x98
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x02, 0x00,
-    0x03, 0x04, 0x0d, 0x02, 0x00, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0x92, 0x8a,
-
-                                              0xb5, //  0xb8
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x0c, 0x02,
-    0x06, 0x04, 0x5b, 0x02, 0x43, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0x32, 0x18,
-
-                                              0xb5, //  0xd8
-    0x62, 0x02, 0x13, 0x18, 0x00, 0x06, 0x03, 0x00,
-    0x0c, 0x04, 0x11, 0x02, 0x00, 0x00, 0x80, 0xc1,
-    0x2b, 0x00, 0x1c, 0x01, 0x00, 0x00, 0xd8, 0x11,
-    0x03, 0x03, 0x00, 0xc6, 0x09, 0xa0, 0xaa,
-
-    // Invalid second sync byte
-    0xb5, 1, 2, 3, 4, 5, 6, 7,                      //  0xf8
-
-    // Valid u-blox message
-                                              0xb5, // 0x100
-    0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05,
-    0x00, 0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95,
-    0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x00, 0x40, 0xbd, 0x52, 0x00, 0x00, 0xe5,
-    0xa3, 0x2a, 0x00, 0x00, 0x00, 0xf6, 0x8e, 0xaa,
-    0xaa, 0x00, 0x40, 0x3f, 0x50, 0x69, 0x71,
-
-    // Bad checksum
-                                              0xb5, // 0x130
-    0x62, 0x02, 0x13, 0x28, 0x00, 0x02, 0x09, 0x05,
-    0x00, 0x08, 0x40, 0x02, 0x43, 0x55, 0x55, 0x95,
-    0x00, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-    0x55, 0x00, 0x40, 0xbd, 0x52, 0x00, 0x00, 0xe5,
-    0xa3, 0x2a, 0x00, 0x00, 0x00, 0xf6, 0x8e, 0xaa,
-    0xaa, 0x00, 0x40, 0x3f, 0x50, 0x69, 0x70,
-
-    // Message too long - needs BUFFER_LENGTH of at least 100 bytes
-    // Valid u-blox NAV-PVT message // 0x160
-    0xB5,0x62,0x01,0x07,0x5C,0x00, // Header
-    0x50,0x32,0x20,0x17,0xE3,0x07,0x0A,0x11, // Payload
-    0x0B,0x2E,0x08,0x37,0x0F,0x00,0x00,0x00,
-    0x2E,0x3A,0x01,0x00,0x03,0x01,0xEA,0x0F,
-    0x46,0x4E,0x44,0x04,0xFE,0x81,0x90,0x1E,
-    0x03,0x9A,0x03,0x00,0x46,0xE4,0x02,0x00,
-    0xD3,0x10,0x00,0x00,0xB9,0x1B,0x00,0x00,
-    0x89,0xFF,0xFF,0xFF,0xE5,0xFF,0xFF,0xFF,
-    0x7C,0xFF,0xFF,0xFF,0x7A,0x00,0x00,0x00,
-    0x63,0xFD,0xC9,0x00,0xFF,0x01,0x00,0x00,
-    0x1C,0x0D,0x4B,0x00,0x8D,0x00,0x00,0x00,
-    0xB8,0x41,0x47,0x3D,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    0x9D,0x7C // Checksum
-};
-
-// Number of bytes in the rawDataStream
-#define RAW_DATA_BYTES      sizeof(rawDataStream)
-
-// Account for the largest u-blox messages
-#define BUFFER_LENGTH   48
+#include "Arduino_Boards.h"
+#include "ESP32.h"
+#include "SAMD21.h"
+#include "SAMD51.h"
 
 //----------------------------------------
 // Locals
 //----------------------------------------
 
-uint32_t dataOffset;
-SEMP_PARSE_STATE *parse;
+bool runTests;
 
 //----------------------------------------
-// Test routine
+// Application entry point used to initialize the system
 //----------------------------------------
-
-// Initialize the system
 void setup()
 {
-    delay(1000);
+    initUart();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "UBLOX_Test example sketch");
+    sempPrintLn(output);
 
-    Serial.begin(115200);
-    Serial.println();
-    Serial.println("UBLOX_Test example sketch");
-    Serial.println();
-
-    // Initialize the parser
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, BUFFER_LENGTH, processMessage, "UBLOX_Test");
-    if (!parse)
-        reportFatalError("Failed to initialize the parser");
-
-    // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
-
-    // The raw data stream is passed to the parser one byte at a time
-    sempEnableDebugOutput(parse);
-    for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
-
-    // Done parsing the data
-    sempStopParser(&parse);
+    // Run the tests
+    runTests = true;
 }
 
-// Main loop processing after system is initialized
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
-}
+    // Keep the system running
+    petWDT();
 
-// Call back from within parser, for end of message
-// Process a complete message incoming from parser
-void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
-{
-    static bool displayOnce = true;
-    uint32_t offset;
-
-    // Display the raw message
-    Serial.println();
-    offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid u-blox message: %d bytes at 0x%08x (%d)\r\n",
-                  parse->length, offset, offset);
-    dumpBuffer(parse->buffer, parse->length);
-
-    // Display the parser state
-    if (displayOnce)
+    // Determine if a character was input
+    if (Serial)
     {
-        displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        if (Serial.available())
+        {
+            Serial.read();
+
+            // If so, run the tests again
+            runTests = true;
+        }
     }
 
-    // Test UBX data parse routines
-    if (sempUbloxGetMessageClass(parse) == 0x01) // Class: NAV
-        if (sempUbloxGetMessageId(parse) == 0x07) // ID: PVT
+    // Run the tests when requested
+    if (runTests)
     {
-        Serial.println("UBX-NAV-PVT:");
-        Serial.printf("Payload Length: %d\r\n", sempUbloxGetPayloadLength(parse));
-        Serial.printf("iTOW:  %ld\r\n", sempUbloxGetU4(parse, 0));
-        Serial.printf("Year:  %d\r\n", sempUbloxGetU2(parse, 4));
-        Serial.printf("Month: %d\r\n", sempUbloxGetU1(parse, 6));
-        Serial.printf("Day:   %d\r\n", sempUbloxGetU1(parse, 7));
-        Serial.printf("Latitude: %ld\r\n", sempUbloxGetI4(parse, 28));
-        Serial.printf("Longitude: %ld\r\n", sempUbloxGetI4(parse, 24));
-    }
-}
+        runTests = false;
 
-// Display the contents of a buffer
-void dumpBuffer(const uint8_t *buffer, uint16_t length)
-{
-    int bytes;
-    const uint8_t *end;
-    int index;
-    uint16_t offset;
-
-    end = &buffer[length];
-    offset = 0;
-    while (buffer < end)
-    {
-        // Determine the number of bytes to display on the line
-        bytes = end - buffer;
-        if (bytes > (16 - (offset & 0xf)))
-            bytes = 16 - (offset & 0xf);
-
-        // Display the offset
-        Serial.printf("0x%08lx: ", offset);
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf("   ");
-
-        // Display the data bytes
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%02x ", buffer[index]);
-
-        // Separate the data bytes from the ASCII
-        for (; index < (16 - (offset & 0xf)); index++)
-            Serial.printf("   ");
-        Serial.printf(" ");
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf(" ");
-
-        // Display the ASCII values
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
-        Serial.printf("\r\n");
-
-        // Set the next line of data
-        buffer += bytes;
-        offset += bytes;
-    }
-}
-
-// Print the error message every 15 seconds
-void reportFatalError(const char *errorMsg)
-{
-    while (1)
-    {
-        Serial.print("HALTED: ");
-        Serial.print(errorMsg);
-        Serial.println();
-        sleep(15);
+        // Run the tests
+        parserTests();
+        sempPrintStringLn(output, "All done");
     }
 }

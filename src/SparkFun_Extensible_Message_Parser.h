@@ -15,7 +15,14 @@ License: MIT. Please see LICENSE.md for more details
 // Constants
 //----------------------------------------
 
-#define SEMP_MINIMUM_BUFFER_LENGTH      32
+#define SEMP_ALIGNMENT_MASK        3
+
+//----------------------------------------
+// Macros
+//----------------------------------------
+
+// Align x to multiples of 8: 0->0; 1->8; 8->8; 9->16
+#define SEMP_ALIGN(x)   ((x + SEMP_ALIGNMENT_MASK) & (~SEMP_ALIGNMENT_MASK))
 
 //----------------------------------------
 // Externals
@@ -36,212 +43,162 @@ extern const uint32_t semp_u32Crc32Table[];
 // Forward type declaration
 typedef struct _SEMP_PARSE_STATE *P_SEMP_PARSE_STATE;
 
-// Parse routine
-typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, // Parser state
-                                   uint8_t data); // Incoming data byte
+// Bad CRC callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns true when the CRC calculation fails otherwise returns false
+//   if the alternate CRC or checksum calculation is successful.
+//
+// Normally this routine pointer is set to nullptr and sempInvalidData is
+// called.  The parser calls the badCrcCallback routine when the default
+// CRC or checksum calculation fails.  This allows an upper layer to adjust
+// the CRC calculation if necessary.  Alternatively the upper layer can call
+// sempInvalidData.
+typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse);
 
 // CRC callback routine
-typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, // Parser state
-                                     uint8_t dataByte); // Data byte
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: Next byte of data from the data strream
+//
+// Outputs:
+//   Returns true if the parser accepted and processed the incoming data
+//   and false if this data is for another parser
+typedef uint32_t (*SEMP_COMPUTE_CRC)(P_SEMP_PARSE_STATE parse, uint8_t dataByte);
 
-// Normally this routine pointer is set to nullptr.  The parser calls
-// the badCrcCallback routine when the default CRC or checksum calculation
-// fails.  This allows an upper layer to adjust the CRC calculation if
-// necessary.  Return true when the CRC calculation fails otherwise
-// return false if the alternate CRC or checksum calculation is successful.
-typedef bool (*SEMP_BAD_CRC_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
-
+// End of message callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   type: Index into parseTable designating the type of parser
+//
 // Call the application back at specified routine address.  Pass in the
 // parse data structure containing the buffer containing the address of
 // the message data and the length field containing the number of valid
 // data bytes in the buffer.
+typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, uint16_t type);
+
+// Get a zero terminated state name string from the parser
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
 //
-// The type field contains the index into the parseTable which specifies
-// the parser that successfully processed the incoming data.
+// Outputs
+//   Returns the address of the zero terminated state name string
+typedef const char * (*SEMP_GET_STATE_NAME)(const struct _SEMP_PARSE_STATE * parse);
+
+// Invalid data callback
 //
-// End of message callback routine
-typedef void (*SEMP_EOM_CALLBACK)(P_SEMP_PARSE_STATE parse, // Parser state
-                                  uint16_t type); // Index into parseTable
+// Inputs:
+//   buffer: Address of a buffer containing the invalid data
+//   length: Number of bytes in the buffer
+//
+// Normally this routine pointer is set to nullptr.  When this routine is
+// specified, it is called when ever the parser detects an invalid data
+// stream.  All invalid data is passed to this routine and the parser
+// goes back to scanning for the first preamble byte.
+typedef void (*SEMP_INVALID_DATA_CALLBACK)(const uint8_t * buffer, size_t length);
 
-// Invalid data callback:
-// This is parser-specific and should be added to the parser scrtachpad if
-// needed. Normally this routine pointer is set to nullptr. The parser calls
-// the invalidDataCallback routine when the data is recognised as invalid.
-// This allows an upper layer to pass the data to a second parser if needed.
-// This is useful when parsing SBF which is interspersed in raw SPARTN L-Band data.
-// Data is passed to the SBF parser first. Any data which is invalid SBF is passed
-// to a separate SPARTN parser via this callback.
-typedef void (*SEMP_INVALID_DATA_CALLBACK)(P_SEMP_PARSE_STATE parse); // Parser state
+// Call the application to output a single character
+//
+// Inputs:
+//   buffer: Address of a buffer of data to output
+//   length: Number of bytes of data to output
+typedef void (*SEMP_OUTPUT)(uint8_t * buffer, size_t length);
 
-// Length of the sentence name array
-#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
+// Parse routine
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: Next byte of data from the data strream
+//
+// Outputs:
+//   Returns true if the parser accepted and processed the incoming data
+//   and false if this data is for another parser
+typedef bool (*SEMP_PARSE_ROUTINE)(P_SEMP_PARSE_STATE parse, uint8_t data);
 
-// NMEA parser scratch area
-typedef struct _SEMP_NMEA_VALUES
+// Display the contents of the scratch pad
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a routine to output a character
+typedef void (*SEMP_PRINT_SCRATCH_PAD)(P_SEMP_PARSE_STATE parse,
+                                       SEMP_OUTPUT output);
+
+// Describe the parser
+typedef const struct _SEMP_PARSER_DESCRIPTION
 {
-    uint8_t sentenceName[SEMP_NMEA_SENTENCE_NAME_BYTES]; // Sentence name
-    uint8_t sentenceNameLength; // Length of the sentence name
-} SEMP_NMEA_VALUES;
-
-// RTCM parser scratch area
-typedef struct _SEMP_RTCM_VALUES
-{
-    uint32_t crc;            // Copy of CRC calculation before CRC bytes
-    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
-    uint16_t message;        // Message number
-} SEMP_RTCM_VALUES;
-
-// UBLOX payload offset
-#define SEMP_UBLOX_PAYLOAD_OFFSET   6
-
-// UBLOX parser scratch area
-typedef struct _SEMP_UBLOX_VALUES
-{
-    uint16_t bytesRemaining; // Bytes remaining in field
-    uint8_t messageClass;    // Message Class
-    uint8_t messageId;       // Message ID
-    uint16_t payloadLength;  // Payload length
-    uint8_t ck_a;            // U-blox checksum byte 1
-    uint8_t ck_b;            // U-blox checksum byte 2
-} SEMP_UBLOX_VALUES;
-
-// Unicore parser scratch area
-typedef struct _SEMP_UNICORE_BINARY_VALUES
-{
-    uint32_t crc;            // Copy of CRC calculation before CRC bytes
-    uint16_t bytesRemaining; // Bytes remaining in RTCM CRC calculation
-} SEMP_UNICORE_BINARY_VALUES;
-
-// Length of the sentence name array
-#define SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES    16
-
-// Unicore hash (#) parser scratch area
-typedef struct _SEMP_UNICORE_HASH_VALUES
-{
-    uint8_t bytesRemaining;     // Bytes remaining in field
-    uint8_t checksumBytes;      // Number of checksum bytes
-    uint8_t sentenceName[SEMP_UNICORE_HASH_SENTENCE_NAME_BYTES]; // Sentence name
-    uint8_t sentenceNameLength; // Length of the sentence name
-} SEMP_UNICORE_HASH_VALUES;
-
-// SPARTN parser scratch area
-typedef struct _SEMP_SPARTN_VALUES
-{
-    uint16_t frameCount;
-    uint16_t crcBytes;
-    uint16_t TF007toTF016;
-
-    uint8_t messageType;
-    uint16_t payloadLength;
-    uint16_t EAF;
-    uint8_t crcType;
-    uint8_t frameCRC;
-    uint8_t messageSubtype;
-    uint16_t timeTagType;
-    uint16_t authenticationIndicator;
-    uint16_t embeddedApplicationLengthBytes;
-} SEMP_SPARTN_VALUES;
-
-// SBF parser scratch area
-typedef struct _SEMP_SBF_VALUES
-{
-    uint16_t expectedCRC;
-    uint16_t computedCRC;
-    uint16_t sbfID = 0;
-    uint8_t sbfIDrev = 0;
-    uint16_t length;
-    uint16_t bytesRemaining;
-    // Invalid data callback routine (parser-specific)
-    SEMP_INVALID_DATA_CALLBACK invalidDataCallback = (SEMP_INVALID_DATA_CALLBACK)nullptr;
-} SEMP_SBF_VALUES;
-
-// Overlap the scratch areas since only one parser is active at a time
-typedef union
-{
-    SEMP_NMEA_VALUES nmea;       // NMEA specific values
-    SEMP_RTCM_VALUES rtcm;       // RTCM specific values
-    SEMP_UBLOX_VALUES ublox;     // U-blox specific values
-    SEMP_UNICORE_BINARY_VALUES unicoreBinary; // Unicore binary specific values
-    SEMP_UNICORE_HASH_VALUES unicoreHash;     // Unicore hash (#) specific values
-    SEMP_SPARTN_VALUES spartn;   // SPARTN specific values
-    SEMP_SBF_VALUES sbf;         // SBF specific values
-} SEMP_SCRATCH_PAD;
+    const char * parserName;        // Name of the parser
+    SEMP_PARSE_ROUTINE preamble;    // Routine to handle the preamble
+    SEMP_GET_STATE_NAME getStateName; // Routine to translate state into state name
+    SEMP_PRINT_SCRATCH_PAD printScratchPad; // Routine to display the scratch pad
+    size_t minimumParseAreaBytes;   // Minimum parse area size for best operation
+    size_t scratchPadBytes;         // Required scratch pad size
+    size_t payloadOffset;           // Offset to the first byte of the payload
+} SEMP_PARSER_DESCRIPTION;
 
 // Maintain the operating state of one or more parsers processing a raw
 // data stream.
 typedef struct _SEMP_PARSE_STATE
 {
-    const SEMP_PARSE_ROUTINE *parsers; // Table of parsers
-    const char * const *parserNames;   // Table of parser names
+    SEMP_PARSER_DESCRIPTION **parsers; // Table of parsers
     SEMP_PARSE_ROUTINE state;      // Parser state routine
     SEMP_EOM_CALLBACK eomCallback; // End of message callback routine
     SEMP_BAD_CRC_CALLBACK badCrc;  // Bad CRC callback routine
     SEMP_COMPUTE_CRC computeCrc;   // Routine to compute the CRC when set
-    const char *parserName;        // Name of parser
+    SEMP_INVALID_DATA_CALLBACK invalidData; // Invalid data callback
+    const char *parserName;        // Name of parser table
     void *scratchPad;              // Parser scratchpad area
-    Print *printError;             // Class to use for error output
-    Print *printDebug;             // Class to use for debug output
+    SEMP_OUTPUT debugOutput;       // Output a debug character
+    SEMP_OUTPUT errorOutput;       // Output an error character
     bool verboseDebug;             // Verbose debug output (default: false)
     uint32_t crc;                  // RTCM computed CRC
     uint8_t *buffer;               // Buffer containing the message
-    uint32_t bufferLength;         // Length of the buffer in bytes
+    size_t bufferLength;           // Length of the buffer in bytes
     uint16_t parserCount;          // Number of parsers
-    uint16_t length;               // Message length including line termination
+    size_t length;                 // Message length including line termination
     uint16_t type;                 // Active parser type, a value of
                                    // parserCount means searching for preamble
-    bool abortNmeaOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
-    bool abortHashOnNonPrintable;  // Abort Unicore hash parsing on the arrival of a non-printable char
-    bool usePSRAM;                 // Enable / disable PSRAM use
+    bool nmeaAbortOnNonPrintable;  // Abort NMEA parsing on the arrival of a non-printable char
+    bool unicoreHashAbortOnNonPrintable; // Abort Unicore hash parsing on the arrival of a non-printable char
 } SEMP_PARSE_STATE;
 
-//----------------------------------------
-// Protocol specific types
-//----------------------------------------
-
-// Define the Unicore message header
-typedef struct _SEMP_UNICORE_HEADER
-{
-    uint8_t syncA;            // 0xaa
-    uint8_t syncB;            // 0x44
-    uint8_t syncC;            // 0xb5
-    uint8_t cpuIdlePercent;   // CPU Idle Percentage 0-100
-    uint16_t messageId;       // Message ID
-    uint16_t messageLength;   // Message Length
-    uint8_t referenceTime;    // Reference time（GPST or BDST)
-    uint8_t timeStatus;       // Time status
-    uint16_t weekNumber;      // Reference week number
-    uint32_t secondsOfWeek;   // GPS seconds from the beginning of the
-                              // reference week, accurate to the millisecond
-    uint32_t RESERVED;
-
-    uint8_t releasedVersion;  // Release version
-    uint8_t leapSeconds;      // Leap sec
-    uint16_t outputDelayMSec; // Output delay time, ms
-} SEMP_UNICORE_HEADER;
-
-//----------------------------------------
-// Support routines
-//----------------------------------------
-
-int sempAsciiToNibble(int data);
-
-//----------------------------------------
-// Public routines - Called by the application
-//----------------------------------------
-
-// The general routines are used to allocate and free the parse data
-// structure and to pass data bytes to the parser.
+//------------------------------------------------------------------------------
+// SparkFun Extensible Message Parser API routines - Called by the applications
 //
-// The routine sempBeginParser verifies the parameters and allocates an
+// The general API routines are used to locate and release the parse data
+// structure, pass data bytes to the parser and control output.
+//------------------------------------------------------------------------------
+
+// Initialize the parser
+//
+// Inputs:
+//   parserTableName: Address of a zero terminated parserTable name
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   parserCount:  Number of entries in the parseTable
+//   buffer: Address of the buffer to be used for parser state, scratchpad
+//   bufferLength: Number of bytes in the buffer
+//   oemCallback: Address of a callback routine to handle the parsed messages
+//   errorOutput: Address of a routine to output an error character, maybe nullptr
+//   debugOutput: Address of a routine to output a debug character, myabe nullptr
+//   badCrcCallback: Address of a routine to handle bad CRC messages
+//
+// Outputs:
+//   Returns the address of a SEMP_PARSE_STATE structure when successful
+//   or nullptr upon error
+//
+// The routine sempBeginParser verifies the parameters and locates an
 // SEMP_PARSE_STATE data structure, returning the pointer when successful
 // or nullptr upon failure.
 //
-// Two array addresses are passed to the sempBeginParser routine along
-// with the number of entries in each of these arrays.  The array
-// parseTable lists the preamble routines associated with each of the
-// parsers that will process the raw data stream.  The array
-// parserNameTable contains a name string for each of the parsers which
-// can be output during debugging.
+// An array addresses are passed to the sempBeginParser routine along
+// with the number of entries in the arrays.  The array parseTable lists
+// the descriptions for each of the parsers that will process the raw data
+// stream.  The parser name in the description contains a name string
+// which can be output during debugging.
 //
 // Some of the parsers require additional storage to successfully parse
 // the data stream.  The value scratchPadBytes must contain the maximum
@@ -265,24 +222,374 @@ int sempAsciiToNibble(int data);
 // are detected by a parser the name string value gets displayed to
 // identify the parse data structure associated with the error.  This
 // is helpful when multiple parsers are running at the same time.
-//
-// The printError value specifies a class address to use when printing
-// errors.  A nullptr value prevents any error from being output.  It is
-// possible to call sempSetPrintError later to enable or disable error
-// output.
-//
-// Allocate and initialize a parse data structure
-SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
-                                   uint16_t parserCount, \
-                                   const char * const *parserNameTable, \
-                                   uint16_t parserNameCount, \
-                                   uint16_t scratchPadBytes, \
-                                   size_t bufferLength, \
-                                   SEMP_EOM_CALLBACK eomCallback, \
-                                   const char *name, \
-                                   Print *printError = &Serial,
-                                   Print *printDebug = (Print *)nullptr,
+SEMP_PARSE_STATE * sempBeginParser(const char *parserTableName,
+                                   SEMP_PARSER_DESCRIPTION **parseTable,
+                                   uint16_t parserCount,
+                                   uint8_t * buffer,
+                                   size_t bufferLength,
+                                   SEMP_EOM_CALLBACK eomCallback,
+                                   SEMP_OUTPUT errorOutput = nullptr,
+                                   SEMP_OUTPUT debugOutput = nullptr,
                                    SEMP_BAD_CRC_CALLBACK badCrcCallback = (SEMP_BAD_CRC_CALLBACK)nullptr);
+
+// Disable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+void sempDebugOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+//   verbose: Enable or disable verbose debug output
+void sempDebugOutputEnable(SEMP_PARSE_STATE *parse,
+                           SEMP_OUTPUT output,
+                           bool verbose = false);
+
+// Disable error output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+void sempErrorOutputDisable(SEMP_PARSE_STATE *parse);
+
+// Enable debug output
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Address of a SEMP_OUTPUT routine to use for output
+void sempErrorOutputEnable(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output);
+
+// Compute the necessary buffer length in bytes to support the scratch pad
+// and parse buffer lengths.
+//
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   parserCount:  Number of entries in the parseTable
+//   desiredParseAreaSize: Desired size of the parse area in bytes
+//   output: Device to output any debug messages, may be nullptr
+//
+// Outputs:
+//    Returns the number of bytes needed for the buffer that contains
+//    the SEMP parser state, a scratch pad area and the parse buffer
+size_t sempGetBufferLength(SEMP_PARSER_DESCRIPTION **parserTable,
+                           uint16_t parserCount,
+                           size_t desiredParseAreaSize = 0,
+                           SEMP_OUTPUT output = nullptr);
+
+// Translates state value into an ASCII state name
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated state name string
+const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
+
+// Translate the type value into an ASCII type name
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated type name string
+const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type);
+
+// The routine sempParseNextByte is used to parse the next data byte
+// from a raw data stream.
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: Next data byte in the stream of data to parse
+void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
+
+// The routine sempParseNextBytes is used to parse the next bytes
+// from a raw data stream.
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: Address of a buffr containing the next data bytes in the
+//         stream of data to parse
+//   len: Number of data bytes to parse
+void sempParseNextBytes(SEMP_PARSE_STATE *parse,
+                        const uint8_t *data,
+                        size_t len);
+
+// Set the invalid data callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE * structure
+//   invalidDataCallback: Routine to call to handle invalid data
+void sempSetInvalidDataCallback(SEMP_PARSE_STATE *parse,
+                                SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
+
+// The routine sempStopParser frees the parse data structure and sets
+// the pointer value to nullptr to prevent future references to the
+// structure.
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE * structure
+void sempStopParser(SEMP_PARSE_STATE **parse);
+
+//------------------------------------------------------------------------------
+// Payload access routines - Called by the applications
+//
+// The payload access routines are used by the application to extract
+// values from the payload.
+//------------------------------------------------------------------------------
+
+// Get a 32-bit floating point value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+float sempGetF4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 32-bit floating point value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 64-bit floating point (double) value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+double sempGetF8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a 64-bit floating point (double) value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the floating point value
+double sempGetF8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int8_t sempGetI1(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int8_t sempGetI1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int16_t sempGetI2(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int16_t sempGetI2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int32_t sempGetI4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 32-bit signed number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value plus one if the value is
+//   negative
+int sempGetI4Digits(int32_t value);
+
+// Get an 32-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int32_t sempGetI4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int64_t sempGetI8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 64-bit signed number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value plus one if the value is
+//   negative
+int sempGetI8Digits(int64_t value);
+
+// Get an 64-bit integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the integer value
+int64_t sempGetI8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a zero terminated string address
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the address of the string
+const char * sempGetString(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get a zero terminated string address
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the address of the string
+const char * sempGetStringNoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint8_t sempGetU1(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 8-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint8_t sempGetU1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint16_t sempGetU2(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 16-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 32-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint32_t sempGetU4(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 32-bit unsigned number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value
+int sempGetU4Digits(uint32_t value);
+
+// Get an 32-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get an 64-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint64_t sempGetU8(const SEMP_PARSE_STATE *parse, size_t offset);
+
+// Get the number of digits in a 64-bit unsigned number
+//
+// Inputs:
+//   value: Count the digits of this value
+//
+// Outputs:
+//   Returns the number of digits in the value
+int sempGetU8Digits(uint64_t value);
+
+// Get an 64-bit unsigned integer value
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   offset:  Offsets from the packetNumber of entries in the parseTable
+//
+// Outputs:
+//    Returns the unsigned integer value
+uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset);
+
+//------------------------------------------------------------------------------
+// SparkFun Extensible Message Parser API routines - Called by parsers
+//
+// These API routines should only be called by parsers when processing
+// the incoming data stream
+//------------------------------------------------------------------------------
+
+// Get a path for an error character
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a routine to output an error character
+SEMP_OUTPUT sempGetErrorOutput(const SEMP_PARSE_STATE *parse);
 
 // Only parsers should call the routine sempFirstByte when an unexpected
 // byte is found in the data stream.  Parsers will also set the state
@@ -291,128 +598,554 @@ SEMP_PARSE_STATE * sempBeginParser(const SEMP_PARSE_ROUTINE *parseTable, \
 // determine if the parser recognizes the data byte as the preamble for
 // a message.  The first parser to acknowledge the preamble byte by
 // returning true is the parser that gets called for the following data.
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   data: First data byte in the stream of data to parse
+//
+// Outputs:
+//   Returns true if a parser was found to process this data and false
+//   when none of the parsers recgonize the input data
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data);
 
-// The routine sempParseNextByte is used to parse the next data byte
-// from a raw data stream.
-void sempParseNextByte(SEMP_PARSE_STATE *parse, uint8_t data);
+// Perform the invalid data callback
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+void sempInvalidDataCallback(SEMP_PARSE_STATE *parse);
 
-// The routine sempParseNextBytes is used to parse the next bytes
-// from a raw data stream.
-void sempParseNextBytes(SEMP_PARSE_STATE *parse, uint8_t *data, uint16_t len);
+//------------------------------------------------------------------------------
+// Print support routines - Called by parsers and some applications
+//
+// The print support routines are used to output debug and error messages.
+//------------------------------------------------------------------------------
 
-// The routine sempStopParser frees the parse data structure and sets
-// the pointer value to nullptr to prevent future references to the
-// freed structure.
-void sempStopParser(SEMP_PARSE_STATE **parse);
+// Convert an ASCII character (0-9, A-F, or a-f) into a 4-bit binary value
+//
+// Inputs:
+//   data: An ASCII character (0-9, A-F, or a-f)
+//
+// Outputs:
+//   If successful, returns the 4-bit binary value matching the character
+//   or -1 upon failure for invalid characters
+int sempAsciiToNibble(int data);
+
+// Display the contents of a buffer in hexadecimal and ASCII
+//
+// Inputs:
+//   output: Address of a routine to output a character
+//   buffer: Address of a buffer containing the data to display
+//   length: Number of bytes of data to display
+void sempDumpBuffer(SEMP_OUTPUT output, const uint8_t *buffer, size_t length);
+
+// Convert nibble to ASCII
+//
+// Inputs:
+//   nibble: Binary value, the low 4 bits will be converted into ASCII
+//
+// Outputs:
+//   Returns an ASCII character representing the lower 4 bits of the input
+//   value (0-9, a-f)
+char sempNibbleToAscii(int nibble);
+
+// Display an address value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   addr: A binary value to display as ASCII hex characters
+void sempPrintAddr(SEMP_OUTPUT output, const void *addr);
+
+// Display an address value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   addr: A binary value to display as ASCII hex characters
+void sempPrintAddrLn(SEMP_OUTPUT output, const void *addr);
+
+// Display a character
+//
+// Inputs:
+//   output: Device on which to output the string
+//   character: The character value to output
+void sempPrintChar(SEMP_OUTPUT output, char character);
+
+// Display a character followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   character: The character value to output
+void sempPrintCharLn(SEMP_OUTPUT output, char character);
+
+// Display a signed 32-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI32(SEMP_OUTPUT output, int32_t value, int fieldWidth = 0);
+
+// Display a signed 32-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI32Ln(SEMP_OUTPUT output, int32_t value, int fieldWidth = 0);
+
+// Display a signed 64-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI64(SEMP_OUTPUT output, int64_t value, int fieldWidth = 0);
+
+// Display a signed 64-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalI64Ln(SEMP_OUTPUT output, int64_t value, int fieldWidth = 0);
+
+// Display an unsigned 32-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU32(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display an unsigned 32-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU32Ln(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display an unsigned 64-bit decimal value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU64(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display an unsigned 64-bit decimal value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as decimal
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintDecimalU64Ln(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display an 8-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
+
+// Display an 8-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
+
+// Display a 16-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
+
+// Display a 16-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
+
+// Display a 32-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display a 32-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display a 64-bit hex value
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display a 64-bit hex value followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display an 8-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x02x(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
+
+// Display an 8-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x02xLn(SEMP_OUTPUT output, uint8_t value, int fieldWidth = 0);
+
+// Display a 16-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x04x(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
+
+// Display a 16-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x04xLn(SEMP_OUTPUT output, uint16_t value, int fieldWidth = 0);
+
+// Display a 32-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x08x(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display a 32-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x08xLn(SEMP_OUTPUT output, uint32_t value, int fieldWidth = 0);
+
+// Display a 64-bit hex value with a 0x prefix
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x016x(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display a 64-bit hex value with a 0x prefix followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   value: A binary value to display as ASCII hex characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintHex0x016xLn(SEMP_OUTPUT output, uint64_t value, int fieldWidth = 0);
+
+// Display a carriage return and line feed
+//
+// Inputs:
+//   output: Device on which to output the string
+void sempPrintLn(SEMP_OUTPUT output);
 
 // Print the contents of the parser data structure
-void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse, Print *print = &Serial);
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   output: Addess of a routine to output a debug character
+void sempPrintParserConfiguration(SEMP_PARSE_STATE *parse,
+                                  SEMP_OUTPUT output = nullptr);
 
-// Format and print a line of text
-void sempPrintf(Print *print, const char *format, ...);
+// Display a string
+//
+// Inputs:
+//   output: Device on which to output the string
+//   string: A zero terminated string of characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintString(SEMP_OUTPUT output, const char * string, int fieldWidth = 0);
 
-// Print a line of text
-void sempPrintln(Print *print, const char *string = "");
+// Display a string followed by a CR and LF
+//
+// Inputs:
+//   output: Device on which to output the string
+//   string: A zero terminated string of characters
+//   fieldWidth: Zero = Just output the value
+//               Positive = Right justify the value
+//               Negative = Left justify the value
+void sempPrintStringLn(SEMP_OUTPUT output, const char * string, int fieldWidth = 0);
 
-// Translates state value into an ASCII state name
-const char * sempGetStateName(const SEMP_PARSE_STATE *parse);
+//------------------------------------------------------------------------------
+// Testing support routines - Must only be called by testing routines
+//------------------------------------------------------------------------------
 
-// Translate the type value into an ASCII type name
-const char * sempGetTypeName(SEMP_PARSE_STATE *parse, uint16_t type);
+//----------------------------------------
+// Compute the buffer size required without a parse area (overhead)
+//
+// Inputs:
+//   parseTable: Address of an array of SEMP_PARSER_DESCRIPTION addresses
+//   parserCount:  Number of entries in the parseTable
+//   parseAread: Address to receive the minimum parse area size
+//   payloadOffset: Address to receive the maximum payload offset
+//
+// Outputs:
+//   Returns the buffer overhead bytes required for the parser state and
+//   scratch pad area
+//----------------------------------------
+size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
+                                 uint16_t parserCount,
+                                 size_t *parseAreaBytes,
+                                 size_t *payloadOffset,
+                                 size_t *parseStateBytes,
+                                 size_t *scratchPadBytes);
 
-// Enable or disable debug output
-void sempEnableDebugOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial, bool verbose = false);
-void sempDisableDebugOutput(SEMP_PARSE_STATE *parse);
+//------------------------------------------------------------------------------
+// Parser notes
+//------------------------------------------------------------------------------
 
-// Enable or disable error output
-void sempEnableErrorOutput(SEMP_PARSE_STATE *parse, Print *print = &Serial);
-void sempDisableErrorOutput(SEMP_PARSE_STATE *parse);
+// The parser routines are placed in reverse order to define the routine before
+// its use and eliminate forward declarations.  Removing the forward declaration
+// helps reduce the exposure of the routines to the application layer.  Typically
+// only the parser description is made public.
 
-// Additional settings to help cope with erroneous data
+//------------------------------------------------------------------------------
+// NMEA
+//------------------------------------------------------------------------------
+
+// Length of the sentence name array
+#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempNmeaParserDescription;
+
 // Abort NMEA on a non-printable char
-void sempAbortNmeaOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
-// Abort Unicore hash on a non-printable char
-void sempAbortHashOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempNmeaAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
 
-// The parser routines within a parser module are typically placed in
-// reverse order within the module.  This lets the routine declaration
-// proceed the routine use and eliminates the need for forward declaration.
-// Removing the forward declaration helps reduce the exposure of the
-// routines to the application layer.  As such only the preamble routine
-// should need to be listed below.
-
-// NMEA parse routines
-bool sempNmeaPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-bool sempNmeaFindFirstComma(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempNmeaGetStateName(const SEMP_PARSE_STATE *parse);
+// Get the sentence name
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated sentence name string
 const char * sempNmeaGetSentenceName(const SEMP_PARSE_STATE *parse);
 
+//------------------------------------------------------------------------------
+// RTCM
+//------------------------------------------------------------------------------
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempRtcmParserDescription;
+
 // RTCM parse routines
-bool sempRtcmPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempRtcmGetStateName(const SEMP_PARSE_STATE *parse);
 uint16_t sempRtcmGetMessageNumber(const SEMP_PARSE_STATE *parse);
-uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
-int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, uint16_t start, uint16_t width);
+int64_t sempRtcmGetSignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
+uint64_t sempRtcmGetUnsignedBits(const SEMP_PARSE_STATE *parse, size_t start, size_t width);
 
-// u-blox parse routines
-bool sempUbloxPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempUbloxGetStateName(const SEMP_PARSE_STATE *parse);
-uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
-uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
-uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
-uint16_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
-uint8_t sempUbloxGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset); // offset is the Payload offset
-uint16_t sempUbloxGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint32_t sempUbloxGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint64_t sempUbloxGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int8_t sempUbloxGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int16_t sempUbloxGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int32_t sempUbloxGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int64_t sempUbloxGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-float sempUbloxGetR4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-double sempUbloxGetR8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-const char *sempUbloxGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
+//------------------------------------------------------------------------------
+// SBF
+//------------------------------------------------------------------------------
 
-// Unicore binary parse routines
-bool sempUnicoreBinaryPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempUnicoreBinaryGetStateName(const SEMP_PARSE_STATE *parse);
-void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
-
-// Unicore hash (#) parse routines
-bool sempUnicoreHashPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempUnicoreHashGetStateName(const SEMP_PARSE_STATE *parse);
-void sempUnicoreHashPrintHeader(SEMP_PARSE_STATE *parse);
-const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
-
-// SPARTN parse routines
-bool sempSpartnPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempSpartnGetStateName(const SEMP_PARSE_STATE *parse);
-uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempSbfParserDescription;
 
 // SBF parse routines
-bool sempSbfPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-const char * sempSbfGetStateName(const SEMP_PARSE_STATE *parse);
-void sempSbfSetInvalidDataCallback(const SEMP_PARSE_STATE *parse, SEMP_INVALID_DATA_CALLBACK invalidDataCallback);
 uint16_t sempSbfGetBlockNumber(const SEMP_PARSE_STATE *parse);
 uint8_t sempSbfGetBlockRevision(const SEMP_PARSE_STATE *parse);
-uint8_t sempSbfGetU1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint16_t sempSbfGetU2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint32_t sempSbfGetU4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-uint64_t sempSbfGetU8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int8_t sempSbfGetI1(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int16_t sempSbfGetI2(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int32_t sempSbfGetI4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-int64_t sempSbfGetI8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-float sempSbfGetF4(const SEMP_PARSE_STATE *parse, uint16_t offset);
-double sempSbfGetF8(const SEMP_PARSE_STATE *parse, uint16_t offset);
-const char *sempSbfGetString(const SEMP_PARSE_STATE *parse, uint16_t offset);
+const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
+uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
+
+// Get the ID value
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the ID value
+uint16_t sempSbfGetId(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedNMEA(const SEMP_PARSE_STATE *parse);
 bool sempSbfIsEncapsulatedRTCMv3(const SEMP_PARSE_STATE *parse);
-uint16_t sempSbfGetEncapsulatedPayloadLength(const SEMP_PARSE_STATE *parse);
-const uint8_t *sempSbfGetEncapsulatedPayload(const SEMP_PARSE_STATE *parse);
 
-// Determine if PSRAM is being used by SEMP
-bool sempPsramInUse(const SEMP_PARSE_STATE *parse);
+// Get the length
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the length
+uint16_t sempSbfGetLength(const SEMP_PARSE_STATE *parse);
+
+// Deprecated duplicate routines
+#define sempSbfGetF4        sempGetF4
+#define sempSbfGetF8        sempGetF8
+#define sempSbfGetI1        sempGetI1
+#define sempSbfGetI2        sempGetI2
+#define sempSbfGetI4        sempGetI4
+#define sempSbfGetI8        sempGetI8
+#define sempSbfGetString    sempGetString
+#define sempSbfGetU1        sempGetU1
+#define sempSbfGetU2        sempGetU2
+#define sempSbfGetU4        sempGetU4
+#define sempSbfGetU8        sempGetU8
+
+//------------------------------------------------------------------------------
+// SPARTN
+//------------------------------------------------------------------------------
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempSpartnParserDescription;
+
+// Get the message subtype number
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the message subtype number
+uint8_t sempSpartnGetMessageSubType(const SEMP_PARSE_STATE *parse);
+
+// Get the message number
+//
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//    Returns the message type number
+uint8_t sempSpartnGetMessageType(const SEMP_PARSE_STATE *parse);
+
+//------------------------------------------------------------------------------
+// u-blox
+//------------------------------------------------------------------------------
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempUbloxParserDescription;
+
+uint8_t sempUbloxGetMessageClass(const SEMP_PARSE_STATE *parse);
+uint8_t sempUbloxGetMessageId(const SEMP_PARSE_STATE *parse);
+uint16_t sempUbloxGetMessageNumber(const SEMP_PARSE_STATE *parse); // |- Class (8 bits) -||- ID (8 bits) -|
+size_t sempUbloxGetPayloadLength(const SEMP_PARSE_STATE *parse);
+
+// Deprecated duplicate routines
+#define sempUbloxGetI1      sempGetI1
+#define sempUbloxGetI2      sempGetI2
+#define sempUbloxGetI4      sempGetI4
+#define sempUbloxGetI8      sempGetI8
+#define sempUbloxGetR4      sempGetF4
+#define sempUbloxGetR8      sempGetF8
+#define sempUbloxGetString  sempGetString
+#define sempUbloxGetU1      sempGetU1
+#define sempUbloxGetU2      sempGetU2
+#define sempUbloxGetU4      sempGetU4
+#define sempUbloxGetU8      sempGetU8
+
+//------------------------------------------------------------------------------
+// Unicore Binary
+//------------------------------------------------------------------------------
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempUnicoreBinaryParserDescription;
+
+void sempUnicoreBinaryPrintHeader(SEMP_PARSE_STATE *parse);
+
+//------------------------------------------------------------------------------
+// Unicore Hash (#)
+//------------------------------------------------------------------------------
+
+// Data structure to list in the parserTable passed to sempBeginParser
+extern SEMP_PARSER_DESCRIPTION sempUnicoreHashParserDescription;
+
+// Abort Unicore hash on a non-printable char
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//   abort: Set true to abort or false to continue when detecting a
+//          non-printable character in the input stream
+void sempUnicoreHashAbortOnNonPrintable(SEMP_PARSE_STATE *parse, bool abort = true);
+
+// Unicore hash (#) parse routines
+// Inputs:
+//   parse: Address of a SEMP_PARSE_STATE structure
+//
+// Outputs:
+//   Returns the address of a zero terminated sentence name string
+const char * sempUnicoreHashGetSentenceName(const SEMP_PARSE_STATE *parse);
 
 #endif  // __SPARKFUN_EXTENSIBLE_MESSAGE_PARSER_H__

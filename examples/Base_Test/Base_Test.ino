@@ -5,225 +5,59 @@
 */
 
 #include <SparkFun_Extensible_Message_Parser.h> //http://librarymanager/All#SparkFun_Extensible_Message_Parser
-
-//----------------------------------------
-// Constants
-//----------------------------------------
-
-const uint8_t rawDataStream[] =
-{
-    0, 1, 2, 3, 4, 5
-};
-
-#define RAW_DATA_BYTES      sizeof(rawDataStream)
-
-// Build the table listing all of the parsers
-bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data);
-SEMP_PARSE_ROUTINE const parserTable[] =
-{
-    noParserPreamble
-};
-const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
-
-const char * const parserNames[] =
-{
-    "No parser"
-};
-const int parserNameCount = sizeof(parserNames) / sizeof(parserNames[0]);
+#include "Arduino_Boards.h"
+#include "ESP32.h"
+#include "SAMD21.h"
+#include "SAMD51.h"
 
 //----------------------------------------
 // Locals
 //----------------------------------------
 
-uint32_t dataOffset;
-SEMP_PARSE_STATE *parse;
+bool runTests;
 
 //----------------------------------------
-// Test routine
+// Application entry point used to initialize the system
 //----------------------------------------
-
 void setup()
 {
-    delay(1000);
+    initUart();
+    sempPrintLn(output);
+    sempPrintStringLn(output, "Base_Test example sketch");
+    sempPrintLn(output);
 
-    Serial.begin(115200);
-    Serial.println();
-    Serial.println("Base_Test example sketch");
-    Serial.println();
-
-    // No parser table specified
-    parse = sempBeginParser(nullptr, parserCount,
-                            parserNames, parserNameCount,
-                            0, 3000, processMessage, "No parser");
-    if (parse)
-        reportFatalError("Failed to detect parserTable set to nullptr (0)");
-
-    // Parser count is zero
-    parse = sempBeginParser(parserTable, 0,
-                            parserNames, parserCount,
-                            0, 3000, processMessage, "No parser");
-    if (parse)
-        reportFatalError("Failed because parserCount != nameTableCount");
-
-    // No parser name table specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            nullptr, parserNameCount,
-                            0, 3000, processMessage, "No parser");
-    if (parse)
-        reportFatalError("Failed to detect parserNameTable set to nullptr (0)");
-
-    // Parser name count is zero
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, 0,
-                            0, 3000, processMessage, "No parser");
-    if (parse)
-        reportFatalError("Failed because parserCount != nameTableCount");
-
-    // No end-of-message callback specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, nullptr, "No parser");
-    if (parse)
-        reportFatalError("Failed to detect eomCallback set to nullptr (0)");
-
-    // No name specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, processMessage, nullptr);
-    if (parse)
-        reportFatalError("Failed to detect parserName set to nullptr (0)");
-
-    // No name specified
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, SEMP_MINIMUM_BUFFER_LENGTH, processMessage, "");
-    if (parse)
-        reportFatalError("Failed to detect parserName set to empty string");
-
-    // Initialize the parser, specify a large scratch pad area
-    // Display the parser allocation
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            4091, 3000, processMessage, "Base Test Example");
-    if (!parse)
-        reportFatalError("Failed to initialize the parser");
-    Serial.println("Parser successfully initialized");
-
-    // Display the parser configuration
-    Serial.printf("&parserTable: %p\r\n", parserTable);
-    Serial.printf("&parserNames: %p\r\n", parserNames);
-    sempPrintParserConfiguration(parse, &Serial);
-
-    // Display the parse state
-    Serial.printf("Parse State: %s\r\n", sempGetStateName(parse));
-
-    // Display the parser type
-    Serial.printf("Parser Name: %s\r\n", sempGetTypeName(parse, parse->type));
-
-    // Obtain a raw data stream from somewhere
-    sempEnableDebugOutput(parse);
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
-
-    // The raw data stream is passed to the parser one byte at a time
-    for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
-
-    // Done parsing the data
-    sempStopParser(&parse);
-    Serial.println("Parser shutdown");
+    // Run the tests
+    runTests = true;
 }
 
+//----------------------------------------
+// Main loop processing, repeatedly called after system is initialized by setup
+//----------------------------------------
 void loop()
 {
-}
+    // Keep the system running
+    petWDT();
 
-// Check for the preamble
-bool noParserPreamble(SEMP_PARSE_STATE *parse, uint8_t data)
-{
-    // Preamble not found
-    return false;
-}
-
-// Call back from within parser, for end of message
-// Process a complete message incoming from parser
-void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
-{
-    static bool displayOnce = true;
-    uint32_t offset;
-
-    // Display the raw message
-    Serial.println();
-    offset = dataOffset + 1 - parse->length;
-    Serial.printf("Valid Message: %d bytes at 0x%08x (%d)\r\n",
-                  parse->length, offset, offset);
-    dumpBuffer(parse->buffer, parse->length);
-
-    // Display the parser state
-    if (displayOnce)
+    // Determine if a character was input
+    if (Serial)
     {
-        displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        if (Serial.available())
+        {
+            Serial.read();
+
+            // If so, run the tests again
+            runTests = true;
+        }
     }
-}
 
-// Display the contents of a buffer
-void dumpBuffer(uint8_t *buffer, uint16_t length)
-{
-    int bytes;
-    uint8_t *end;
-    int index;
-    uint16_t offset;
-
-    end = &buffer[length];
-    offset = 0;
-    while (buffer < end)
+    // Run the tests when requested
+    if (runTests)
     {
-        // Determine the number of bytes to display on the line
-        bytes = end - buffer;
-        if (bytes > (16 - (offset & 0xf)))
-            bytes = 16 - (offset & 0xf);
+        runTests = false;
 
-        // Display the offset
-        Serial.printf("0x%08lx: ", offset);
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf("   ");
-
-        // Display the data bytes
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%02x ", buffer[index]);
-
-        // Separate the data bytes from the ASCII
-        for (; index < (16 - (offset & 0xf)); index++)
-            Serial.printf("   ");
-        Serial.printf(" ");
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf(" ");
-
-        // Display the ASCII values
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
-        Serial.printf("\r\n");
-
-        // Set the next line of data
-        buffer += bytes;
-        offset += bytes;
-    }
-}
-
-// Print the error message every 15 seconds
-void reportFatalError(const char *errorMsg)
-{
-    while (1)
-    {
-        Serial.print("HALTED: ");
-        Serial.print(errorMsg);
-        Serial.println();
-        sleep(15);
+        // Run the tests
+        justifyTests();
+        parserTests();
+        sempPrintStringLn(output, "All done");
     }
 }

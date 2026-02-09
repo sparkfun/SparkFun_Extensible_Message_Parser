@@ -13,9 +13,9 @@
 //----------------------------------------
 
 // Build the table listing all of the parsers
-SEMP_PARSE_ROUTINE const parserTable[] =
+const SEMP_PARSER_DESCRIPTION * parserTable[] =
 {
-    sempSpartnPreamble
+    &sempSpartnParserDescription
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 
@@ -42,19 +42,19 @@ const uint8_t rawDataStream[] =
     0x3E, 0x1D, 0x9C, 0x37, 0x7E, 0x9A, 0x5E, 0xE8, 0x39, 0xC6, 0x0E, 0xBD, 0xDE, 0xA9, 0x7D, 0x43,
     0xB9, 0x17, 0x96, 0xC7, 0x04, 0xAF, 0x9A, 0x4B, 0xBF, 0x70, 0x65, 0xC3, 0x66, 0x80, 0xCA, 0x45,
     0x20, 0x16, 0x41, 0xA4, 0x14, 0x2B, 0x5B, 0xD4, 0x11, 0x6F, 0x64,
-    
+
     // OCB 0 - invalid header CRC
     0x73, 0x01, 0x16, 0x69, 0x08, 0xBF, 0x33, 0xD0, 0x78, 0x6C, 0x2D, 0x48, 0x2A, 0x18, 0xF0, 0xC0,
     0x3E, 0x1D, 0x9C, 0x37, 0x7E, 0x9A, 0x5E, 0xE8, 0x39, 0xC6, 0x0E, 0xBD, 0xDE, 0xA9, 0x7D, 0x43,
     0xB9, 0x17, 0x96, 0xC7, 0x04, 0xAF, 0x9A, 0x4B, 0xBF, 0x70, 0x65, 0xC3, 0x66, 0x80, 0xCA, 0x45,
     0x20, 0x16, 0x41, 0xA4, 0x14, 0x2B, 0x5B, 0xD4, 0x11, 0x6F, 0x64,
-    
+
     // OCB 0 - invalid CRC
     0x73, 0x00, 0x16, 0x69, 0x08, 0xBF, 0x33, 0xD0, 0x78, 0x6C, 0x2D, 0x48, 0x2A, 0x18, 0xF0, 0xC0,
     0xFF, 0x1D, 0x9C, 0x37, 0x7E, 0x9A, 0x5E, 0xE8, 0x39, 0xC6, 0x0E, 0xBD, 0xDE, 0xA9, 0x7D, 0x43,
     0xB9, 0x17, 0x96, 0xC7, 0x04, 0xAF, 0x9A, 0x4B, 0xBF, 0x70, 0x65, 0xC3, 0x66, 0x80, 0xCA, 0x45,
     0x20, 0x16, 0x41, 0xA4, 0x14, 0x2B, 0x5B, 0xD4, 0x11, 0x6F, 0x64,
-    
+
     // GAD 0
     0x73, 0x04, 0x5F, 0xEE, 0x05, 0x0A, 0xF0, 0x6C,
     0x25, 0x08, 0x16, 0xE5, 0xF1, 0x12, 0xCD, 0xD9, 0x4B, 0x42, 0x7A, 0xA0, 0xB5, 0x19, 0x45, 0x44,
@@ -70,7 +70,7 @@ const uint8_t rawDataStream[] =
     0x04, 0x1A, 0xFF, 0xD6, 0x7D, 0x4C, 0x1B, 0xDB, 0x85, 0xE5, 0xBD, 0xC3, 0xB4, 0x34, 0xEA, 0xD8,
     0xFC, 0x39, 0x28, 0x7A, 0x4C, 0x03, 0x12, 0x23, 0x21, 0x4D, 0xFD, 0xE4, 0x61, 0x38, 0xEE, 0xF9,
     0x1B, 0x36, 0xFA, 0xAC,
-    
+
     // Invalid data - must skip over
     0, 1, 2, 3, 4, 5, 6, 7,                         //     0
 
@@ -111,48 +111,54 @@ const uint8_t rawDataStream[] =
     0x56, 0x60, 0xB0, 0xFE, 0x18, 0x94, 0x40, 0xB3, 0xC1, 0x6E, 0x5D, 0x5D, 0x90, 0xD7, 0x72, 0x46,
     0x58, 0x95, 0x5C, 0x69, 0x1C, 0x64, 0x1A, 0xA6, 0x5C, 0xF3, 0xCD, 0x32, 0xFA, 0x00, 0xCE, 0xD7,
     0x71, 0x5E, 0x8D,
-    
+
 };
 
 // Number of bytes in the rawDataStream
 #define RAW_DATA_BYTES      (sizeof(rawDataStream) / sizeof(rawDataStream[0]))
 
-// Account for the largest SPARTN messages
-#define BUFFER_LENGTH   1100
-
 //----------------------------------------
 // Locals
 //----------------------------------------
 
+// Account for the largest SPARTN messages
+uint8_t buffer[3096];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
-//----------------------------------------
-// Test routine
-//----------------------------------------
+//------------------------------------------------------------------------------
+// Test routines
+//------------------------------------------------------------------------------
 
-// Initialize the system
-void setup()
+//----------------------------------------
+// Run the parser tests
+//----------------------------------------
+void parserTests()
 {
-    delay(1000);
+    size_t bufferLength;
 
-    Serial.begin(115200);
-    Serial.println();
-    Serial.println("SPARTN_Test example sketch");
-    Serial.println();
+    // Verify the buffer size
+    bufferLength = sempGetBufferLength(parserTable, parserCount);
+    if (sizeof(buffer) < bufferLength)
+    {
+        sempPrintString(output, "Set buffer size to >= ");
+        sempPrintDecimalI32Ln(output, bufferLength);
+        reportFatalError("Fix the buffer size!");
+    }
 
     // Initialize the parser
-    parse = sempBeginParser(parserTable, parserCount,
-                            parserNames, parserNameCount,
-                            0, BUFFER_LENGTH, processMessage, "SPARTN_Test");
+    parse = sempBeginParser("SPARTN_Test", parserTable, parserCount, buffer,
+                            bufferLength, processMessage, output, output);
     if (!parse)
         reportFatalError("Failed to initialize the parser");
 
     // Obtain a raw data stream from somewhere
-    Serial.printf("Raw data stream: %d bytes\r\n", RAW_DATA_BYTES);
+    sempPrintString(output, "Raw data stream: ");
+    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
-    sempEnableDebugOutput(parse);
+    sempDebugOutputEnable(parse, output);
     for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
         // Update the parser state based on the incoming byte
         sempParseNextByte(parse, rawDataStream[dataOffset]);
@@ -161,23 +167,18 @@ void setup()
     sempStopParser(&parse);
 }
 
-// Main loop processing after system is initialized
-void loop()
-{
-    // Nothing to do here...
-}
-
+//----------------------------------------
 // Call back from within parser, for end of message
 // Process a complete message incoming from parser
+//----------------------------------------
 void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
 {
-    SEMP_SCRATCH_PAD *scratchPad = (SEMP_SCRATCH_PAD *)parse->scratchPad;
-    
     static bool displayOnce = true;
+    uint8_t messageType;
     uint32_t offset;
 
     // Display the raw message
-    Serial.println();
+    sempPrintLn(output);
     offset = dataOffset + 1 - parse->length;
     const char *typeName[] = {
         "OCB",
@@ -186,78 +187,43 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
         "BPAC",
         "EAS"
     };
-    Serial.printf("Valid SPARTN message, type %d (%s), subtype %d : %d bytes at 0x%08lx (%ld)\r\n",
-                  scratchPad->spartn.messageType,
-                  scratchPad->spartn.messageType <= 4 ? typeName[scratchPad->spartn.messageType] : "TBD / Proprietary",
-                  scratchPad->spartn.messageSubtype,
-                  parse->length, offset, offset);
-    dumpBuffer(parse->buffer, parse->length);
+    messageType = sempSpartnGetMessageType(parse);
+    sempPrintString(output, "Valid SPARTN message, type ");
+    sempPrintDecimalI32(output, messageType);
+    sempPrintString(output, " (");
+    sempPrintString(output, messageType <= 4 ? typeName[messageType] : "TBD / Proprietary");
+    sempPrintString(output, "), subtype ");
+    sempPrintDecimalI32(output, sempSpartnGetMessageSubType(parse));
+    sempPrintString(output, " : ");
+    sempPrintDecimalI32(output, parse->length);
+    sempPrintString(output, " bytes at ");
+    sempPrintHex0x08x(output, offset);
+    sempPrintString(output, " (");
+    sempPrintDecimalI32(output, offset);
+    sempPrintCharLn(output, ')');
+    sempDumpBuffer(output, parse->buffer, parse->length);
 
     // Display the parser state
     if (displayOnce)
     {
         displayOnce = false;
-        Serial.println();
-        sempPrintParserConfiguration(parse, &Serial);
+        sempPrintLn(output);
+        sempPrintParserConfiguration(parse, output);
     }
 }
 
-// Display the contents of a buffer
-void dumpBuffer(const uint8_t *buffer, uint16_t length)
-{
-    int bytes;
-    const uint8_t *end;
-    int index;
-    uint32_t offset;
-
-    end = &buffer[length];
-    offset = 0;
-    while (buffer < end)
-    {
-        // Determine the number of bytes to display on the line
-        bytes = end - buffer;
-        if (bytes > (16 - (offset & 0xf)))
-            bytes = 16 - (offset & 0xf);
-
-        // Display the offset
-        Serial.printf("0x%08lx: ", offset);
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf("   ");
-
-        // Display the data bytes
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%02x ", buffer[index]);
-
-        // Separate the data bytes from the ASCII
-        for (; index < (16 - (offset & 0xf)); index++)
-            Serial.printf("   ");
-        Serial.printf(" ");
-
-        // Skip leading bytes
-        for (index = 0; index < (offset & 0xf); index++)
-            Serial.printf(" ");
-
-        // Display the ASCII values
-        for (index = 0; index < bytes; index++)
-            Serial.printf("%c", ((buffer[index] < ' ') || (buffer[index] >= 0x7f)) ? '.' : buffer[index]);
-        Serial.printf("\r\n");
-
-        // Set the next line of data
-        buffer += bytes;
-        offset += bytes;
-    }
-}
-
+//----------------------------------------
 // Print the error message every 15 seconds
+//
+// Inputs:
+//   errorMsg: Zero-terminated error message string to output every 15 seconds
+//----------------------------------------
 void reportFatalError(const char *errorMsg)
 {
     while (1)
     {
-        Serial.print("HALTED: ");
-        Serial.print(errorMsg);
-        Serial.println();
+        sempPrintString(output, "HALTED: ");
+        sempPrintStringLn(output, errorMsg);
         sleep(15);
     }
 }

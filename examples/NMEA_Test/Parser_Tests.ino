@@ -39,12 +39,12 @@ const uint8_t rawDataStream[] =
     "$GPRMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 421
 
     // Long valid name
-    //123456789012345
-    "$ABCDEFGHIJKLMNO,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,1,00*15\r\n"  // 491
+    //1234567890123456789
+    "$ABCDEFGHIJKLMNOPQRS,210230,A,3855.4487,N,0.0071,W,0.0,076.2,1,00*15\r\n"  // 491
 
     // Name too long
-    //1234567890123456
-    "$ABCDEFGHIJKLMNOP,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130*6A\r\n"  // 561
+    //12345678901234567890
+    "$ABCDEFGHIJKLMNOPQRST,210230,A,3855.4487,N,0.0071,W,0.0,076.2,130*6A\r\n"  // 561
 
     // Invalid character in the sentence name
     "$G@RMC,210230,A,3855.4487,N,09446.0071,W,0.0,076.2,130495,003.8,E*69\r\n"  // 631
@@ -78,7 +78,7 @@ const uint8_t rawDataStream[] =
 //----------------------------------------
 
 // Account for the largest NMEA sentence + CR + LF + zero termination
-uint8_t buffer[174];
+uint8_t buffer[177];
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 

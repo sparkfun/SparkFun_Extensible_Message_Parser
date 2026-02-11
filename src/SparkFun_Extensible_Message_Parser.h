@@ -987,8 +987,8 @@ size_t sempComputeBufferOverhead(SEMP_PARSER_DESCRIPTION **parserTable,
 // NMEA
 //------------------------------------------------------------------------------
 
-// Length of the sentence name array
-#define SEMP_NMEA_SENTENCE_NAME_BYTES    16
+// Length of the sentence name array, large for long sentence names ie, 'PQTMJAMMINGSTATUS'
+#define SEMP_NMEA_SENTENCE_NAME_BYTES    20
 
 // Data structure to list in the parserTable passed to sempBeginParser
 extern SEMP_PARSER_DESCRIPTION sempNmeaParserDescription;

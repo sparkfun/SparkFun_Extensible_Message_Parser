@@ -509,7 +509,6 @@ float sempGetF4(const SEMP_PARSE_STATE *parse, size_t offset)
 float sempGetF4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     float value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -531,7 +530,6 @@ double sempGetF8(const SEMP_PARSE_STATE *parse, size_t offset)
 double sempGetF8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     double value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -553,7 +551,6 @@ int8_t sempGetI1(const SEMP_PARSE_STATE *parse, size_t offset)
 int8_t sempGetI1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     int8_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     value = *(int8_t *)&parse->buffer[offset];
     return value;
 }
@@ -575,7 +572,6 @@ int16_t sempGetI2(const SEMP_PARSE_STATE *parse, size_t offset)
 int16_t sempGetI2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     int16_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -607,7 +603,6 @@ int32_t sempGetI4(const SEMP_PARSE_STATE *parse, size_t offset)
 int32_t sempGetI4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     int32_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -639,7 +634,6 @@ int sempGetI8Digits(int64_t value)
 int64_t sempGetI8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     int64_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -676,7 +670,6 @@ const char * sempGetString(const SEMP_PARSE_STATE *parse, size_t offset)
 //----------------------------------------
 const char * sempGetStringNoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     return (const char *)&parse->buffer[offset];
 }
 
@@ -714,7 +707,6 @@ uint8_t sempGetU1(const SEMP_PARSE_STATE *parse, size_t offset)
 uint8_t sempGetU1NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint8_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     value = *(uint8_t *)&parse->buffer[offset];
     return value;
 }
@@ -736,7 +728,6 @@ uint16_t sempGetU2(const SEMP_PARSE_STATE *parse, size_t offset)
 uint16_t sempGetU2NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint16_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -766,7 +757,6 @@ int sempGetU4Digits(uint32_t value)
 uint32_t sempGetU4NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint32_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }
@@ -806,7 +796,6 @@ int sempGetU8Digits(uint64_t value)
 uint64_t sempGetU8NoOffset(const SEMP_PARSE_STATE *parse, size_t offset)
 {
     uint64_t value;
-    SEMP_PARSER_DESCRIPTION *parserDescription = parse->parsers[parse->type];
     memcpy(&value, &parse->buffer[offset], sizeof(value));
     return value;
 }

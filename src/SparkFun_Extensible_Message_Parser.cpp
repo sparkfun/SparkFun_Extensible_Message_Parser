@@ -373,7 +373,6 @@ void sempErrorOutputEnable(SEMP_PARSE_STATE *parse, SEMP_OUTPUT output)
 //----------------------------------------
 bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    int index;
     SEMP_PARSER_DESCRIPTION *parseDescripion;
 
     if (parse)
@@ -388,7 +387,7 @@ bool sempFirstByte(SEMP_PARSE_STATE *parse, uint8_t data)
         for (parse->type = 0; parse->type < parse->parserCount; parse->type++)
         {
             // Determine if this parser is able to parse this stream
-            parseDescripion = parse->parsers[index];
+            parseDescripion = parse->parsers[parse->type];
             if (parseDescripion->preamble(parse, data))
                 // This parser claims to be able to parse this stream
                 return true;

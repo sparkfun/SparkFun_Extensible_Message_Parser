@@ -126,19 +126,20 @@ typedef struct _DataStream
 {
     size_t length;
     const uint8_t *data;
+    int parser;
 } DataStream;
 
-#define DATA_STREAM_INIT(x, extraBytes)     {sizeof(x) - extraBytes, &x[0]}
+#define DATA_STREAM_INIT(x, extraBytes, parser)     {sizeof(x) - extraBytes, &x[0], parser}
 const DataStream dataStream[] =
 {
-    DATA_STREAM_INIT(nmea_1, 1),
-    DATA_STREAM_INIT(ublox_1, 0),
-    DATA_STREAM_INIT(nmea_2, 1),
-    DATA_STREAM_INIT(ublox_2, 0),
-    DATA_STREAM_INIT(nmea_3, 1),
-    DATA_STREAM_INIT(ublox_3, 0),
-    DATA_STREAM_INIT(nmea_4, 1),
-    DATA_STREAM_INIT(ublox_4, 0)
+    DATA_STREAM_INIT(nmea_1, 1, NMEA_PARSER_INDEX),
+    DATA_STREAM_INIT(ublox_1, 0, UBLOX_PARSER_INDEX),
+    DATA_STREAM_INIT(nmea_2, 1, NMEA_PARSER_INDEX),
+    DATA_STREAM_INIT(ublox_2, 0, UBLOX_PARSER_INDEX),
+    DATA_STREAM_INIT(nmea_3, 1, NMEA_PARSER_INDEX),
+    DATA_STREAM_INIT(ublox_3, 0, UBLOX_PARSER_INDEX),
+    DATA_STREAM_INIT(nmea_4, 1, NMEA_PARSER_INDEX),
+    DATA_STREAM_INIT(ublox_4, 0, UBLOX_PARSER_INDEX)
 };
 
 #define DATA_STREAM_ENTRIES     (sizeof(dataStream) / sizeof(dataStream[0]))
@@ -151,7 +152,9 @@ uint8_t buffer[3099];
 int byteOffset;
 int dataIndex;
 uint32_t dataOffset;
+int expectedParser;
 SEMP_PARSE_STATE *parse;
+volatile int parserMessageCounts[2];
 
 //------------------------------------------------------------------------------
 // Test routines
@@ -192,11 +195,30 @@ void parserTests()
     sempDebugOutputEnable(parse, output);
     for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
     {
+        int previousCount;
+
+        expectedParser = dataStream[dataIndex].parser;
+        previousCount = parserMessageCounts[expectedParser];
         for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)
         {
             // Update the parser state based on the incoming byte
             sempParseNextByte(parse, dataStream[dataIndex].data[byteOffset]);
             dataOffset += 1;
+        }
+
+        // Validate that the message was properly parsed
+        if (parserMessageCounts[expectedParser] == previousCount)
+        {
+            sempPrintString(output, "dataOffset: ");
+            sempPrintDecimalI32Ln(output, dataOffset);
+
+            sempPrintString(output, "byteOffset: ");
+            sempPrintDecimalI32Ln(output, byteOffset);
+
+            sempPrintString(output, "ERROR: ");
+            sempPrintString(output, parserTable[expectedParser]->parserName);
+            sempPrintStringLn(output, " failed to process message!");
+            reportFatalError("Bug in parser or sempFirstByte!");
         }
     }
 
@@ -219,6 +241,9 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
     switch (type) // Index into parserTable array
     {
         case NMEA_PARSER_INDEX:
+            // Account for this message
+            parserMessageCounts[type] = parserMessageCounts[type] + 1;
+
             // Determine the raw data stream offset
             offset = dataOffset + 2 - parse->length;
             byteIndex = byteOffset + 2 - parse->length;
@@ -238,6 +263,10 @@ void processMessage(SEMP_PARSE_STATE *parse, uint16_t type)
             break;
 
         case UBLOX_PARSER_INDEX:
+            // Account for this message
+            parserMessageCounts[type] = parserMessageCounts[type] + 1;
+
+            // Determine the raw data stream offset
             offset = dataOffset + 1 - parse->length;
             sempPrintString(output, "Valid u-blox message: ");
             sempPrintDecimalI32(output, parse->length);

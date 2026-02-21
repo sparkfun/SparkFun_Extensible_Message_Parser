@@ -230,7 +230,6 @@ bool sempSbfPreamble2(SEMP_PARSE_STATE *parse, uint8_t data)
         sempPrintStringLn(output, ") bytes, invalid preamble2");
     }
 
-    SEMP_SBF_VALUES *scratchPad = (SEMP_SBF_VALUES *)parse->scratchPad;
     sempInvalidDataCallback(parse);
     parse->state = sempFirstByte;
     return false;

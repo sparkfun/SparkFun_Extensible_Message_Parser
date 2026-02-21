@@ -66,13 +66,17 @@ typedef struct _SEMP_UNICORE_HASH_VALUES
 // #VERSION,97,GPS,FINE,2282,248561000,0,0,18,676;UM980,R4.10Build7923,HRPT00-S10C-P,2310415000001-MD22B1224962616,ff3bac96f31f9bdd,2022/09/28*7432d4ed
 // CRC is calculated without the # or * characters
 //----------------------------------------
-void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
+bool sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
 {
-    SEMP_OUTPUT output = parse->debugOutput;
+    SEMP_OUTPUT output;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
     uint32_t crc;
     uint32_t crcRx;
     const uint8_t *data;
+    size_t length;
+
+    // Ignore the CR and LF at the end of the buffer
+    length = parse->length - bytesToIgnore;
 
     // Compute the CRC for the message
     crc = 0;
@@ -92,107 +96,146 @@ void sempUnicoreHashValidatCrc(SEMP_PARSE_STATE *parse)
     crcRx |= sempAsciiToNibble(*++data);
 
     // Determine if the CRC is valid
-    if (crc != crcRx)
+    // Should we call badCrc here? I assume not? TODO... 
+    if ((crc == crcRx) && ((length + 2) <= parse->bufferLength))
     {
-        // Display the checksum error
-        if (output)
+        // Always add the carriage return and line feed
+        parse->buffer[length++] = '\r';
+        parse->buffer[length++] = '\n';
+
+        // Zero terminate the Unicore hash (#) sentence, don't count this in the length
+        parse->buffer[length] = 0;
+
+        // Process this Unicore hash (#) sentence
+        parse->length = length;
+        parse->eomCallback(parse, parse->type); // Pass parser array index
+        return true;
+    }
+
+    // Display the error
+    output = parse->debugOutput;
+    if (output)
+    {
+        if ((length + 2) > parse->bufferLength)
         {
+            sempPrintString(output, "ERROR SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore hash (#) buffer is too small,");
+            sempPrintString(output, "increase the buffer size >= ");
+            sempPrintDecimalU32Ln(output, parse->buffer - (uint8_t *)parse + length + 2);
+        }
+        else
+        {
+            // Display the checksum error
             sempPrintString(output, "SEMP ");
             sempPrintString(output, parse->parserName);
             sempPrintString(output, ": Unicore hash (#) ");
             sempPrintString(output, (const char *)scratchPad->sentenceName);
             sempPrintString(output, ", ");
-            sempPrintHex0x04x(output, parse->length);
+            sempPrintHex0x04x(output, length);
             sempPrintString(output, " (");
-            sempPrintDecimalU32(output, parse->length);
+            sempPrintDecimalU32(output, length);
             sempPrintString(output, ") bytes, bad CRC received ");
             sempPrintHex0x08x(output, crcRx);
             sempPrintString(output, ", computed: ");
             sempPrintHex0x02xLn(output, crc);
         }
-        return;
     }
 
-    // Verify that enough space exists in the buffer
-    if ((uint32_t)(parse->length + UNICORE_HASH_BUFFER_OVERHEAD) > parse->bufferLength)
-    {
-        // Sentence too long
-        if (output)
-        {
-            sempPrintString(output, "SEMP ");
-            sempPrintString(output, parse->parserName);
-            sempPrintString(output, ": Unicore hash (#) ");
-            sempPrintString(output, "sentence too long, increase the buffer size >= ");
-            sempPrintDecimalU32Ln(output, parse->buffer - (uint8_t *)parse + parse->length + UNICORE_HASH_BUFFER_OVERHEAD);
-        }
-
-        // Start searching for a preamble byte
-        parse->state = sempFirstByte;
-        return;
-    }
-
-    // Always add the carriage return and line feed
-    parse->buffer[parse->length++] = '\r';
-    parse->buffer[parse->length++] = '\n';
-
-    // Zero terminate the Unicore hash (#) sentence, don't count this in the length
-    parse->buffer[parse->length] = 0;
-
-    // Process this Unicore hash (#) sentence
-    parse->eomCallback(parse, parse->type); // Pass parser array index
+    // The data character is in the buffer, remove it because the caller
+    // passes it to sempFirstByte.
+    parse->length -= 1;
+    sempInvalidDataCallback(parse);
+    return false;
 }
 
 //----------------------------------------
 // Validate the checksum
 //----------------------------------------
-void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
+bool sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
 {
     uint32_t checksum;
-    SEMP_OUTPUT output = parse->debugOutput;
+    size_t length;
+    SEMP_OUTPUT output;
     SEMP_UNICORE_HASH_VALUES *scratchPad = (SEMP_UNICORE_HASH_VALUES *)parse->scratchPad;
 
     // Determine if a CRC was used for this message
     if (scratchPad->checksumBytes > 2)
     {
         // This message is using a CRC instead of a checksum
-        sempUnicoreHashValidatCrc(parse);
-        return;
+        return sempUnicoreHashValidatCrc(parse, bytesToIgnore);
     }
+
+    // Ignore the CR and LF at the end of the buffer
+    length = parse->length - bytesToIgnore;
 
     // Convert the checksum characters into binary
-    checksum = sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
-    checksum |= sempAsciiToNibble(parse->buffer[parse->length - 1]);
+    checksum = sempAsciiToNibble(parse->buffer[length - 2]) << 4;
+    checksum |= sempAsciiToNibble(parse->buffer[length - 1]);
 
     // Validate the checksum
-    if ((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
+    bool validCsum = (checksum == parse->crc);
+    if (!validCsum)
+    {
+        if (parse->badCrc)
+        {
+            // Maintain backward compatibility with earlier versions
+            // Don't include CR/LF in parse->length when calling badCrc
+            parse->length -= bytesToIgnore;
+            validCsum = !parse->badCrc(parse);
+            parse->length += bytesToIgnore; // Restore the length
+        }
+    }
+    if (validCsum && ((length + 2) <= parse->bufferLength))
     {
         // Always add the carriage return and line feed
-        parse->buffer[parse->length++] = '\r';
-        parse->buffer[parse->length++] = '\n';
+        parse->buffer[length++] = '\r';
+        parse->buffer[length++] = '\n';
 
         // Zero terminate the Unicore hash (#) sentence, don't count this in the length
-        parse->buffer[parse->length] = 0;
+        parse->buffer[length] = 0;
 
         // Process this Unicore hash (#) sentence
+        parse->length = length;
         parse->eomCallback(parse, parse->type); // Pass parser array index
+        return true;
     }
-    else if (output)
+
+    // Display the error
+    output = parse->debugOutput;
+    if (output)
     {
-        // Display the checksum error
-        sempPrintString(output, "SEMP ");
-        sempPrintString(output, parse->parserName);
-        sempPrintString(output, ": Unicore hash (#) ");
-        sempPrintString(output, (const char *)scratchPad->sentenceName);
-        sempPrintString(output, ", ");
-        sempPrintHex0x04x(output, parse->length);
-        sempPrintString(output, " (");
-        sempPrintDecimalU32(output, parse->length);
-        sempPrintString(output, ") bytes, bad checksum, received 0x");
-        sempPrintChar(output, parse->buffer[parse->length - 2]);
-        sempPrintChar(output,  parse->buffer[parse->length - 1]);
-        sempPrintString(output, ", computed: ");
-        sempPrintHex0x02xLn(output, parse->crc);
+        if ((length + 2) > parse->bufferLength)
+        {
+            sempPrintString(output, "ERROR SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore Hash buffer is too small, increase >= ");
+            sempPrintDecimalU32Ln(output, parse->buffer - (uint8_t *)parse + length + 2);
+        }
+        else
+        {
+            // Display the checksum error
+            sempPrintString(output, "SEMP ");
+            sempPrintString(output, parse->parserName);
+            sempPrintString(output, ": Unicore hash (#) ");
+            sempPrintString(output, (const char *)scratchPad->sentenceName);
+            sempPrintString(output, ", ");
+            sempPrintHex0x04x(output, length);
+            sempPrintString(output, " (");
+            sempPrintDecimalU32(output, length);
+            sempPrintString(output, ") bytes, bad checksum, received 0x");
+            sempPrintChar(output, parse->buffer[length - 2]);
+            sempPrintChar(output,  parse->buffer[length - 1]);
+            sempPrintString(output, ", computed: ");
+            sempPrintHex0x02xLn(output, parse->crc);
+        }
     }
+
+    // The data character is in the buffer, remove it because the caller
+    // passes it to sempFirstByte.
+    parse->length -= 1;
+    sempInvalidDataCallback(parse);
+    return false;
 }
 
 //----------------------------------------
@@ -200,22 +243,14 @@ void sempUnicoreHashValidateChecksum(SEMP_PARSE_STATE *parse)
 //----------------------------------------
 bool sempUnicoreHashLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
+    // Validate the checksum and pass the sentence to the upper layer
     // Process the LF
-    if (data == '\n')
+    if (sempUnicoreHashValidateChecksum(parse, 2) && (data == '\n'))
     {
-        // Pass the sentence to the upper layer
-        sempUnicoreHashValidateChecksum(parse);
-
         // Start searching for a preamble byte
         parse->state = sempFirstByte;
         return true;
     }
-
-    // Pass the sentence to the upper layer
-    sempUnicoreHashValidateChecksum(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -226,22 +261,14 @@ bool sempUnicoreHashLineFeed(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreHashCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
+    // Validate the checksum and pass the sentence to the upper layer
     // Process the CR
-    if (data == '\r')
+    if (sempUnicoreHashValidateChecksum(parse, 2) && (data == '\r'))
     {
-        // Pass the sentence to the upper layer
-        sempUnicoreHashValidateChecksum(parse);
-
         // Start searching for a preamble byte
         parse->state = sempFirstByte;
         return true;
     }
-
-    // Pass the sentence to the upper layer
-    sempUnicoreHashValidateChecksum(parse);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);
@@ -252,9 +279,6 @@ bool sempUnicoreHashCarriageReturn(SEMP_PARSE_STATE *parse, uint8_t data)
 //----------------------------------------
 bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
 {
-    // Don't add the current character to the length
-    parse->length -= 1;
-
     // Process the line termination
     if (data == '\r')
     {
@@ -267,8 +291,8 @@ bool sempUnicoreHashLineTermination(SEMP_PARSE_STATE *parse, uint8_t data)
         return true;
     }
 
-    // Pass the sentence to the upper layer
-    sempUnicoreHashValidateChecksum(parse);
+    // Validate the checksum and pass the sentence to the upper layer
+    sempUnicoreHashValidateChecksum(parse, 1);
 
     // Start searching for a preamble byte
     return sempFirstByte(parse, data);

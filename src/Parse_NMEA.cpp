@@ -73,8 +73,19 @@ bool sempNmeaValidateChecksum(SEMP_PARSE_STATE *parse, size_t bytesToIgnore)
     checksum |= sempAsciiToNibble(parse->buffer[length - 1]);
 
     // Validate the checksum
-    if (((checksum == parse->crc) || (parse->badCrc && (!parse->badCrc(parse))))
-        && ((length + 2) <= parse->bufferLength))
+    bool validCsum = (checksum == parse->crc);
+    if (!validCsum)
+    {
+        if (parse->badCrc)
+        {
+            // Maintain backward compatibility with earlier versions
+            // Don't include CR/LF in parse->length when calling badCrc
+            parse->length -= bytesToIgnore;
+            validCsum = !parse->badCrc(parse);
+            parse->length += bytesToIgnore; // Restore the length
+        }
+    }
+    if (validCsum && ((length + 2) <= parse->bufferLength))
     {
         // Always add the carriage return and line feed
         parse->buffer[length++] = '\r';

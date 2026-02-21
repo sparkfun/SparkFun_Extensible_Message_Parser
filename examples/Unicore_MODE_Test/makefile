@@ -11,7 +11,7 @@ SHELL=/bin/bash
 # Source files
 ##########
 
-SKETCH=Unicore_Binary_Test
+SKETCH=Unicore_MODE_Test
 ESP32_CHIP=esp32
 PARTITION_FILE_NAME=RTKEverywhere
 

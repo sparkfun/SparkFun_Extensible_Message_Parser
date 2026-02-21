@@ -1,7 +1,8 @@
 /*
-  SparkFun Unicore binary test example sketch
+  SparkFun Unicore MODE test example sketch
 
-  This example demonstrates how to parse a Unicore Binary data stream
+  This example demonstrates how to parse a Unicore command response
+  e.g. MODE
 
   License: MIT. Please see LICENSE.md for more details
 */

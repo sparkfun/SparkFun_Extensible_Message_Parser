@@ -26,40 +26,30 @@ const SEMP_PARSER_DESCRIPTION * parserTable[] =
 };
 const int parserCount = sizeof(parserTable) / sizeof(parserTable[0]);
 
-const uint8_t rawDataStream[] =
+const uint8_t modeResponse[] = 
 {
     // This is the UM980's response to the "MODE\r\n" command
     // Note that the $ is _included_ in the checksum,
     // causing badNmeaChecksum to be called
-    // "$command,MODE,response: OK*5D\r\n"
-    // "#MODE,97,GPS,FINE,2406,465982000,17548,0,18,962;MODE ROVER SURVEY,*1B\r\n"
-    0x24,0x63,0x6F,0x6D,0x6D,0x61,0x6E,0x64,0x2C,0x4D,0x4F,0x44,0x45,0x2C,0x72,0x65,
-    0x73,0x70,0x6F,0x6E,0x73,0x65,0x3A,0x20,0x4F,0x4B,0x2A,0x35,0x44,0x0D,0x0A,
-    0x23,0x4D,0x4F,0x44,0x45,0x2C,0x39,0x37,0x2C,0x47,0x50,0x53,0x2C,0x46,0x49,0x4E,
-    0x45,0x2C,0x32,0x34,0x30,0x36,0x2C,0x34,0x36,0x35,0x39,0x38,0x32,0x30,0x30,0x30,
-    0x2C,0x31,0x37,0x35,0x34,0x38,0x2C,0x30,0x2C,0x31,0x38,0x2C,0x39,0x36,0x32,0x3B,
-    0x4D,0x4F,0x44,0x45,0x20,0x52,0x4F,0x56,0x45,0x52,0x20,0x53,0x55,0x52,0x56,0x45,
-    0x59,0x2C,0x2A,0x31,0x42,0x0D,0x0A,
+    "$command,MODE,response: OK*5D\r\n"
+    "#MODE,97,GPS,FINE,2406,465982000,17548,0,18,962;MODE ROVER SURVEY,*1B\r\n"
+};
 
+const uint8_t bestNavResponse[] =
+{
     // This is the response to "BESTNAVB 1.00\r\n"
-    // "$command,BESTNAVB 1.00,response: OK*7A\r\n"
-    0x24,0x63,0x6F,0x6D,0x6D,0x61,0x6E,0x64,0x2C,0x42,0x45,0x53,0x54,0x4E,0x41,0x56,
-    0x42,0x20,0x31,0x2E,0x30,0x30,0x2C,0x72,0x65,0x73,0x70,0x6F,0x6E,0x73,0x65,0x3A,
-    0x20,0x4F,0x4B,0x2A,0x37,0x41,0x0D,0x0A,
+    "$command,BESTNAVB 1.00,response: OK*7A\r\n"
+};
 
+const uint8_t unicoreHash8ByteCrc[] =
+{
     // Valid Unicore hash (#) sentence with an 8 byte checksum
-    // "#VERSION,40,GPS,UNKNOWN,1,1000,0,0,18,15;UM980,R4.10Build7923,HRPT00-S10C-P,
-    //  2310415000001-MD22B1225023842,ff3b1e9611b3b07b,2022/09/28*b164c965\r\n"
-    0x23,0x56,0x45,0x52,0x53,0x49,0x4F,0x4E,0x2C,0x34,0x30,0x2C,0x47,0x50,0x53,0x2C,
-    0x55,0x4E,0x4B,0x4E,0x4F,0x57,0x4E,0x2C,0x31,0x2C,0x31,0x30,0x30,0x30,0x2C,0x30,
-    0x2C,0x30,0x2C,0x31,0x38,0x2C,0x31,0x35,0x3B,0x55,0x4D,0x39,0x38,0x30,0x2C,0x52,
-    0x34,0x2E,0x31,0x30,0x42,0x75,0x69,0x6C,0x64,0x37,0x39,0x32,0x33,0x2C,0x48,0x52,
-    0x50,0x54,0x30,0x30,0x2D,0x53,0x31,0x30,0x43,0x2D,0x50,0x2C,0x32,0x33,0x31,0x30,
-    0x34,0x31,0x35,0x30,0x30,0x30,0x30,0x30,0x31,0x2D,0x4D,0x44,0x32,0x32,0x42,0x31,
-    0x32,0x32,0x35,0x30,0x32,0x33,0x38,0x34,0x32,0x2C,0x66,0x66,0x33,0x62,0x31,0x65,
-    0x39,0x36,0x31,0x31,0x62,0x33,0x62,0x30,0x37,0x62,0x2C,0x32,0x30,0x32,0x32,0x2F,
-    0x30,0x39,0x2F,0x32,0x38,0x2A,0x62,0x31,0x36,0x34,0x63,0x39,0x36,0x35,0x0D,0x0A,
+    "#VERSION,40,GPS,UNKNOWN,1,1000,0,0,18,15;UM980,R4.10Build7923,HRPT00-S10C-P,"
+    "2310415000001-MD22B1225023842,ff3b1e9611b3b07b,2022/09/28*b164c965\r\n"
+};
 
+const uint8_t unicoreRecTime[] =
+{
     // This is a valid periodic RECTIMEB message
     0xAA,0x44,0xB5,0x61,0x66,0x00,0x2C,0x00,0x00,0xA0,0x66,0x09,0xE8,0x5D,0xC6,0x1B,
     0x8C,0x44,0x00,0x00,0x00,0x12,0x13,0x00,0x00,0x00,0x00,0x00,0x17,0x77,0xC4,0x19,
@@ -68,8 +58,22 @@ const uint8_t rawDataStream[] =
     0x01,0x00,0x00,0x00,0x63,0xA7,0x47,0xDB,
 };
 
-// Number of bytes in the rawDataStream
-#define RAW_DATA_BYTES      (sizeof(rawDataStream))
+typedef struct _DataStream
+{
+    size_t length;
+    const uint8_t *data;
+} DataStream;
+
+#define DATA_STREAM_INIT(x, extraBytes)     {sizeof(x) - extraBytes, &x[0]}
+const DataStream dataStream[] =
+{
+    DATA_STREAM_INIT(modeResponse, 1),
+    DATA_STREAM_INIT(bestNavResponse, 1),
+    DATA_STREAM_INIT(unicoreHash8ByteCrc, 1),
+    DATA_STREAM_INIT(unicoreRecTime, 0),
+};
+
+#define DATA_STREAM_ENTRIES     (sizeof(dataStream) / sizeof(dataStream[0]))
 
 //----------------------------------------
 // Locals
@@ -77,6 +81,8 @@ const uint8_t rawDataStream[] =
 
 // Account for the largest Unicore messages
 uint8_t buffer[3095];
+int byteOffset;
+int dataIndex;
 uint32_t dataOffset;
 SEMP_PARSE_STATE *parse;
 
@@ -85,9 +91,7 @@ SEMP_PARSE_STATE *parse;
 //------------------------------------------------------------------------------
 
 // Alternate checksum for NMEA parser needed during setup
-// ****************************************************
-// * Based on the Unicore_GNSS_Arduino_Library v2.0.0 *
-// ****************************************************
+// Based on the Unicore_GNSS_Arduino_Library v2.0.0
 bool badNmeaChecksum(SEMP_PARSE_STATE *parse)
 {
     int alternateChecksum;
@@ -101,12 +105,6 @@ bool badNmeaChecksum(SEMP_PARSE_STATE *parse)
     // Older UM980 firmware during setup is improperly adding the '$'
     // into the checksum calculation.  Convert the received checksum
     // characters into binary.
-    // ************************************************************
-    // * Please see Issue #91                                     *
-    // * With SEMP >= v2.0.0                                      *
-    // * For NMEA: the last two bytes are CR LF, not the checksum *
-    // * For Unicore Hash: the last two bytes are the checksum    *
-    // ************************************************************
     checksum = sempAsciiToNibble(parse->buffer[parse->length - 1]);
     checksum |= sempAsciiToNibble(parse->buffer[parse->length - 2]) << 4;
 
@@ -117,7 +115,7 @@ bool badNmeaChecksum(SEMP_PARSE_STATE *parse)
     // Display bad checksums
     if (!badChecksum)
     {
-        sempPrintString(output, "Unicore Lib: Message improperly includes ");
+        sempPrintString(output, "Unicore: Message improperly includes ");
         sempPrintChar(output, parse->buffer[0]);
         sempPrintStringLn(output, " in checksum");
         sempDumpBuffer(output, parse->buffer, parse->length);
@@ -131,6 +129,7 @@ bool badNmeaChecksum(SEMP_PARSE_STATE *parse)
 void parserTests()
 {
     size_t bufferLength;
+    int rawDataBytes;
 
     // Verify the buffer size
     bufferLength = sempGetBufferLength(parserTable, parserCount);
@@ -149,15 +148,24 @@ void parserTests()
         reportFatalError("Failed to initialize the parser");
 
     // Obtain a raw data stream from somewhere
+    rawDataBytes = 0;
+    for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
+        rawDataBytes += dataStream[dataIndex].length;
     sempPrintString(output, "Raw data stream: ");
-    sempPrintDecimalI32(output, RAW_DATA_BYTES);
+    sempPrintDecimalI32(output,rawDataBytes);
     sempPrintStringLn(output, " bytes");
 
     // The raw data stream is passed to the parser one byte at a time
     sempDebugOutputEnable(parse, output);
-    for (dataOffset = 0; dataOffset < RAW_DATA_BYTES; dataOffset++)
-        // Update the parser state based on the incoming byte
-        sempParseNextByte(parse, rawDataStream[dataOffset]);
+    for (dataIndex = 0; dataIndex < DATA_STREAM_ENTRIES; dataIndex++)
+    {
+        for (byteOffset = 0; byteOffset < dataStream[dataIndex].length; byteOffset++)
+        {
+            // Update the parser state based on the incoming byte
+            sempParseNextByte(parse, dataStream[dataIndex].data[byteOffset]);
+            dataOffset += 1;
+        }
+    }
 
     // Done parsing the data
     sempStopParser(&parse);
